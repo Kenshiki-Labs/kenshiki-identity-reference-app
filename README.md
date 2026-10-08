@@ -84,8 +84,9 @@ automatic comparison and late-result fencing. A rendered React test completes a 
 returns to Identity and reopens results without rescanning or prematurely releasing evidence.
 The UI tests target the installed native artifact: twelve bridge checks, unavailable document/MRZ
 camera recovery, an unavailable-SSN-service bottom sheet, and synthetic standalone SSN confirmation,
-result and reopening. The 0.3 artifact validation is in progress; these test definitions are not a
-claim that the final 0.3 package has passed.
+result and reopening. All five passed against the 0.3 package built from clean commit `082088e`,
+along with TypeScript checking and 61 reference-flow tests. The exact artifact hash and evidence
+are recorded in [the distribution record](../../Distribution/README.md#030-standalone-ssn-correction-2026-10-08).
 
 For the synthetic SSN test only, AppDelegate registers a fixture when launched with
 `--ssn-artifact-fixture`. It is compiled only for the simulator, accepts only the invalid synthetic
