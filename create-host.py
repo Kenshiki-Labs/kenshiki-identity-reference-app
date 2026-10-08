@@ -26,6 +26,7 @@ subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'I
 for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts']:
     shutil.copyfile(Path(__file__).with_name(filename), host / filename)
 shutil.copyfile(Path(__file__).with_name('CaptureFlowController.test.ts'), host / 'CaptureFlowController.test.ts')
+shutil.copyfile(Path(__file__).with_name('IdentityCaptureFlow.test.tsx'), host / 'IdentityCaptureFlow.test.tsx')
 # Replace the CLI's starter-screen test with this example's actual controller tests.
 (host / '__tests__/App.test.tsx').unlink(missing_ok=True)
 for source, filename in [(args.trust_anchors, 'masterList.pem'), (args.embedder, 'embedder.mlmodelc'),

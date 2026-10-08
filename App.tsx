@@ -1,8 +1,9 @@
-import React, {useEffect, useState} from 'react';
-import {Button, SafeAreaView, ScrollView, Text, View} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {Button, Pressable, SafeAreaView, ScrollView, Text, View} from 'react-native';
 import {IdentityCaptureSession, IdentityCapturePreview} from '@kenshiki/identity-capture';
 import type {Configuration} from '@kenshiki/identity-capture';
-import {IdentityCaptureFlow} from './IdentityCaptureFlow';
+import {Action, CaptureResultDetails, IdentityCaptureFlow, styles} from './IdentityCaptureFlow';
+import type {CompletedCapture} from './CaptureFlowController';
 
 const rows = [
   ['P<UTOSPECIMEN<<SYNTHETIC<<<<<<<<<<<<<<<<<<<<'],
@@ -19,13 +20,67 @@ const messages = {
 
 const emptyConfiguration: Configuration = {};
 export default function App({configuration = emptyConfiguration}: {configuration?: Configuration}) {
-  const [flow, setFlow] = useState(false);
-  return <SafeAreaView style={{flex: 1}}>{flow ?
-    <IdentityCaptureFlow configuration={configuration} onExit={() => setFlow(false)} /> :
-    <View style={{flex: 1}}>
-      <Button title="Passport and face check" testID="open-capture-flow" onPress={() => setFlow(true)} />
-      <IntegrationChecks />
-    </View>}
+  const [screen, setScreen] = useState<'identity' | 'result' | 'capture' | 'checks'>('identity');
+  const [result, setResult] = useState<CompletedCapture>();
+  const [focus, setFocus] = useState<'passport' | 'face'>('passport');
+  const owned = useRef<CompletedCapture | undefined>(undefined);
+  const [input, setInput] = useState<{completed?: CompletedCapture; resume?: 'read' | 'selfie'}>({});
+  const [clearSheet, setClearSheet] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  useEffect(() => () => { void owned.current?.session.release(); }, []);
+  function accept(completed: CompletedCapture) {
+    owned.current = completed; setResult(completed); setInput({}); setScreen('identity');
+  }
+  function start(resume?: 'read' | 'selfie') {
+    const completed = result;
+    owned.current = undefined; setResult(undefined);
+    setInput({completed, resume}); setScreen('capture');
+  }
+  async function clear() {
+    if (clearing) return;
+    setClearing(true);
+    await owned.current?.session.release();
+    owned.current = undefined; setResult(undefined); setClearSheet(false); setClearing(false); setScreen('identity');
+  }
+  return <SafeAreaView style={styles.root}>
+    {screen === 'capture' ? <IdentityCaptureFlow configuration={configuration} {...input}
+      onComplete={accept} onExit={() => { setInput({}); setScreen('identity'); }} /> :
+    screen === 'checks' ? <View style={{flex: 1}}><Action label="Back to Identity" onPress={() => setScreen('identity')} /><IntegrationChecks /></View> :
+    <ScrollView contentContainerStyle={styles.content} accessibilityElementsHidden={clearSheet}>
+      <Text accessibilityRole="header" style={styles.title}>{screen === 'result' ? 'Your results' : 'Identity'}</Text>
+      {screen === 'identity' ? <>
+        <Text style={styles.body}>Your documents and face check, together in one place.</Text>
+        <Pressable accessibilityRole="button" style={styles.card} testID="open-capture-flow"
+          onPress={() => { setFocus('passport'); if (result) setScreen('result'); else start(); }}>
+          <Text style={styles.sheetTitle}>Passport</Text>
+          <Text style={styles.body}>{result ? `${result.passport.givenNames} ${result.passport.surname} · View results` : 'Scan and read your passport'}</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" accessibilityState={{disabled: !result?.passport.portraitAvailable}}
+          disabled={!result?.passport.portraitAvailable} style={[styles.card, !result?.passport.portraitAvailable && styles.disabled]}
+          testID="face-match-card" onPress={() => { setFocus('face'); if (result?.comparison) setScreen('result'); else start('selfie'); }}>
+          <Text style={styles.sheetTitle}>Face match</Text>
+          <Text style={styles.body}>{result?.comparison ? 'Comparison complete · View results' : result ? 'Compare a selfie with your passport photo' : 'Read a passport to add its photo first'}</Text>
+        </Pressable>
+        {result && <Text style={styles.label}>Available while this app stays open. Clear results when you are finished.</Text>}
+        {result && <Action label="Clear results" secondary onPress={() => setClearSheet(true)} />}
+        <Action label="Developer checks" secondary onPress={() => setScreen('checks')} testID="open-sdk-checks" />
+      </> : result && <>
+        <CaptureResultDetails result={result} focus={focus} />
+        <Action label="Back to Identity" onPress={() => setScreen('identity')} />
+        <Action label={result.comparison ? 'Retake selfie' : 'Compare with a selfie'} secondary
+          disabled={!result.passport.portraitAvailable} onPress={() => start('selfie')} />
+        <Action label="Read chip again" secondary onPress={() => start('read')} />
+        <Action label="Clear results" secondary onPress={() => setClearSheet(true)} />
+      </>}
+    </ScrollView>}
+    {clearSheet && <View style={styles.scrim}><View style={styles.sheet} accessibilityViewIsModal>
+      <View style={styles.sheetContent}>
+        <Text accessibilityRole="header" style={styles.sheetTitle}>Clear these results?</Text>
+        <Text style={styles.body}>This removes the passport, photos and comparison from this check.</Text>
+        <Action label="Clear results" onPress={clear} disabled={clearing} />
+        <Action label="Keep results" secondary onPress={() => setClearSheet(false)} disabled={clearing} />
+      </View>
+    </View></View>}
   </SafeAreaView>;
 }
 

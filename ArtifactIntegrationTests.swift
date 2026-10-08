@@ -2,7 +2,7 @@ import XCTest
 
 final class ArtifactIntegrationTests: XCTestCase {
   @MainActor
-  func testUnavailableCameraOffersABottomSheetAndFreshStart() throws {
+  func testUnavailableCameraOffersABottomSheetAndReturnToIdentity() throws {
     #if !targetEnvironment(simulator)
     throw XCTSkip("This test exercises unavailable simulator camera hardware")
     #endif
@@ -18,16 +18,19 @@ final class ArtifactIntegrationTests: XCTestCase {
     if permission.waitForExistence(timeout: 3), permission.buttons["Allow"].exists {
       permission.buttons["Allow"].tap()
     }
-    let retry = app.buttons["retry-capture"]
-    XCTAssertTrue(retry.waitForExistence(timeout: 15), "A stopped camera needs a recovery sheet")
+    let back = app.buttons["back-to-details"]
+    XCTAssertTrue(back.waitForExistence(timeout: 15), "Unsupported hardware needs a way back")
     XCTAssertEqual(app.alerts.count, 0, "App recovery must not use a native alert")
-    app.buttons["confirm-restart"].tap()
-    XCTAssertTrue(start.waitForExistence(timeout: 5))
+    back.tap()
+    XCTAssertTrue(open.waitForExistence(timeout: 5))
   }
   @MainActor
   func testInstalledPackageAcrossJavaScriptAndNativeBoundaries() throws {
     let app = XCUIApplication()
     app.launch()
+    let checks = app.buttons["open-sdk-checks"]
+    XCTAssertTrue(checks.waitForExistence(timeout: 30))
+    checks.tap()
     let run = app.buttons["run-sdk-checks"]
     XCTAssertTrue(run.waitForExistence(timeout: 30), "Packaged React Native host did not load")
     run.tap()

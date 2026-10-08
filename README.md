@@ -1,16 +1,35 @@
 # iOS React Native reference app
 
 This adopter-owned UI installs the **built npm tarball**, not an SDK source checkout. It offers
-passport MRZ capture and review → passport NFC → paired TrueDepth selfie → local face comparison.
+an Identity hub with separate Passport and Face match cards. Passport MRZ capture and review leads
+to NFC and immediately inspectable passport results. Face match reuses that passport photo;
+paired TrueDepth capture automatically starts the local comparison.
 The screens and controller are reusable reference source for SSA's app. The native SDK remains
 usable without this UI. Copy, branding, navigation and enrollment decisions belong to the adopter.
 
 All app recovery and restart prompts use an in-view bottom sheet. Apple still presents its own
 camera permission and NFC system UI. The app starts idle; capture follows an explicit action.
-Backgrounding cancels work and requires an explicit resume. Restart and unmount release the native
-session and its evidence. The demo never calls `exportPassport`, persists captures or uploads data.
+Backgrounding cancels active work and requires an explicit resume. Cancelling Apple's NFC sheet
+quietly returns to the printed details. Camera and comparison failures offer targeted retry while
+keeping a successful passport read. Restart clears the check.
+Interruption waits for native cancellation and the active JavaScript command to settle. If a read or
+comparison completed before cancellation won, its committed observations replace the prior result
+before review becomes available; the interrupted camera screen is never reopened by that delivery.
 
-`Hosts/SensorHost` (Kenshiki Sensors) also has a native Passport tab using the public Swift APIs.
+`IdentityCaptureFlow.onComplete(result)` transfers ownership of its live native session to the
+adopter before unmount. `CompletedCapture` includes the passport/protocol observations, printed/chip
+correspondence, optional comparison and its receipt, and the session handle. The receiving app must
+call `result.session.release()` when clearing the result or ending its owning scope. Unmounting the
+completed flow does not release transferred evidence. Cancelling an unfinished flow does release it.
+Do not retain only the observations and then release the session if you still need image review.
+
+The demo holds one result in memory and reopens it from either Identity card; app termination clears
+it. Explicit Clear results uses a bottom sheet. `IdentityCaptureImage` renders the hash-bound passport
+photo and selfie directly from native memory, and release blanks mounted image views. Chip fields,
+independent protocol outcomes and measured depth details remain available in the results view.
+The demo never calls `exportPassport`, persists captures or uploads data.
+
+`Hosts/SensorHost` (Kenshiki Sensors) also has native Identity cards using the public Swift APIs.
 This React Native app specifically tests the distributed artifact through the JavaScript bridge.
 Physical acceptance in either host is evidence for that path; it does not substitute for testing
 the other integration.
@@ -21,7 +40,7 @@ Requires Node 22.11+, CocoaPods, Xcode and an iOS 18+ target. The tested baselin
 0.87.1 / React 19.2.3. SSA's actual React Native version and Expo/bare setup remain unknown.
 
 ```sh
-python3 create-host.py /absolute/new/IdentitySDKHost /absolute/kenshiki-identity-capture-0.1.0.tgz
+python3 create-host.py /absolute/new/IdentitySDKHost /absolute/kenshiki-identity-capture-0.1.1.tgz
 ```
 
 For a device journey, pass explicit `--trust-anchors /path/master-list.pem`,
@@ -39,16 +58,18 @@ in its provisioning profile. Do not reuse a production app identity to run this 
 ```sh
 cd /absolute/new/IdentitySDKHost
 npx tsc --noEmit
-npx jest --runInBand CaptureFlowController.test.ts
+npx jest --runInBand CaptureFlowController.test.ts IdentityCaptureFlow.test.tsx
 cd ios
 xcodebuild test -workspace IdentitySDKHost.xcworkspace -scheme IdentitySDKHost \
   -configuration Release -destination 'platform=iOS Simulator,id=YOUR_SIMULATOR' \
   -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
 ```
 
-The controller tests use an explicit mocked SDK to exercise UI ownership and late-result fencing.
+The controller tests use an explicit mocked SDK to exercise result handoff, targeted recovery,
+automatic comparison and late-result fencing. A rendered React test completes a passport read,
+returns to Identity and reopens results without rescanning or prematurely releasing evidence.
 The UI tests run the real installed native artifact: ten bridge checks, plus unavailable-camera
-recovery and restart through the rendered React Native screens. Neither proves live camera/NFC
+recovery and return to Identity through the rendered React Native screens. Neither proves live camera/NFC
 behavior. Release builds bundle JavaScript and need no Metro server at runtime.
 
 For physical acceptance, scan and review a passport, read its chip, test pull-away recovery and
