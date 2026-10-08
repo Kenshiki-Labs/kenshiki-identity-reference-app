@@ -4,6 +4,7 @@ import {IdentityCaptureSession} from '@kenshiki/identity-capture';
 import type {Configuration, PhoneCheckReceipt} from '@kenshiki/identity-capture';
 import {Action, styles} from './IdentityCaptureFlow';
 import {PhoneFlowController, type PhoneFlowState, type SavedPhoneCheck} from './PhoneFlowController';
+import {SubscriberResultDetails} from './SubscriberResultDetails';
 
 export function PhoneFlow({configuration, saved, onComplete, onExit}: {
   configuration: Configuration; saved?: SavedPhoneCheck;
@@ -99,6 +100,9 @@ export function PhoneResultDetails({receipt}: {receipt: PhoneCheckReceipt}) {
     <Row label="Check completed" value={receipt.completedAt} />
     <Text style={styles.body}>The service received a text from this number. Subscriber agreement is a separate finding.</Text>
     <Text accessibilityRole="header" style={styles.sheetTitle}>Comparison with your ID</Text>
+    {receipt.subscriberComparison || receipt.subscriberFailure
+      ? <SubscriberResultDetails result={receipt.subscriberComparison} failure={receipt.subscriberFailure} />
+      : <>
     <Row label="Reported outcome" value={comparison ? ({agreed: 'Subscriber details agree', singleSource: 'One source reports agreement',
       contradicted: 'Subscriber details differ', unavailable: 'Comparison unavailable', notCompared: 'Not compared'}[comparison.status] ?? comparison.status) : 'No comparison returned'} />
     {comparison && <>
@@ -124,12 +128,18 @@ export function PhoneResultDetails({receipt}: {receipt: PhoneCheckReceipt}) {
         {(provider.source === 'vonage' || provider.formatValid != null) && <Row label="Number format valid" value={provider.formatValid} />}
       </View>)}
     </> : <Text style={styles.body}>Provider details are not present in this saved receipt. Opening it does not run another check.</Text>}
+    </>}
     <Action label={showReceipt ? 'Hide receipt details' : 'Show receipt details'} secondary
       onPress={() => setShowReceipt(value => !value)} testID="phone-receipt-details" />
     {showReceipt && <>
       <Row label="Challenge reference" value={receipt.challengeID} />
       <Row label="Message digest" value={receipt.messageHash} />
       <Row label="Provider request reference" value={evidence?.requestID} />
+      {receipt.subscriberComparison && <>
+        <Row label="Comparison reference" value={receipt.subscriberComparison.operationID} />
+        <Row label="Policy version" value={receipt.subscriberComparison.evaluation.policyVersion} />
+        <Row label="Profile version" value={receipt.subscriberComparison.profileVersion} />
+      </>}
     </>}
   </View>;
 }

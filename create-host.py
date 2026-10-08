@@ -26,7 +26,7 @@ subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'I
 for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
                  'DriverLicenseFlow.tsx', 'DocumentFlowController.ts',
                  'DriverLicenseFlow.test.tsx', 'DocumentFlowController.test.ts',
-                 'PhoneFlow.tsx', 'PhoneFlowController.ts', 'PhoneFlow.test.tsx', 'PhoneFlowController.test.ts',
+                 'PhoneFlow.tsx', 'SubscriberResultDetails.tsx', 'PhoneFlowController.ts', 'PhoneFlow.test.tsx', 'PhoneFlowController.test.ts',
                  'SSNFlow.tsx', 'SSNFlowController.ts', 'SSNFlow.test.tsx', 'SSNFlowController.test.ts']:
     shutil.copyfile(Path(__file__).with_name(filename), host / filename)
 shutil.copyfile(Path(__file__).with_name('CaptureFlowController.test.ts'), host / 'CaptureFlowController.test.ts')

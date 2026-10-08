@@ -2,7 +2,7 @@ import React from 'react';
 import {AppState} from 'react-native';
 import type {AppStateStatus} from 'react-native';
 import renderer, {act} from 'react-test-renderer';
-import type {CaptureEvent, PhoneCheckReceipt, PhoneCheckSnapshot} from '@kenshiki/identity-capture';
+import type {CaptureEvent, PhoneCheckReceipt, PhoneCheckSnapshot, SubscriberComparisonResult} from '@kenshiki/identity-capture';
 import App from './App';
 import {PhoneResultDetails} from './PhoneFlow';
 
@@ -28,7 +28,11 @@ jest.mock('@kenshiki/identity-capture', () => ({
   IdentityCaptureSession: {create: jest.fn(async () => mockSession)},
   IdentityCapturePreview: 'MockCapturePreview', IdentityCaptureImage: 'MockCaptureImage',
 }));
-beforeEach(() => { jest.clearAllMocks(); mockSnapshot = mockReady; mockListener = undefined; });
+beforeEach(() => {
+  jest.clearAllMocks(); mockSnapshot = mockReady; mockListener = undefined;
+  jest.spyOn(AppState, 'addEventListener').mockImplementation(() => ({remove: jest.fn()}));
+});
+afterEach(() => jest.restoreAllMocks());
 async function renderApp() {
   let view!: renderer.ReactTestRenderer;
   await act(async () => { view = renderer.create(<App />); });
@@ -81,6 +85,45 @@ test('older receipts explicitly explain missing details without triggering a new
   let view!: renderer.ReactTestRenderer;
   await act(async () => { view = renderer.create(<PhoneResultDetails receipt={{...mockReceipt, subjectComparison: undefined}} />); });
   expect(JSON.stringify(view.toJSON())).toContain('Provider details are not present in this saved receipt');
+  expect(mockSession.phoneSend).not.toHaveBeenCalled();
+  await act(async () => { view.unmount(); });
+});
+
+test('subscriber findings appear on the same result screen without another consent or send step', async () => {
+  const subscriber: SubscriberComparisonResult = {
+    operationID: 'synthetic-comparison', profileVersion: 'synthetic', subjectRevision: 'synthetic',
+    numberVerificationReference: mockReceipt.challengeID, completedAt: mockReceipt.completedAt,
+    provider: {providerID: 'Synthetic provider', product: 'Synthetic comparison', apiVersion: 'v1', adapterVersion: 'v1', reviewRevision: 'not-live'},
+    checks: [{name: 'givenName', submitted: true, compared: true, outcome: 'noMatch', scope: 'individualAttribute', coveredInputs: ['givenName'], reason: 'reportedGrade'},
+      {name: 'birthDate', submitted: true, compared: null, outcome: 'noData', scope: 'unqualified', coveredInputs: [], reason: 'noData'}],
+    evaluation: {status: 'incomplete', policyVersion: 'test-only', requiredChecks: ['givenName', 'birthDate'],
+      gradePolicy: {givenName: ['exactMatch'], familyName: ['exactMatch'], birthDate: ['exactMatch'], addressLines: ['exactMatch'], city: ['exactMatch'], region: ['exactMatch'], postalCode: ['exactMatch'], country: ['exactMatch']},
+      outsidePolicyChecks: ['givenName'], incompleteChecks: ['birthDate'], sourceFreshness: 'unknownTimeAllowed'},
+    source: {kind: 'unknown'}, wholeAddress: {submitted: true, compared: true, outcome: 'exactMatch', coveredInputs: [], reason: 'reportedGrade', coverageBasis: 'unverified'},
+  };
+  const {view, tap} = await renderApp(); await tap('open-phone'); await tap('phone-send');
+  await act(async () => {
+    mockSnapshot = {...mockReady, stage: 'completed', receipt: {...mockReceipt, subjectComparison: undefined, subscriberComparison: subscriber}};
+    mockListener?.({type: 'phoneSnapshot', snapshot: mockSnapshot});
+  });
+  const shown = JSON.stringify(view.toJSON());
+  for (const text of ['Phone possession confirmed', 'Comparison incomplete', 'Does not match', 'No data', 'Not returned', 'Whole address',
+    'This combined observation does not fill in missing individual address checks.', 'Synthetic provider']) expect(shown).toContain(text);
+  expect(shown).not.toContain('Required details agree');
+  expect(view.root.findAllByProps({testID: 'phone-bottom-sheet'})).toHaveLength(0);
+  await tap('phone-done'); await tap('open-phone');
+  expect(JSON.stringify(view.toJSON())).toContain('Comparison incomplete');
+  expect(mockSession.phoneSend).toHaveBeenCalledTimes(1);
+  await act(async () => { view.unmount(); });
+});
+
+test.each(['outcomeUnknown', 'notDispatched'] as const)('subscriber %s preserves possession without automatic retry', async failure => {
+  mockSnapshot = {...mockReady, stage: 'completed', receipt: {...mockReceipt, subjectComparison: undefined, subscriberFailure: failure}};
+  const {view, tap} = await renderApp(); await tap('open-phone');
+  const shown = JSON.stringify(view.toJSON());
+  expect(shown).toContain('Phone possession confirmed');
+  expect(shown).toContain(failure === 'outcomeUnknown' ? 'may have run' : 'was not run');
+  expect(shown).not.toContain('Subscriber details agree');
   expect(mockSession.phoneSend).not.toHaveBeenCalled();
   await act(async () => { view.unmount(); });
 });
