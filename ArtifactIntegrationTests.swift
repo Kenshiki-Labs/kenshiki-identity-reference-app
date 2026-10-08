@@ -74,6 +74,8 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(entry.waitForExistence(timeout: 5))
     entry.tap()
     entry.typeText("000001234")
+    XCTAssertEqual(entry.value as? String, "000001234", "Fast entry must preserve every digit")
+    XCTAssertTrue(app.buttons["ssn-review-number"].isEnabled)
     app.buttons["ssn-review-number"].tap()
     XCTAssertTrue(app.otherElements["ssn-bottom-sheet"].waitForExistence(timeout: 5))
     XCTAssertEqual(app.staticTexts["ssn-confirmation-number"].label, "000-00-1234")

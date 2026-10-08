@@ -48,7 +48,9 @@ async function renderApp(config = configuration) {
 test('SSN review displays exact digits in a bottom sheet and a completed result reopens from Identity', async () => {
   const {view, tap, enter} = await renderApp(); await tap('open-ssn');
   expect(view.root.findAllByProps({testID: 'ssn-entry'})).toHaveLength(0);
-  await tap('ssn-begin-entry'); await enter(); await tap('ssn-review-number');
+  await tap('ssn-begin-entry'); await enter();
+  expect(view.root.findByProps({testID: 'ssn-entry'}).props.value).toBe('000001234');
+  await tap('ssn-review-number');
   expect(view.root.findByProps({testID: 'ssn-bottom-sheet'})).toBeDefined();
   expect(view.root.findByProps({testID: 'ssn-confirmation-number'}).props.children).toBe('000-00-1234');
   expect(mockSession.ssnConfirm).not.toHaveBeenCalled();

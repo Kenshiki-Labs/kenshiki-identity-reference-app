@@ -54,8 +54,8 @@ export function SSNFlow({configuration, saved, onComplete, onExit}: {
         <Text style={styles.label}>Social Security number</Text>
         <TextInput testID="ssn-entry" accessibilityLabel="Social Security number" keyboardType="number-pad"
           autoCorrect={false} autoCapitalize="none" autoComplete="off" importantForAutofill="no"
-          value={formatNumber(state.digits)} onChangeText={controller.setDigits} editable={!busy}
-          placeholder="000-00-0000" style={[styles.card, {fontSize: 28, color: '#112f59'}]} />
+          value={state.digits} onChangeText={controller.setDigits} editable={!busy}
+          placeholder="000000000" style={[styles.card, {fontSize: 28, color: '#112f59'}]} />
         <Text style={styles.body}>You will confirm every digit before the check starts. Your entered number is cleared when you leave this screen.</Text>
         <Action label="Review number" testID="ssn-review-number" disabled={busy || state.digits.length !== 9}
           onPress={() => { Keyboard.dismiss(); void controller.requestConfirmation(); }} />
