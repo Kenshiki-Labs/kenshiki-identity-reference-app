@@ -10,9 +10,10 @@ camera permission and NFC system UI. The app starts idle; capture follows an exp
 Backgrounding cancels work and requires an explicit resume. Restart and unmount release the native
 session and its evidence. The demo never calls `exportPassport`, persists captures or uploads data.
 
-`Hosts/SensorHost` (Kenshiki Sensors) still has its existing document/selfie capture tab. This
-React Native app is the passport/face migration's integration and UI test surface; the new journey
-has not been added to SensorHost or installed on the owner's phone.
+`Hosts/SensorHost` (Kenshiki Sensors) also has a native Passport tab using the public Swift APIs.
+This React Native app specifically tests the distributed artifact through the JavaScript bridge.
+Physical acceptance in either host is evidence for that path; it does not substitute for testing
+the other integration.
 
 ## Generate a separate host
 
