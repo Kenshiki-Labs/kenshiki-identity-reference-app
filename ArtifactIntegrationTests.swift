@@ -2,6 +2,42 @@ import XCTest
 
 final class ArtifactIntegrationTests: XCTestCase {
   @MainActor
+  func testUnavailablePhoneUsesBottomSheetAndReturnsToIdentity() {
+    let app = XCUIApplication()
+    app.launch()
+    let open = app.buttons["open-phone"]
+    XCTAssertTrue(open.waitForExistence(timeout: 30))
+    for _ in 0..<3 where !open.isHittable { app.swipeUp() }
+    open.tap()
+    XCTAssertTrue(app.otherElements["phone-bottom-sheet"].waitForExistence(timeout: 10))
+    XCTAssertEqual(app.alerts.count, 0)
+    app.buttons["phone-sheet-back"].tap()
+    XCTAssertTrue(open.waitForExistence(timeout: 5))
+  }
+
+  @MainActor
+  func testNativePhoneProviderRegistersAndUnsupportedTextMessagingDoesNotSend() throws {
+    #if !targetEnvironment(simulator)
+    throw XCTSkip("This test requires unavailable simulator text messaging")
+    #endif
+    let app = XCUIApplication()
+    app.launchArguments = ["--phone-artifact-fixture"]
+    app.launch()
+    let open = app.buttons["open-phone"]
+    XCTAssertTrue(open.waitForExistence(timeout: 30))
+    for _ in 0..<3 where !open.isHittable { app.swipeUp() }
+    open.tap()
+    let send = app.buttons["phone-send"]
+    XCTAssertTrue(send.waitForExistence(timeout: 10))
+    XCTAssertTrue(send.isEnabled)
+    send.tap()
+    XCTAssertTrue(app.otherElements["phone-bottom-sheet"].waitForExistence(timeout: 10))
+    XCTAssertTrue(app.staticTexts["Text messaging is unavailable. Use an iPhone with text messaging enabled."].exists)
+    XCTAssertEqual(app.alerts.count, 0)
+    app.buttons["phone-sheet-back"].tap()
+    XCTAssertTrue(open.waitForExistence(timeout: 5))
+  }
+  @MainActor
   func testUnavailableSSNProviderHasABottomSheetAndReturnToIdentity() {
     let app = XCUIApplication()
     app.launch()
@@ -112,7 +148,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(run.waitForExistence(timeout: 30), "Packaged React Native host did not load")
     run.tap()
     let status = app.staticTexts["sdk-check-status"]
-    let finished = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "12 checks passed"), object: status)
+    let finished = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "14 checks passed"), object: status)
     XCTAssertEqual(XCTWaiter.wait(for: [finished], timeout: 30), .completed, status.label)
   }
 }

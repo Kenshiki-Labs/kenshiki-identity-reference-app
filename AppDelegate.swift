@@ -38,6 +38,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         "requiresLocation": false,
       ]
       #if targetEnvironment(simulator)
+      if ProcessInfo.processInfo.arguments.contains("--phone-artifact-fixture") {
+        var registrationError: NSError?
+        if IDCaptureRegisterPhoneCheckProvider(ArtifactPhoneProvider(), "artifact-phone", &registrationError) {
+          configuration["phone"] = [
+            "providerID": "artifact-phone", "checkedDocumentID": "synthetic-checked-document",
+            "workflowID": UUID().uuidString,
+            "directoryURL": support.appendingPathComponent("ArtifactPhone", isDirectory: true).absoluteString,
+            "keychainService": identity + ".artifact-phone", "keychainAccount": "artifact-phone-v1",
+            "policy": ["pollInterval": 3.0, "rateLimitBackoff": 5.0, "resendDelay": 45.0],
+          ]
+        }
+      }
       // Explicit synthetic integration fixture. Never registered on a physical device.
       if ProcessInfo.processInfo.arguments.contains("--ssn-artifact-fixture") {
         var registrationError: NSError?
@@ -61,6 +73,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   }
 }
 #if targetEnvironment(simulator)
+@MainActor
+private final class ArtifactPhoneProvider: NSObject, PhoneCheckProvider {
+  func phoneContext(_ checkedDocumentID: String) async throws -> String {
+    guard checkedDocumentID == "synthetic-checked-document" else {
+      throw NSError(domain: "IDPhoneCheckProvider", code: PhoneCheckProviderFailure.contextChanged.rawValue)
+    }
+    return #"{"credentialID":"synthetic","documentOperationID":"00000000-0000-4000-8000-000000000001","documentSubject":{"givenName":"Synthetic"}}"#
+  }
+  func startPhoneCheck(_ request: String) async throws -> String {
+    throw NSError(domain: "IDPhoneCheckProvider", code: PhoneCheckProviderFailure.unavailable.rawValue)
+  }
+  func completePhoneCheck(_ request: String) async throws -> String? {
+    throw NSError(domain: "IDPhoneCheckProvider", code: PhoneCheckProviderFailure.unavailable.rawValue)
+  }
+}
+
 @MainActor
 private final class ArtifactSSNProvider: NSObject, SSNIssuanceProvider {
   func checkSSN(_ digits: String, operationID: String, credentialID: String) async

@@ -1,7 +1,7 @@
 # iOS React Native reference app
 
 This adopter-owned UI installs the **built npm tarball**, not an SDK source checkout. It offers
-an Identity hub with Driver licence, Passport, Face match and SSN issuance cards. Passport MRZ capture and review leads
+an Identity hub with Driver licence, Passport, Face match, SSN issuance and Phone cards. Passport MRZ capture and review leads
 to NFC and immediately inspectable passport results. Face match reuses that passport photo;
 paired TrueDepth capture automatically starts the local comparison.
 The screens and controller are reusable reference source for SSA's app. The native SDK remains
@@ -54,7 +54,7 @@ Requires Node 22.11+, CocoaPods, Xcode and an iOS 18+ target. The tested baselin
 0.87.1 / React 19.2.3. SSA's actual React Native version and Expo/bare setup remain unknown.
 
 ```sh
-python3 create-host.py /absolute/new/IdentitySDKHost /absolute/kenshiki-identity-capture-0.3.0.tgz
+python3 create-host.py /absolute/new/IdentitySDKHost /absolute/kenshiki-identity-capture-0.4.0.tgz
 ```
 
 For a device journey, pass explicit `--trust-anchors /path/master-list.pem`,
@@ -106,3 +106,11 @@ and response codes when the native provider supplies `SSNIssuanceProviderDetails
 observations survive encrypted receipt restoration and bridge into `receipt.details`.
 Absent observations are labeled “Not returned”; earlier receipts explain that details were
 not retained. This source update is not a claim that the earlier 0.3.0 artifact includes it.
+
+The Phone card uses `PhoneFlowController` to preserve native session ownership, subscribe to
+receipt updates and drain interrupted composition/polling before returning to Identity. Opening
+saved results is local-only. It shows the received number, dates, separate subscriber outcome,
+field grades and carrier observations, including missing values. See the [native provider
+contract](../../ReactNative/identity-capture/README.md#phone-flow-04-source). The example requires
+an approved native service and checked-document reference; none is silently selected. The current
+legacy phone backend does not meet the phone-only PII requirement.

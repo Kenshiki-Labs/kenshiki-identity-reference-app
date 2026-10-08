@@ -8,6 +8,8 @@ import {DocumentResultDetails, DriverLicenseFlow, documentName} from './DriverLi
 import {isCompleteDocument, type SavedDocumentCapture} from './DocumentFlowController';
 import {SSNFlow, ssnSummary} from './SSNFlow';
 import type {SavedSSNCheck} from './SSNFlowController';
+import {PhoneFlow} from './PhoneFlow';
+import type {SavedPhoneCheck} from './PhoneFlowController';
 
 const rows = [
   ['P<UTOSPECIMEN<<SYNTHETIC<<<<<<<<<<<<<<<<<<<<'],
@@ -24,7 +26,7 @@ const messages = {
 
 const emptyConfiguration: Configuration = {};
 export default function App({configuration = emptyConfiguration}: {configuration?: Configuration}) {
-  const [screen, setScreen] = useState<'identity' | 'result' | 'capture' | 'checks' | 'documentCapture' | 'documentResult' | 'ssn'>('identity');
+  const [screen, setScreen] = useState<'identity' | 'result' | 'capture' | 'checks' | 'documentCapture' | 'documentResult' | 'ssn' | 'phone'>('identity');
   const [result, setResult] = useState<CompletedCapture>();
   const [focus, setFocus] = useState<'passport' | 'face'>('passport');
   const owned = useRef<CompletedCapture | undefined>(undefined);
@@ -35,11 +37,15 @@ export default function App({configuration = emptyConfiguration}: {configuration
   const [ssn, setSSN] = useState<SavedSSNCheck>();
   const ownedSSN = useRef<SavedSSNCheck | undefined>(undefined);
   const [ssnInput, setSSNInput] = useState<SavedSSNCheck>();
+  const [phone, setPhone] = useState<SavedPhoneCheck>();
+  const ownedPhone = useRef<SavedPhoneCheck | undefined>(undefined);
+  const [phoneInput, setPhoneInput] = useState<SavedPhoneCheck>();
   const [clearSheet, setClearSheet] = useState<'passport' | 'document'>();
   const [clearError, setClearError] = useState<string>();
   const [clearing, setClearing] = useState(false);
   useEffect(() => () => {
     void owned.current?.session.release(); void ownedDocument.current?.session.release(); void ownedSSN.current?.session.release();
+    void ownedPhone.current?.session.release();
   }, []);
   function accept(completed: CompletedCapture) {
     owned.current = completed; setResult(completed); setInput({}); setScreen('identity');
@@ -62,6 +68,12 @@ export default function App({configuration = emptyConfiguration}: {configuration
   }
   function acceptSSN(value: SavedSSNCheck) {
     ownedSSN.current = value; setSSN(value); setSSNInput(undefined); setScreen('identity');
+  }
+  function openPhone() {
+    ownedPhone.current = undefined; setPhoneInput(phone); setPhone(undefined); setScreen('phone');
+  }
+  function acceptPhone(value: SavedPhoneCheck) {
+    ownedPhone.current = value; setPhone(value); setPhoneInput(undefined); setScreen('identity');
   }
   function requestClear(target: 'passport' | 'document') { setClearError(undefined); setClearSheet(target); }
   async function clear() {
@@ -86,11 +98,13 @@ export default function App({configuration = emptyConfiguration}: {configuration
       onComplete={acceptDocument} onExit={() => { setDocumentInput({}); setScreen('identity'); }} /> :
     screen === 'ssn' ? <SSNFlow configuration={configuration} saved={ssnInput}
       onComplete={acceptSSN} onExit={() => { setSSNInput(undefined); setScreen('identity'); }} /> :
+    screen === 'phone' ? <PhoneFlow configuration={configuration} saved={phoneInput}
+      onComplete={acceptPhone} onExit={() => { setPhoneInput(undefined); setScreen('identity'); }} /> :
     screen === 'checks' ? <View style={{flex: 1}}><Action label="Back to Identity" onPress={() => setScreen('identity')} /><IntegrationChecks /></View> :
     <ScrollView contentContainerStyle={styles.content} accessibilityElementsHidden={!!clearSheet}>
       <Text accessibilityRole="header" style={styles.title}>{screen === 'result' ? 'Your results' : screen === 'documentResult' ? 'Your driver’s license' : 'Identity'}</Text>
       {screen === 'identity' ? <>
-        <Text style={styles.body}>Your documents and face check, together in one place.</Text>
+        <Text style={styles.body}>Your identity checks, together in one place.</Text>
         <Pressable accessibilityRole="button" style={styles.card} testID="open-driver-license"
           onPress={() => document && isCompleteDocument(document.document) ? setScreen('documentResult') : startDocument()}>
           <Text style={styles.sheetTitle}>Driver’s license</Text>
@@ -112,6 +126,11 @@ export default function App({configuration = emptyConfiguration}: {configuration
           <Text style={styles.sheetTitle}>Social Security number</Text>
           <Text style={styles.body}>{ssn?.snapshot.recoveryNeeded ? 'Check needs attention · Open' : ssn?.snapshot.receipt
             ? `${ssnSummary(ssn.snapshot.receipt)} · View result` : 'Check whether your number was issued'}</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" style={styles.card} testID="open-phone" onPress={openPhone}>
+          <Text style={styles.sheetTitle}>Phone</Text>
+          <Text style={styles.body}>{phone?.snapshot.pending ? 'Check in progress · Resume' : phone?.snapshot.receipt
+            ? 'Result available · View receipt and comparison' : 'Send a text and compare subscriber details with your checked ID'}</Text>
         </Pressable>
         {result && <Text style={styles.label}>Passport and face results are available while this app stays open. Clear them when you are finished.</Text>}
         {result && <Action label="Clear passport and face results" secondary onPress={() => requestClear('passport')} />}
@@ -188,6 +207,8 @@ function IntegrationChecks() {
       await rejects(() => first!.compareFace(), 'referenceUnavailable');
       await rejects(() => first!.ssnSnapshot(), 'ssnNotConfigured');
       await rejects(() => first!.ssnCancel(), 'ssnNotConfigured');
+      await rejects(() => first!.phoneSnapshot(), 'phoneNotConfigured');
+      await rejects(() => first!.phoneCancel(), 'phoneNotConfigured');
       await rejects(() => first!.readPassport({...parsed, consent: true, messages}), 'unsupported');
       const cameraFailure = new Promise<string>((resolve, reject) => {
         const timer = setTimeout(() => { off(); reject(new Error('Missing camera failure event')); }, 5000);
