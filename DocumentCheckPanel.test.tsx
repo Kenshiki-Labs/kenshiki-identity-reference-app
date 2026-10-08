@@ -14,7 +14,9 @@ async function setup() {
   const native = {documentCheckRestore: jest.fn(async () => initial),
     documentCheck: jest.fn(async () => correction), documentCheckCorrect: jest.fn(async () => ({...correction,
       result: {...correction.result, outcome: 'recordMatched', providerStatus: 'answered',
-        providerChecks: [{name: 'issuer', status: 'matched', reasons: ['name and date agreed']}],
+        providerChecks: [{name: 'issuer', status: 'matched', reasons: ['name and date agreed'],
+          metadataJSON: JSON.stringify({'name-first-match': 'full', risk: 0, flagged: false})}],
+        receipt: {serviceVersion: 'test-contract-v1', answeredRequestSHA256: 'request-digest', observationSHA256: 'observation-digest'},
         submittedFields: {givenName: 'SYNTHETIC'}, correctable: []}})),
     documentCheckAskAgain: jest.fn(), cancel: jest.fn(async () => {})};
   let view!: ReactTestRenderer;
@@ -37,6 +39,9 @@ test('reopening reads saved status without purchasing and corrections show compl
   expect(f.native.documentCheckCorrect).toHaveBeenCalledWith({givenName: 'SYNTHETIC'}, true);
   const rendered = JSON.stringify(f.view.toJSON());
   expect(rendered).toContain('Issuing record matched'); expect(rendered).toContain('name and date agreed');
+  expect(rendered).toContain('name-first-match'); expect(rendered).toContain('full');
+  expect(rendered).toContain('false'); expect(rendered).toContain('test-contract-v1');
+  expect(rendered).toContain('request-digest'); expect(rendered).toContain('observation-digest');
   expect(rendered).toContain('SYNTHETIC'); expect(rendered).toContain('answered');
   await act(async () => f.view.unmount());
 });

@@ -8,6 +8,18 @@ const labels = {recordMatched: 'Issuing record matched', recordNotMatched: 'Issu
   pending: 'Check still pending', unavailable: 'No answer available', needsCorrection: 'Review the requested details',
   inconclusive: 'No conclusive record comparison'};
 
+function metadataRows(encoded?: string | null): [string, string][] {
+  if (encoded == null) return [];
+  try {
+    const value: unknown = JSON.parse(encoded);
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return Object.entries(value).sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, item]) => [key, typeof item === 'string' ? item : JSON.stringify(item)]);
+    }
+  } catch {}
+  return [['Metadata', encoded]];
+}
+
 /** No request runs on mount or reopening. Only explicit holder actions can dispatch a check. */
 export function DocumentCheckPanel({session, configured}: {session: IdentityCaptureSession; configured: boolean}) {
   const [snapshot, setSnapshot] = useState<DocumentCheckSnapshot>();
@@ -51,11 +63,22 @@ export function DocumentCheckPanel({session, configured}: {session: IdentityCapt
         {result.providerChecks.map((check, index) => <View key={`${check.name}-${index}`} style={styles.detail}>
           <Text style={styles.label}>{check.name}</Text><Text selectable style={styles.body}>{check.status}</Text>
           {check.reasons.map((reason, i) => <Text selectable style={styles.body} key={i}>{reason}</Text>)}
+          {metadataRows(check.metadataJSON).map(([key, value]) => <View key={key}>
+            <Text style={styles.label}>{key}</Text><Text selectable style={styles.body}>{value}</Text>
+          </View>)}
         </View>)}
         {!result.providerChecks.length && <Text style={styles.body}>Individual provider checks were not returned.</Text>}
         {Object.entries(result.submittedFields ?? {}).map(([field, value]) => <View key={field}>
           <Text style={styles.label}>{field}</Text><Text selectable style={styles.body}>{value}</Text>
         </View>)}
+        {!result.submittedFields && <Text style={styles.body}>Submitted fields were not returned.</Text>}
+        <Text style={styles.body}>{result.replayed ? 'Service returned the existing answer.' : 'Service returned a new answer.'}</Text>
+        {result.receipt ? <View style={styles.detail}>
+          <Text style={styles.label}>Service receipt</Text>
+          <Text selectable style={styles.body}>Version: {result.receipt.serviceVersion}</Text>
+          <Text selectable style={styles.body}>Answered request: {result.receipt.answeredRequestSHA256}</Text>
+          <Text selectable style={styles.body}>Read observations: {result.receipt.observationSHA256}</Text>
+        </View> : <Text style={styles.body}>Service receipt was not returned.</Text>}
         <Text selectable style={styles.body}>Operation: {result.operationID}</Text>
         {result.verificationID && <Text selectable style={styles.body}>Verification: {result.verificationID}</Text>}
       </>}
