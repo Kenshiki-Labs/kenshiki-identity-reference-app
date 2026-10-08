@@ -65,7 +65,7 @@ export function SSNFlow({configuration, saved, onComplete, onExit}: {
         <SSNResultDetails receipt={receipt} />
         {!needsRecovery && !state.editing && <>
           <Action label="Done" testID="finish-ssn" onPress={finish} disabled={busy} />
-          <Action label="Check another number" secondary testID="ssn-check-again" onPress={controller.edit} disabled={busy} />
+          <Action label="Run a new check" secondary testID="ssn-check-again" onPress={controller.edit} disabled={busy} />
         </>}
       </>}
       {close}
