@@ -97,9 +97,22 @@ export function ssnSummary(receipt: SSNVerificationReceipt): string {
   return receipt.issuance === 'issued' ? 'Issuance confirmed' : receipt.issuance === 'notIssued' ? 'Issuance not confirmed' : 'Issuance unavailable';
 }
 export function SSNResultDetails({receipt}: {receipt: SSNVerificationReceipt}) {
+  const details = receipt.details;
+  const reported = (value?: string | null) => value?.trim() || 'Not returned';
   return <View style={styles.card} testID="ssn-result">
     <Text accessibilityRole="header" style={styles.sheetTitle}>{ssnSummary(receipt)}</Text>
     <ResultRow label="Was the number issued?" value={receipt.issuance === 'issued' ? 'Yes' : receipt.issuance === 'notIssued' ? 'No' : 'Unavailable'} />
+    {details ? <>
+      <Text accessibilityRole="header" style={styles.sheetTitle}>Returned findings</Text>
+      <ResultRow label="Issuing state" value={reported(details.region)} />
+      <ResultRow label="Issuance period begins" value={reported(details.issueStart)} />
+      <ResultRow label="Issuance period ends" value={reported(details.issueEnd)} />
+      <ResultRow label="Provider classification" value={reported(details.codeDescription)} />
+      <ResultRow label="Classification code" value={reported(details.code)} />
+      <ResultRow label="Source" value={reported(details.source)} />
+      <ResultRow label="Reported status" value={reported(details.reportedStatus)} />
+      <ResultRow label="Response code" value={details.responseCode == null ? 'Not returned' : String(details.responseCode)} />
+    </> : <Text style={styles.body}>This earlier check saved only the issuance result. Provider details were not retained. A new confirmed check is needed to obtain them.</Text>}
     <ResultRow label="Checked" value={receipt.checkedAt} />
     <Text style={styles.body}>This result does not establish that the number belongs to you.</Text>
   </View>;

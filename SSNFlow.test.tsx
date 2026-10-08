@@ -96,3 +96,26 @@ test('an uncertain prior dispatch gets a fresh-number warning before another con
   await tap('ssn-confirm'); expect(mockSession.ssnConfirm).toHaveBeenCalledWith('fresh-token');
   await act(async () => { view.unmount(); });
 });
+
+test('returned findings show source values, while older receipts explain why details are absent', async () => {
+  let view!: renderer.ReactTestRenderer;
+  await act(async () => { view = renderer.create(<SSNResultDetails receipt={{...mockReceipt, details: {
+    source: 'Synthetic provider', responseCode: 0, reportedStatus: 'Item1', region: 'CA',
+    issueStart: '1978-01-01', issueEnd: '1979-12-31', code: '2',
+    codeDescription: 'Issued in the reported period',
+  }}} />); });
+  let shown = JSON.stringify(view.toJSON());
+  for (const value of ['CA', '1978-01-01', '1979-12-31', 'Issued in the reported period', 'Item1', 'Synthetic provider']) {
+    expect(shown).toContain(value);
+  }
+  await act(async () => { view.update(<SSNResultDetails receipt={{...mockReceipt, details: {
+    source: 'Synthetic provider', responseCode: 0, reportedStatus: 'Item1',
+  }}} />); });
+  shown = JSON.stringify(view.toJSON());
+  expect(shown).toContain('Not returned'); expect(shown).not.toContain('1978-01-01');
+  await act(async () => { view.update(<SSNResultDetails receipt={mockReceipt} />); });
+  shown = JSON.stringify(view.toJSON());
+  expect(shown).toContain('Provider details were not retained');
+  expect(mockSession.ssnConfirm).not.toHaveBeenCalled();
+  await act(async () => { view.unmount(); });
+});

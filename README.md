@@ -100,3 +100,9 @@ cancellation, then capture and compare a real selfie. Repeat after backgrounding
 Check unsupported TrueDepth hardware fails closed. Record exact artifact hashes, device/OS and
 observations without copying personal data into logs. VoiceOver focus, large text and localized
 copy need acceptance in SSA's app; this reference flow is not a production accessibility claim.
+
+The source result screen also renders issuance region, date range, classification, source
+and response codes when the native provider supplies `SSNIssuanceProviderDetails`. Those
+observations survive encrypted receipt restoration and bridge into `receipt.details`.
+Absent observations are labeled “Not returned”; earlier receipts explain that details were
+not retained. This source update is not a claim that the earlier 0.3.0 artifact includes it.
