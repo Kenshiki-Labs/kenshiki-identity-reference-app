@@ -19,6 +19,7 @@ export function IdentityCaptureFlow({configuration, onExit, onComplete, complete
     setController(active); setState(active.state);
     if (resume === 'selfie') void active.selfie();
     if (resume === 'read') void active.read();
+    if (!resume) void active.open();
     const listener = AppState.addEventListener('change', next => { if (next === 'background') void active.pause(); });
     return () => { listener.remove(); void active.dispose(); };
   }, [configuration, completed, resume]);
@@ -70,6 +71,15 @@ export function IdentityCaptureFlow({configuration, onExit, onComplete, complete
       importantForAccessibility={sheet ? 'no-hide-descendants' : 'auto'} contentContainerStyle={styles.content}>
       <Text style={styles.eyebrow}>IDENTITY</Text>
       <Text accessibilityRole="header" style={styles.title}>{title}</Text>
+      {phase === 'loading' && <Text style={styles.body}>Opening saved results…</Text>}
+      {phase === 'saved' && <>
+        <Text style={styles.body}>Choose a saved passport check.</Text>
+        {state.saved?.map((record, index) => <View key={record.workflowID} style={styles.card}>
+          <Text style={styles.body}>{record.recordedAt}</Text>
+          {action('Open saved results', () => controller.recoverSaved(record.workflowID), false, `saved-passport-${index}`)}
+        </View>)}
+        {action('Scan another passport', controller.restart, false, 'new-passport', true)}
+      </>}
       {phase === 'intro' && <>
         <Text style={styles.body}>Scan the photo page, then hold your phone against the passport to read its chip. You can review the passport and compare its photo with a selfie.</Text>
         <Text style={styles.body}>Your captures stay on this phone. Starting allows camera capture; reading the chip begins when you choose to continue.</Text>
@@ -111,7 +121,7 @@ export function IdentityCaptureFlow({configuration, onExit, onComplete, complete
               state.passport || state.mrz ? controller.recover : async () => { await controller.dispose(); onExit(); },
               false, 'back-to-details') : <>
               {sheet.recovery === 'settings' && action('Open Settings', () => Linking.openSettings(), false, 'open-camera-settings')}
-              {action(sheet.recovery === 'settings' ? 'Try camera again' : 'Try again', controller.recover, false, 'retry-capture')}
+              {action(sheet.recovery === 'save' ? 'Save completed result' : sheet.recovery === 'settings' ? 'Try camera again' : 'Try again', controller.recover, false, 'retry-capture')}
             </>}
             {state.passport && action('Keep passport results', finish, false, 'keep-passport', true)}
             {action('Start over', controller.restart, false, 'confirm-restart', true)}

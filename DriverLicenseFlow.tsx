@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {AppState, Linking, ScrollView, Text, View} from 'react-native';
 import {IdentityCaptureImage, IdentityCapturePreview, IdentityCaptureSession} from '@kenshiki/identity-capture';
 import type {Configuration, DocumentObservation} from '@kenshiki/identity-capture';
+import {DocumentCheckPanel} from './DocumentCheckPanel';
 import {Action, styles} from './IdentityCaptureFlow';
 import {DocumentFlowController, type DocumentFlowState, type SavedDocumentCapture} from './DocumentFlowController';
 
@@ -95,6 +96,7 @@ export function DriverLicenseFlow({configuration, saved, resume, onComplete, onE
       </>}
       {state.phase === 'result' && state.completed && state.session && <>
         <DocumentResultDetails result={{session: state.session, document: state.completed}} />
+        <DocumentCheckPanel key={state.completed.front?.captureID} session={state.session} configured={!!configuration.document?.check} />
         {action('Done', finish, 'finish-document')}
         {action('Retake this license', controller.startFront, 'start-document-front', true)}
       </>}

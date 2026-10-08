@@ -31,6 +31,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     if let support = FileManager.default.urls(for: .applicationSupportDirectory,
       in: .userDomainMask).first, let identity = Bundle.main.bundleIdentifier {
+      configuration["results"] = [
+        "directoryURL": support.appendingPathComponent("IdentityResults", isDirectory: true).absoluteString,
+        "keychainService": identity + ".results", "keychainAccount": "completed-results-v1",
+      ]
       configuration["document"] = [
         "directoryURL": support.appendingPathComponent("IdentityDocuments", isDirectory: true).absoluteString,
         "keychainService": identity + ".documents",
@@ -38,6 +42,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         "requiresLocation": false,
       ]
       #if targetEnvironment(simulator)
+      if ProcessInfo.processInfo.arguments.contains("--document-check-artifact-fixture") {
+        var registrationError: NSError?
+        if IDCaptureRegisterDocumentCheckProvider(ArtifactDocumentProvider(), "artifact-document", &registrationError),
+          var document = configuration["document"] as? [String: Any] {
+          document["check"] = ["providerID": "artifact-document", "recordDomain": "artifact-document-v1"]
+          configuration["document"] = document
+        }
+      }
       if ProcessInfo.processInfo.arguments.contains("--phone-artifact-fixture") {
         var registrationError: NSError?
         if IDCaptureRegisterPhoneCheckProvider(ArtifactPhoneProvider(), "artifact-phone", &registrationError) {
@@ -73,6 +85,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   }
 }
 #if targetEnvironment(simulator)
+private final class ArtifactDocumentProvider: NSObject, DocumentCheckProvider, @unchecked Sendable {
+  // The artifact check must fail at missing retained capture before any provider method runs.
+  func readDocument(_ original: Data, captureID: String, sourceSHA256: String) async throws -> DocumentProviderReading {
+    throw NSError(domain: "unexpectedArtifactRead", code: 1)
+  }
+  func documentRequest(_ observations: Data, format: String, captureID: String) throws -> DocumentProviderRequest {
+    throw NSError(domain: "unexpectedArtifactRequest", code: 1)
+  }
+  func correctedDocumentRequest(_ request: DocumentProviderRequest, reply: DocumentProviderReply,
+                                corrections: [String: String]) throws -> DocumentProviderRequest {
+    throw NSError(domain: "unexpectedArtifactCorrection", code: 1)
+  }
+  func sendDocumentRequest(_ request: DocumentProviderRequest) async throws -> DocumentProviderReply {
+    throw NSError(domain: "unexpectedArtifactDispatch", code: 1)
+  }
+  func documentResult(_ reply: DocumentProviderReply, request: DocumentProviderRequest) throws -> Data {
+    throw NSError(domain: "unexpectedArtifactResult", code: 1)
+  }
+}
 @MainActor
 private final class ArtifactPhoneProvider: NSObject, PhoneCheckProvider {
   func phoneContext(_ checkedDocumentID: String) async throws -> String {

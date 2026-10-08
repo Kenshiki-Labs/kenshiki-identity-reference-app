@@ -137,6 +137,24 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(open.waitForExistence(timeout: 5))
   }
   @MainActor
+  func testNativeDocumentProviderAndDurableResultCommandsThroughInstalledPackage() throws {
+    let app = XCUIApplication()
+    app.launchArguments = ["--document-check-artifact-fixture"]
+    app.launch()
+    let checks = app.buttons["open-sdk-checks"]
+    XCTAssertTrue(checks.waitForExistence(timeout: 30))
+    for _ in 0..<3 where !checks.isHittable { app.swipeUp() }
+    checks.tap()
+    let run = app.buttons["run-sdk-checks"]
+    XCTAssertTrue(run.waitForExistence(timeout: 30))
+    run.tap()
+    let status = app.staticTexts["sdk-check-status"]
+    let finished = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "18 checks passed"), object: status)
+    XCTAssertEqual(XCTWaiter.wait(for: [finished], timeout: 30), .completed, status.label)
+    XCTAssertEqual(app.alerts.count, 0)
+  }
+
+  @MainActor
   func testInstalledPackageAcrossJavaScriptAndNativeBoundaries() throws {
     let app = XCUIApplication()
     app.launch()
@@ -148,7 +166,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(run.waitForExistence(timeout: 30), "Packaged React Native host did not load")
     run.tap()
     let status = app.staticTexts["sdk-check-status"]
-    let finished = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "14 checks passed"), object: status)
+    let finished = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "18 checks passed"), object: status)
     XCTAssertEqual(XCTWaiter.wait(for: [finished], timeout: 30), .completed, status.label)
   }
 }

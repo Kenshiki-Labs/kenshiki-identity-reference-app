@@ -240,3 +240,47 @@ test('closing fences a successful result delivered after release begins', async 
   read.resolve(passport); await reading; await closing;
   expect(f.controller.state.passport).toBeUndefined(); expect(f.native.release).toHaveBeenCalledTimes(1);
 });
+
+test('configured custody reopens a bound passport and face without repeating acquisition', async () => {
+  const f = fixture();
+  const native = Object.assign(f.native, {
+    listResults: jest.fn(async () => [
+      {kind: 'passport-read-v1', workflowID: 'saved', artifacts: []},
+      {kind: 'face-comparison-v1', workflowID: 'saved', artifacts: [{role: 'reference', sha256: 'reference'}]},
+    ]),
+    recoverPassport: jest.fn(async () => ({...passport, printedMRZ: mrz})),
+    recoverFace: jest.fn(async () => comparison),
+  });
+  const c = new CaptureFlowController(f.create, {results: {directoryURL: 'file:///test', keychainService: 'test', keychainAccount: 'test'}}, jest.fn());
+  await c.open(); expect(c.state.phase).toBe('result'); expect(c.state.comparison).toBe(comparison);
+  expect(native.recoverFace).toHaveBeenCalledWith('saved');
+  expect(native.readPassport).not.toHaveBeenCalled(); expect(native.startSelfie).not.toHaveBeenCalled();
+  await c.dispose();
+});
+test('a retained face from a replaced passport is not restored onto the new passport', async () => {
+  const f = fixture();
+  const native = Object.assign(f.native, {
+    listResults: jest.fn(async () => [
+      {kind: 'passport-read-v1', workflowID: 'saved', artifacts: []},
+      {kind: 'face-comparison-v1', workflowID: 'saved', artifacts: [{role: 'reference', sha256: 'old-reference'}]},
+    ]),
+    recoverPassport: jest.fn(async () => ({...passport, printedMRZ: mrz})), recoverFace: jest.fn(),
+  });
+  const c = new CaptureFlowController(f.create, {results: {directoryURL: 'file:///test', keychainService: 'test', keychainAccount: 'test'}}, jest.fn());
+  await c.open(); expect(c.state.phase).toBe('passport'); expect(c.state.comparison).toBeUndefined();
+  expect(native.recoverFace).not.toHaveBeenCalled(); await c.dispose();
+});
+test('saving a completed read retries local storage without scanning or reading again', async () => {
+  const f = fixture(); const native = Object.assign(f.native, {retryResultSave: jest.fn(async () => ({...passport, printedMRZ: mrz}))});
+  native.readPassport.mockRejectedValueOnce({code: 'resultSaveFailed'});
+  await f.controller.scan(); await f.controller.review(); await f.controller.read();
+  expect(f.controller.state.sheet?.recovery).toBe('save');
+  await f.controller.recover(); expect(f.controller.state.phase).toBe('passport');
+  expect(native.readPassport).toHaveBeenCalledTimes(1); expect(native.retryResultSave).toHaveBeenCalledTimes(1);
+});
+test('a broken saved store offers recovery instead of treating it as a first capture', async () => {
+  const f = fixture(); Object.assign(f.native, {listResults: jest.fn(async () => { throw {code: 'resultIntegrityFailure'}; })});
+  const c = new CaptureFlowController(f.create, {results: {directoryURL: 'file:///test', keychainService: 'test', keychainAccount: 'test'}}, jest.fn());
+  await c.open(); expect(c.state.phase).toBe('loading'); expect(c.state.sheet?.recovery).toBe('load');
+  expect(f.native.startMRZ).not.toHaveBeenCalled(); await c.dispose();
+});

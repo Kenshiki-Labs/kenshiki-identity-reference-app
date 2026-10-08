@@ -11,7 +11,7 @@ All app recovery and restart prompts use an in-view bottom sheet. Apple still pr
 camera permission and NFC system UI. The app starts idle; capture follows an explicit action.
 Backgrounding cancels active work and requires an explicit resume. Cancelling Apple's NFC sheet
 quietly returns to the printed details. Camera and comparison failures offer targeted retry while
-keeping a successful passport read. Restart clears the check.
+keeping a successful passport read. Restart starts a new workflow and preserves previously saved results.
 Interruption waits for native cancellation and the active JavaScript command to settle. If a read or
 comparison completed before cancellation won, its committed observations replace the prior result
 before review becomes available; the interrupted camera screen is never reopened by that delivery.
@@ -23,12 +23,24 @@ call `result.session.release()` when clearing the result or ending its owning sc
 completed flow does not release transferred evidence. Cancelling an unfinished flow does release it.
 Do not retain only the observations and then release the session if you still need image review.
 
-The demo holds one result in memory and reopens it from either Identity card; app termination clears
-it. Explicit Clear results uses a bottom sheet. `IdentityCaptureImage` renders the hash-bound passport
-photo and selfie directly from native memory, and release blanks mounted image views. Chip fields,
-independent protocol outcomes and measured depth details remain available in the results view.
-Passport/face review stays in memory in the RN bridge. Driver licence captures use the native
-encrypted document store and reopen from saved IDs; the app never calls `exportPassport`.
+The AppDelegate configures encrypted passport/face custody in the app's private support directory
+with a dedicated Keychain identity. The Identity hub restores a single saved passport on startup;
+when several workflows exist, opening its card offers a saved-result picker. Face results reopen
+only with the matching passport portrait. Release clears decrypted images, and relaunch can reopen
+the encrypted records without acquisition. An explicit bottom sheet confirms erasing all passport
+and face records, images and their key. A failed local save offers saving again without repeating
+the completed hardware check. The optional SDK configuration also supports transient-only callers.
+
+`IdentityCaptureImage` renders hash-bound passport photos and selfies from native memory.
+Chip fields, independent protocol outcomes and depth details remain available in the results view.
+Driver licence captures and document-check journals share the native encrypted document store;
+the app never calls `exportPassport`. A configured native document provider enables
+`DocumentCheckPanel` on the completed licence screen. It shows the actual returned checks and
+submitted fields, opens saved replies locally, and offers explicit reconciliation and requested
+corrections. Wrap this panel in `IdentitySheetHost` above scroll/navigation content so recovery and
+correction sheets attach to the screen bottom. Without a provider it accurately reports unavailable.
+See the [document provider contract](../../ReactNative/identity-capture/README.md#optional-document-check-06).
+
 The SSN card is independent of document capture and phone verification. The adopting app registers
 its native provider through `IDCaptureRegisterSSNIssuanceProvider`, then supplies `ssn.context.credentialID`,
 a stable `workflowID`, the registered `providerID` and dedicated directory/Keychain custody names.
@@ -54,7 +66,7 @@ Requires Node 22.11+, CocoaPods, Xcode and an iOS 18+ target. The tested baselin
 0.87.1 / React 19.2.3. SSA's actual React Native version and Expo/bare setup remain unknown.
 
 ```sh
-python3 create-host.py /absolute/new/IdentitySDKHost /absolute/kenshiki-identity-capture-0.5.0.tgz
+python3 create-host.py /absolute/new/IdentitySDKHost /absolute/kenshiki-identity-capture-0.6.0.tgz
 ```
 
 For a device journey, pass explicit `--trust-anchors /path/master-list.pem`,
@@ -72,7 +84,7 @@ in its provisioning profile. Do not reuse a production app identity to run this 
 ```sh
 cd /absolute/new/IdentitySDKHost
 npx tsc --noEmit
-npx jest --runInBand CaptureFlowController.test.ts IdentityCaptureFlow.test.tsx DocumentFlowController.test.ts DriverLicenseFlow.test.tsx SSNFlowController.test.ts SSNFlow.test.tsx
+npx jest --runInBand
 cd ios
 xcodebuild test -workspace IdentitySDKHost.xcworkspace -scheme IdentitySDKHost \
   -configuration Release -destination 'platform=iOS Simulator,id=YOUR_SIMULATOR' \
@@ -82,7 +94,7 @@ xcodebuild test -workspace IdentitySDKHost.xcworkspace -scheme IdentitySDKHost \
 The controller tests use an explicit mocked SDK to exercise result handoff, targeted recovery,
 automatic comparison and late-result fencing. A rendered React test completes a passport read,
 returns to Identity and reopens results without rescanning or prematurely releasing evidence.
-The UI tests target the installed native artifact: twelve bridge checks, unavailable document/MRZ
+The historical 0.3 UI tests targeted the installed native artifact: twelve bridge checks, unavailable document/MRZ
 camera recovery, an unavailable-SSN-service bottom sheet, and synthetic standalone SSN confirmation,
 result and reopening. All five passed against the 0.3 package built from clean commit `082088e`,
 along with TypeScript checking and 61 reference-flow tests. The exact artifact hash and evidence
@@ -121,3 +133,10 @@ comparison after the actual receipt. It adds no normal UI step or extra comparis
 `SubscriberResultDetails` shows the individual grades, scope, missing evidence and whole-address
 observation on the existing result screen. A lost answer remains explicit uncertainty; reopening
 does not run another comparison. See the [composition contract](../../ReactNative/identity-capture/README.md#subscriber-composition-05-source).
+
+For the 0.6 document registration test, `--document-check-artifact-fixture` registers a simulator-only
+provider whose methods refuse dispatch. The installed bridge must recognize it and refuse a check
+without a retained front. The 18 developer checks also exercise completed-result discovery and
+erasure in separate test custody. They never erase normal user records. Full document response,
+correction, cancellation and result reopening are exercised by native runtime tests using synthetic
+providers. These tests do not validate a licensed reader, a live supplier or physical capture.

@@ -1,20 +1,21 @@
 import type {
   CaptureEvent, Configuration, FaceComparison, IdentityCaptureSession,
-  MRZObservation, PassportObservation, PassportReadOptions,
+  MRZObservation, PassportObservation, PassportReadOptions, CompletedResultDescriptor,
 } from '@kenshiki/identity-capture';
 
 // Host orchestration only. All parsing, acquisition, liveness and comparison use public SDK APIs.
-export type Phase = 'intro' | 'scanning' | 'review' | 'reading' | 'passport' |
+export type Phase = 'loading' | 'saved' | 'intro' | 'scanning' | 'review' | 'reading' | 'passport' |
   'selfie' | 'captured' | 'comparing' | 'result';
-type Recovery = 'scan' | 'read' | 'selfie' | 'compare' | 'dismiss' | 'settings' | 'details';
+type Recovery = 'load' | 'save' | 'scan' | 'read' | 'selfie' | 'compare' | 'dismiss' | 'settings' | 'details';
 export type FlowState = {
+  saved?: CompletedResultDescriptor[];
   phase: Phase; busy: boolean; preview: number; ready: boolean;
   session?: IdentityCaptureSession; mrz?: MRZObservation; passport?: PassportObservation;
   passportMRZ?: MRZObservation;
   comparison?: FaceComparison; hint?: string; progress?: string;
   sheet?: {kind: 'recovery' | 'restart'; message: string; recovery: Recovery};
 };
-/** The receiving app owns this in-memory session after handoff and must release it when cleared. */
+/** The receiving app owns this review session. Configured encrypted results survive its release. */
 export type CompletedCapture = {
   session: IdentityCaptureSession; mrz?: MRZObservation; passport: PassportObservation;
   comparison?: FaceComparison;
@@ -76,6 +77,25 @@ export class CaptureFlowController {
     if (this.closed) return;
     this.state = {...this.state, ...patch}; this.changed(this.state);
   }
+  open = () => {
+    if (this.current || !this.config.results) return Promise.resolve();
+    return this.run('loading', 'load', async session => {
+      const saved = (await session.listResults()).filter(record => record.kind === 'passport-read-v1');
+      if (saved.length === 1) return this.restore(session, saved[0].workflowID);
+      return {saved, phase: saved.length ? 'saved' : 'intro'};
+    });
+  };
+  recoverSaved = (workflowID: string) => this.run('loading', 'load', session => this.restore(session, workflowID));
+  private async restore(session: IdentityCaptureSession, workflowID: string): Promise<Partial<FlowState>> {
+    const records = await session.listResults();
+    const passport = await session.recoverPassport(workflowID);
+    const face = records.find(record => record.workflowID === workflowID && record.kind === 'face-comparison-v1');
+    // An earlier face result must never be shown against a replacement passport photo.
+    const comparison = face?.artifacts.some(artifact => artifact.role === 'reference' && artifact.sha256 === passport.portraitSHA256)
+      ? await session.recoverFace(workflowID) : undefined;
+    return {passport, mrz: passport.printedMRZ, passportMRZ: passport.printedMRZ,
+      comparison, phase: comparison ? 'result' : 'passport'};
+  }
   private recovery(): Recovery {
     switch (this.state.phase) {
       case 'scanning': return 'scan';
@@ -128,10 +148,10 @@ export class CaptureFlowController {
             progress: undefined, sheet: undefined});
           return;
         }
-        const next = this.errorRecovery(code, recovery);
+        const next = code === 'resultSaveFailed' ? 'save' : this.errorRecovery(code, recovery);
         this.update({ready: false, sheet: {kind: 'recovery',
           recovery: next,
-          message: errors[code] ?? 'We could not finish this check. Please try again.'}});
+          message: code === 'resultSaveFailed' ? 'The check completed, but its result could not be saved. Try saving again without repeating the check.' : errors[code] ?? 'We could not finish this check. Please try again.'}});
       }
     } finally {
       if (this.activeWork === pending) this.activeWork = undefined;
@@ -169,6 +189,16 @@ export class CaptureFlowController {
     const recovery = this.state.sheet?.recovery;
     this.update({sheet: undefined});
     switch (recovery) {
+      case 'load': return this.run('loading', 'load', async session => {
+        const saved = (await session.listResults()).filter(record => record.kind === 'passport-read-v1');
+        return {saved, phase: saved.length ? 'saved' : 'intro'};
+      });
+      case 'save': return this.run(this.state.phase, 'save', async session => {
+        const saved = await session.retryResultSave();
+        return 'documentNumber' in saved
+          ? {passport: saved, mrz: saved.printedMRZ, passportMRZ: saved.printedMRZ, comparison: undefined, phase: 'passport'}
+          : {comparison: saved, phase: 'result'};
+      });
       case 'scan': return this.scan(); case 'read': return this.read();
       case 'selfie': return this.selfie(); case 'compare': return this.compare();
       case 'settings': return this.state.phase === 'selfie' ? this.selfie() : this.scan();
@@ -202,7 +232,7 @@ export class CaptureFlowController {
       message: 'Your check is paused. Continue when you are ready.'});
   };
   requestRestart = () => this.interrupt({kind: 'restart', recovery: this.recovery(),
-    message: 'Start again with a new passport scan? This clears the captured data from this check.'});
+    message: 'Start a new passport scan? Previously saved results stay on this phone until you erase them.'});
   restart = async () => {
     if (this.closed || this.state.busy) return;
     const epoch = ++this.epoch;
