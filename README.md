@@ -54,7 +54,7 @@ Requires Node 22.11+, CocoaPods, Xcode and an iOS 18+ target. The tested baselin
 0.87.1 / React 19.2.3. SSA's actual React Native version and Expo/bare setup remain unknown.
 
 ```sh
-python3 create-host.py /absolute/new/IdentitySDKHost /absolute/kenshiki-identity-capture-0.4.0.tgz
+python3 create-host.py /absolute/new/IdentitySDKHost /absolute/kenshiki-identity-capture-0.5.0.tgz
 ```
 
 For a device journey, pass explicit `--trust-anchors /path/master-list.pem`,
@@ -114,3 +114,10 @@ field grades and carrier observations, including missing values. See the [native
 contract](../../ReactNative/identity-capture/README.md#phone-flow-04-source). The example requires
 an approved native service and checked-document reference; none is silently selected. The current
 legacy phone backend does not meet the phone-only PII requirement.
+
+The 0.5 subscriber composition keeps that same text, wait and result journey. A registered native
+`SubscriberCheckProvider`, selected with `phone.subscriberProviderID`, attaches the independent
+comparison after the actual receipt. It adds no normal UI step or extra comparison button.
+`SubscriberResultDetails` shows the individual grades, scope, missing evidence and whole-address
+observation on the existing result screen. A lost answer remains explicit uncertainty; reopening
+does not run another comparison. See the [composition contract](../../ReactNative/identity-capture/README.md#subscriber-composition-05-source).
