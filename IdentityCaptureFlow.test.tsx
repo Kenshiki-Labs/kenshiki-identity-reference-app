@@ -83,3 +83,19 @@ test('a failed startup restore offers reopening and never silently starts a repl
   expect(JSON.stringify(view.toJSON())).toContain('SYNTHETIC SPECIMEN');
   await act(async () => { view.unmount(); });
 });
+
+test('saved checks stay reachable after selecting one result', async () => {
+  let view!: renderer.ReactTestRenderer;
+  await act(async () => { view = renderer.create(<App configuration={durable} />); });
+  mockSession.listResults.mockResolvedValue([
+    {kind: 'passport-read-v1', workflowID: 'first', artifacts: []},
+    {kind: 'passport-read-v1', workflowID: 'second', artifacts: []},
+  ]);
+  await act(async () => { await view.root.findByProps({label: 'Open saved passport checks'}).props.onPress(); });
+  expect(JSON.stringify(view.toJSON())).toContain('Saved passport checks');
+  expect(view.root.findByProps({testID: 'saved-passport-0'})).toBeDefined();
+  expect(view.root.findByProps({testID: 'saved-passport-1'})).toBeDefined();
+  expect(mockSession.eraseResults).not.toHaveBeenCalled();
+  expect(mockSession.startMRZ).not.toHaveBeenCalled();
+  await act(async () => { view.unmount(); });
+});

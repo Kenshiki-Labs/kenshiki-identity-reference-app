@@ -83,6 +83,14 @@ export default function App({configuration = emptyConfiguration}: {configuration
     owned.current = undefined; setResult(undefined);
     setInput({completed, resume}); setScreen('capture');
   }
+  async function openSavedResults() {
+    if (openingResults) return;
+    setOpeningResults(true);
+    try {
+      await owned.current?.session.release();
+      owned.current = undefined; setResult(undefined); setInput({}); setScreen('capture');
+    } finally { setOpeningResults(false); }
+  }
   function acceptDocument(saved: SavedDocumentCapture) {
     ownedDocument.current = saved; setDocument(saved); setDocumentInput({}); setScreen('identity');
   }
@@ -146,7 +154,7 @@ export default function App({configuration = emptyConfiguration}: {configuration
           <Text style={styles.body}>{result ? `${result.passport.givenNames} ${result.passport.surname} · View results` : openingResults ? 'Opening saved results…' : savedCount ? 'Open saved passport results' : 'Scan and read your passport'}</Text>
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityState={{disabled: openingResults || restoreError || (!result?.passport.portraitAvailable && !savedCount)}}
-          disabled={openingResults || restoreError || (!result?.passport.portraitAvailable && !savedCount)} style={[styles.card, !result?.passport.portraitAvailable && styles.disabled]}
+          disabled={openingResults || restoreError || (!result?.passport.portraitAvailable && !savedCount)} style={[styles.card, (openingResults || restoreError || (!result?.passport.portraitAvailable && !savedCount)) && styles.disabled]}
           testID="face-match-card" onPress={() => { setFocus('face'); if (result?.comparison) setScreen('result'); else start(result ? 'selfie' : undefined); }}>
           <Text style={styles.sheetTitle}>Face match</Text>
           <Text style={styles.body}>{result?.comparison ? 'Comparison complete · View results' : result ? 'Compare a selfie with your passport photo' : savedCount ? 'Choose a saved passport to view its face check' : 'Read a passport to add its photo first'}</Text>
@@ -161,7 +169,8 @@ export default function App({configuration = emptyConfiguration}: {configuration
           <Text style={styles.body}>{phone?.snapshot.pending ? 'Check in progress · Resume' : phone?.snapshot.receipt
             ? 'Result available · View receipt and comparison' : 'Send a text and compare subscriber details with your checked ID'}</Text>
         </Pressable>
-        {result && <Text style={styles.label}>Saved passport and face results stay on this phone until you erase them.</Text>}
+        {configuration.results && result && <Action label="Open saved passport checks" secondary disabled={openingResults} onPress={openSavedResults} />}
+        {configuration.results && result && <Text style={styles.label}>Saved passport and face results stay on this phone until you erase them.</Text>}
         {result && <Action label="Erase all passport and face results" secondary onPress={() => requestClear('passport')} />}
         {document && <Action label="Delete saved license scans" secondary onPress={() => requestClear('document')} />}
         <Action label="Developer checks" secondary onPress={() => setScreen('checks')} testID="open-sdk-checks" />

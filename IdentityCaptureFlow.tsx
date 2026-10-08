@@ -31,7 +31,7 @@ export function IdentityCaptureFlow({configuration, onExit, onComplete, complete
     handoffStarted.current = true; setFinishing(true);
     onComplete(await controller.handoff());
   };
-  const title = phase === 'intro' ? 'Your passport' : phase === 'scanning' ? 'Scan your passport' :
+  const title = phase === 'loading' ? 'Opening saved checks' : phase === 'saved' ? 'Saved passport checks' : phase === 'intro' ? 'Your passport' : phase === 'scanning' ? 'Scan your passport' :
     phase === 'review' ? 'Check the printed details' : phase === 'reading' ? 'Reading your passport' :
     phase === 'passport' || phase === 'result' ? 'Your results' :
     phase === 'comparing' || phase === 'captured' ? 'Comparing your photos' : 'Take a selfie';
@@ -150,6 +150,7 @@ export function CaptureResultDetails({result, focus = 'passport'}: {result: Comp
     <Text accessibilityRole="header" style={styles.sheetTitle}>Face comparison</Text>
     <Text style={styles.body}>{comparison ? outcomeLabels[comparison.outcome] ?? comparison.outcome : 'Not taken yet'}</Text>
     {comparison && <>
+      {comparison.savedResult && <Details label="Checked at" value={comparison.savedResult.recordedAt} />}
       <Details label="TrueDepth liveness" value={depth ? 'Depth recorded with this selfie' : 'Depth evidence unavailable'} />
       <Details label="Expression" value={comparison.admissionReceipt.eyesOpen ? 'Blink completed; eyes reopened' : 'Not available'} />
     </>}
@@ -158,6 +159,7 @@ export function CaptureResultDetails({result, focus = 'passport'}: {result: Comp
     {focus === 'face' && faceCard}
     <View style={styles.card} testID="passport-result">
       <Text accessibilityRole="header" style={styles.sheetTitle}>Passport</Text>
+      {passport.savedResult && <Details label="Read at" value={passport.savedResult.recordedAt} />}
       <View style={styles.portraits}>
         {referenceSHA && <View style={styles.portrait}>
           <IdentityCaptureImage key={referenceSHA} session={session} image="reference" sha256={referenceSHA}
