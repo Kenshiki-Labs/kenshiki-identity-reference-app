@@ -4,6 +4,10 @@ import {IdentityCaptureSession, IdentityCapturePreview} from '@kenshiki/identity
 import type {Configuration} from '@kenshiki/identity-capture';
 import {Action, CaptureResultDetails, IdentityCaptureFlow, styles} from './IdentityCaptureFlow';
 import type {CompletedCapture} from './CaptureFlowController';
+import {DocumentResultDetails, DriverLicenseFlow, documentName} from './DriverLicenseFlow';
+import {isCompleteDocument, type SavedDocumentCapture} from './DocumentFlowController';
+import {SSNFlow, ssnSummary} from './SSNFlow';
+import type {SavedSSNCheck} from './SSNFlowController';
 
 const rows = [
   ['P<UTOSPECIMEN<<SYNTHETIC<<<<<<<<<<<<<<<<<<<<'],
@@ -20,14 +24,23 @@ const messages = {
 
 const emptyConfiguration: Configuration = {};
 export default function App({configuration = emptyConfiguration}: {configuration?: Configuration}) {
-  const [screen, setScreen] = useState<'identity' | 'result' | 'capture' | 'checks'>('identity');
+  const [screen, setScreen] = useState<'identity' | 'result' | 'capture' | 'checks' | 'documentCapture' | 'documentResult' | 'ssn'>('identity');
   const [result, setResult] = useState<CompletedCapture>();
   const [focus, setFocus] = useState<'passport' | 'face'>('passport');
   const owned = useRef<CompletedCapture | undefined>(undefined);
   const [input, setInput] = useState<{completed?: CompletedCapture; resume?: 'read' | 'selfie'}>({});
-  const [clearSheet, setClearSheet] = useState(false);
+  const [document, setDocument] = useState<SavedDocumentCapture>();
+  const ownedDocument = useRef<SavedDocumentCapture | undefined>(undefined);
+  const [documentInput, setDocumentInput] = useState<{saved?: SavedDocumentCapture; resume?: 'front' | 'back'}>({});
+  const [ssn, setSSN] = useState<SavedSSNCheck>();
+  const ownedSSN = useRef<SavedSSNCheck | undefined>(undefined);
+  const [ssnInput, setSSNInput] = useState<SavedSSNCheck>();
+  const [clearSheet, setClearSheet] = useState<'passport' | 'document'>();
+  const [clearError, setClearError] = useState<string>();
   const [clearing, setClearing] = useState(false);
-  useEffect(() => () => { void owned.current?.session.release(); }, []);
+  useEffect(() => () => {
+    void owned.current?.session.release(); void ownedDocument.current?.session.release(); void ownedSSN.current?.session.release();
+  }, []);
   function accept(completed: CompletedCapture) {
     owned.current = completed; setResult(completed); setInput({}); setScreen('identity');
   }
@@ -36,20 +49,54 @@ export default function App({configuration = emptyConfiguration}: {configuration
     owned.current = undefined; setResult(undefined);
     setInput({completed, resume}); setScreen('capture');
   }
+  function acceptDocument(saved: SavedDocumentCapture) {
+    ownedDocument.current = saved; setDocument(saved); setDocumentInput({}); setScreen('identity');
+  }
+  function startDocument(resume?: 'front' | 'back') {
+    const saved = document;
+    ownedDocument.current = undefined; setDocument(undefined);
+    setDocumentInput({saved, resume}); setScreen('documentCapture');
+  }
+  function openSSN() {
+    ownedSSN.current = undefined; setSSNInput(ssn); setSSN(undefined); setScreen('ssn');
+  }
+  function acceptSSN(value: SavedSSNCheck) {
+    ownedSSN.current = value; setSSN(value); setSSNInput(undefined); setScreen('identity');
+  }
+  function requestClear(target: 'passport' | 'document') { setClearError(undefined); setClearSheet(target); }
   async function clear() {
     if (clearing) return;
     setClearing(true);
-    await owned.current?.session.release();
-    owned.current = undefined; setResult(undefined); setClearSheet(false); setClearing(false); setScreen('identity');
+    try {
+      if (clearSheet === 'document') {
+        await ownedDocument.current?.session.eraseDocuments();
+        await ownedDocument.current?.session.release();
+        ownedDocument.current = undefined; setDocument(undefined);
+      } else {
+        await owned.current?.session.release(); owned.current = undefined; setResult(undefined);
+      }
+      setClearSheet(undefined); setScreen('identity');
+    } catch { setClearError('The saved scans could not be deleted. They have not been removed from this screen. Try again.'); }
+    finally { setClearing(false); }
   }
   return <SafeAreaView style={styles.root}>
     {screen === 'capture' ? <IdentityCaptureFlow configuration={configuration} {...input}
       onComplete={accept} onExit={() => { setInput({}); setScreen('identity'); }} /> :
+    screen === 'documentCapture' ? <DriverLicenseFlow configuration={configuration} {...documentInput}
+      onComplete={acceptDocument} onExit={() => { setDocumentInput({}); setScreen('identity'); }} /> :
+    screen === 'ssn' ? <SSNFlow configuration={configuration} saved={ssnInput}
+      onComplete={acceptSSN} onExit={() => { setSSNInput(undefined); setScreen('identity'); }} /> :
     screen === 'checks' ? <View style={{flex: 1}}><Action label="Back to Identity" onPress={() => setScreen('identity')} /><IntegrationChecks /></View> :
-    <ScrollView contentContainerStyle={styles.content} accessibilityElementsHidden={clearSheet}>
-      <Text accessibilityRole="header" style={styles.title}>{screen === 'result' ? 'Your results' : 'Identity'}</Text>
+    <ScrollView contentContainerStyle={styles.content} accessibilityElementsHidden={!!clearSheet}>
+      <Text accessibilityRole="header" style={styles.title}>{screen === 'result' ? 'Your results' : screen === 'documentResult' ? 'Your driver’s license' : 'Identity'}</Text>
       {screen === 'identity' ? <>
         <Text style={styles.body}>Your documents and face check, together in one place.</Text>
+        <Pressable accessibilityRole="button" style={styles.card} testID="open-driver-license"
+          onPress={() => document && isCompleteDocument(document.document) ? setScreen('documentResult') : startDocument()}>
+          <Text style={styles.sheetTitle}>Driver’s license</Text>
+          <Text style={styles.body}>{document ? isCompleteDocument(document.document)
+            ? `${documentName(document.document)} · View results` : 'Front saved · Continue with the back' : 'Scan your license or open a saved scan'}</Text>
+        </Pressable>
         <Pressable accessibilityRole="button" style={styles.card} testID="open-capture-flow"
           onPress={() => { setFocus('passport'); if (result) setScreen('result'); else start(); }}>
           <Text style={styles.sheetTitle}>Passport</Text>
@@ -61,24 +108,37 @@ export default function App({configuration = emptyConfiguration}: {configuration
           <Text style={styles.sheetTitle}>Face match</Text>
           <Text style={styles.body}>{result?.comparison ? 'Comparison complete · View results' : result ? 'Compare a selfie with your passport photo' : 'Read a passport to add its photo first'}</Text>
         </Pressable>
-        {result && <Text style={styles.label}>Available while this app stays open. Clear results when you are finished.</Text>}
-        {result && <Action label="Clear results" secondary onPress={() => setClearSheet(true)} />}
+        <Pressable accessibilityRole="button" style={styles.card} testID="open-ssn" onPress={openSSN}>
+          <Text style={styles.sheetTitle}>Social Security number</Text>
+          <Text style={styles.body}>{ssn?.snapshot.recoveryNeeded ? 'Check saved · Continue' : ssn?.snapshot.receipt
+            ? `${ssnSummary(ssn.snapshot.receipt)} · View result` : 'Check whether your number was issued'}</Text>
+        </Pressable>
+        {result && <Text style={styles.label}>Passport and face results are available while this app stays open. Clear them when you are finished.</Text>}
+        {result && <Action label="Clear passport and face results" secondary onPress={() => requestClear('passport')} />}
+        {document && <Action label="Delete saved license scans" secondary onPress={() => requestClear('document')} />}
         <Action label="Developer checks" secondary onPress={() => setScreen('checks')} testID="open-sdk-checks" />
+      </> : screen === 'documentResult' && document ? <>
+        <DocumentResultDetails result={document} />
+        <Action label="Back to Identity" testID="document-result-back" onPress={() => setScreen('identity')} />
+        <Action label="Retake this license" secondary testID="retake-saved-document" onPress={() => startDocument('front')} />
+        <Action label="Delete saved license scans" secondary onPress={() => requestClear('document')} />
       </> : result && <>
         <CaptureResultDetails result={result} focus={focus} />
         <Action label="Back to Identity" onPress={() => setScreen('identity')} />
         <Action label={result.comparison ? 'Retake selfie' : 'Compare with a selfie'} secondary
           disabled={!result.passport.portraitAvailable} onPress={() => start('selfie')} />
         <Action label="Read chip again" secondary onPress={() => start('read')} />
-        <Action label="Clear results" secondary onPress={() => setClearSheet(true)} />
+        <Action label="Clear results" secondary onPress={() => requestClear('passport')} />
       </>}
     </ScrollView>}
     {clearSheet && <View style={styles.scrim}><View style={styles.sheet} accessibilityViewIsModal>
       <View style={styles.sheetContent}>
-        <Text accessibilityRole="header" style={styles.sheetTitle}>Clear these results?</Text>
-        <Text style={styles.body}>This removes the passport, photos and comparison from this check.</Text>
-        <Action label="Clear results" onPress={clear} disabled={clearing} />
-        <Action label="Keep results" secondary onPress={() => setClearSheet(false)} disabled={clearing} />
+        <Text accessibilityRole="header" style={styles.sheetTitle}>{clearError ? 'Deletion could not finish' : clearSheet === 'document' ? 'Delete all saved license scans?' : 'Clear these results?'}</Text>
+        <Text style={styles.body}>{clearError ?? (clearSheet === 'document'
+          ? 'This deletes every saved driver’s license scan from this app, including its photos and read details.'
+          : 'This removes the passport, photos and comparison from this check.')}</Text>
+        <Action label={clearError ? 'Try again' : clearSheet === 'document' ? 'Delete all license scans' : 'Clear results'} onPress={clear} disabled={clearing} />
+        <Action label="Keep results" secondary onPress={() => setClearSheet(undefined)} disabled={clearing} />
       </View>
     </View></View>}
   </SafeAreaView>;
@@ -126,6 +186,8 @@ function IntegrationChecks() {
       await rejects(() => first!.parseMRZ([[rows[0][0]], [rows[1][0].slice(0, 43) + '9']]), 'incompleteMRZ');
       await rejects(() => first!.captureMRZ(), 'incompleteMRZ');
       await rejects(() => first!.compareFace(), 'referenceUnavailable');
+      await rejects(() => first!.ssnSnapshot(), 'ssnNotConfigured');
+      await rejects(() => first!.ssnCancel(), 'ssnNotConfigured');
       await rejects(() => first!.readPassport({...parsed, consent: true, messages}), 'unsupported');
       const cameraFailure = new Promise<string>((resolve, reject) => {
         const timer = setTimeout(() => { off(); reject(new Error('Missing camera failure event')); }, 5000);

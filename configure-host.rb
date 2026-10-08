@@ -6,7 +6,7 @@ app = project.targets.find { |target| target.name == 'IdentitySDKHost' }
 FileUtils.cp(File.join(__dir__, 'AppDelegate.swift'), File.join(host, 'ios/IdentitySDKHost/AppDelegate.swift'))
 info_path = File.join(host, 'ios/IdentitySDKHost/Info.plist')
 info = Xcodeproj::Plist.read_from_path(info_path)
-info['NSCameraUsageDescription'] = 'Scan your passport and take a selfie when you start an identity check.'
+info['NSCameraUsageDescription'] = 'Scan your ID or passport and take a selfie when you start an identity check.'
 info['NFCReaderUsageDescription'] = 'Read your passport chip when you choose to continue.'
 info['com.apple.developer.nfc.readersession.iso7816.select-identifiers'] = ['A0000002471001']
 Xcodeproj::Plist.write_to_path(info, info_path)

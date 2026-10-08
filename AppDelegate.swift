@@ -18,7 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     reactNativeFactory = factory
     window = UIWindow(frame: UIScreen.main.bounds)
     // The HOST chooses and locates its resources. The shipped SDK never searches Bundle.main.
-    var configuration: [String: String] = [:]
+    var configuration: [String: Any] = [:]
     for (key, name, extensionName) in [
       ("trustAnchorsURL", "masterList", "pem"),
       ("embedderURL", "embedder", "mlmodelc"),
@@ -26,6 +26,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ] {
       configuration[key] = Bundle.main.url(forResource: name, withExtension: extensionName,
         subdirectory: "CaptureResources")?.absoluteString
+    }
+    if let support = FileManager.default.urls(for: .applicationSupportDirectory,
+      in: .userDomainMask).first, let identity = Bundle.main.bundleIdentifier {
+      configuration["document"] = [
+        "directoryURL": support.appendingPathComponent("IdentityDocuments", isDirectory: true).absoluteString,
+        "keychainService": identity + ".documents",
+        "keychainAccount": "capture-evidence-v1",
+        "requiresLocation": false,
+      ]
     }
     factory.startReactNative(withModuleName: "IdentitySDKHost", in: window,
       initialProperties: ["configuration": configuration], launchOptions: launchOptions)

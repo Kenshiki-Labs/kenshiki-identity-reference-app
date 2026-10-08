@@ -23,7 +23,10 @@ if not artifact.is_file():
     raise SystemExit('Package artifact does not exist')
 subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'IdentitySDKHost',
                 '--version', '0.87.1', '--directory', str(host), '--skip-install', '--skip-git-init'], check=True)
-for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts']:
+for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
+                 'DriverLicenseFlow.tsx', 'DocumentFlowController.ts',
+                 'DriverLicenseFlow.test.tsx', 'DocumentFlowController.test.ts',
+                 'SSNFlow.tsx', 'SSNFlowController.ts', 'SSNFlow.test.tsx', 'SSNFlowController.test.ts']:
     shutil.copyfile(Path(__file__).with_name(filename), host / filename)
 shutil.copyfile(Path(__file__).with_name('CaptureFlowController.test.ts'), host / 'CaptureFlowController.test.ts')
 shutil.copyfile(Path(__file__).with_name('IdentityCaptureFlow.test.tsx'), host / 'IdentityCaptureFlow.test.tsx')

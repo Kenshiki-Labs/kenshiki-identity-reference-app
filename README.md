@@ -1,7 +1,7 @@
 # iOS React Native reference app
 
 This adopter-owned UI installs the **built npm tarball**, not an SDK source checkout. It offers
-an Identity hub with separate Passport and Face match cards. Passport MRZ capture and review leads
+an Identity hub with Driver licence, Passport, Face match and SSN issuance cards. Passport MRZ capture and review leads
 to NFC and immediately inspectable passport results. Face match reuses that passport photo;
 paired TrueDepth capture automatically starts the local comparison.
 The screens and controller are reusable reference source for SSA's app. The native SDK remains
@@ -27,7 +27,12 @@ The demo holds one result in memory and reopens it from either Identity card; ap
 it. Explicit Clear results uses a bottom sheet. `IdentityCaptureImage` renders the hash-bound passport
 photo and selfie directly from native memory, and release blanks mounted image views. Chip fields,
 independent protocol outcomes and measured depth details remain available in the results view.
-The demo never calls `exportPassport`, persists captures or uploads data.
+Passport/face review stays in memory in the RN bridge. Driver licence captures use the native
+encrypted document store and reopen from saved IDs; the app never calls `exportPassport`.
+The SSN card requires host-supplied accepted document/phone context and registered installation
+credentials. Without them it shows setup prerequisites and makes no request. With them, the native
+SDK owns confirmation/status recovery and encrypted receipts; the UI never persists entered digits.
+SSN confirmation, failure and recovery use bottom sheets and results say issuance, not ownership.
 
 `Hosts/SensorHost` (Kenshiki Sensors) also has native Identity cards using the public Swift APIs.
 This React Native app specifically tests the distributed artifact through the JavaScript bridge.
@@ -40,7 +45,7 @@ Requires Node 22.11+, CocoaPods, Xcode and an iOS 18+ target. The tested baselin
 0.87.1 / React 19.2.3. SSA's actual React Native version and Expo/bare setup remain unknown.
 
 ```sh
-python3 create-host.py /absolute/new/IdentitySDKHost /absolute/kenshiki-identity-capture-0.1.1.tgz
+python3 create-host.py /absolute/new/IdentitySDKHost /absolute/kenshiki-identity-capture-0.2.0.tgz
 ```
 
 For a device journey, pass explicit `--trust-anchors /path/master-list.pem`,
@@ -58,19 +63,20 @@ in its provisioning profile. Do not reuse a production app identity to run this 
 ```sh
 cd /absolute/new/IdentitySDKHost
 npx tsc --noEmit
-npx jest --runInBand CaptureFlowController.test.ts IdentityCaptureFlow.test.tsx
+npx jest --runInBand CaptureFlowController.test.ts IdentityCaptureFlow.test.tsx DocumentFlowController.test.ts DriverLicenseFlow.test.tsx SSNFlowController.test.ts SSNFlow.test.tsx
 cd ios
 xcodebuild test -workspace IdentitySDKHost.xcworkspace -scheme IdentitySDKHost \
   -configuration Release -destination 'platform=iOS Simulator,id=YOUR_SIMULATOR' \
-  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
+  -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-
 ```
 
 The controller tests use an explicit mocked SDK to exercise result handoff, targeted recovery,
 automatic comparison and late-result fencing. A rendered React test completes a passport read,
 returns to Identity and reopens results without rescanning or prematurely releasing evidence.
-The UI tests run the real installed native artifact: ten bridge checks, plus unavailable-camera
-recovery and return to Identity through the rendered React Native screens. Neither proves live camera/NFC
-behavior. Release builds bundle JavaScript and need no Metro server at runtime.
+The UI tests run the real installed native artifact: twelve bridge checks, unavailable document/MRZ
+camera recovery, and the SSN prerequisites sheet with return to Identity. The simulator host uses
+ad hoc signing because document custody uses the real Keychain. These checks do not prove live
+camera/NFC or SSN provider behavior. Release builds bundle JavaScript and need no Metro server at runtime.
 
 For physical acceptance, scan and review a passport, read its chip, test pull-away recovery and
 cancellation, then capture and compare a real selfie. Repeat after backgrounding and restarting.
