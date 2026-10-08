@@ -10,7 +10,7 @@ export function SSNFlow({configuration, saved, onComplete, onExit}: {
   onComplete: (value: SavedSSNCheck) => void; onExit: () => void;
 }) {
   const [controller, setController] = useState<SSNFlowController>();
-  const [state, setState] = useState<SSNFlowState>({digits: '', busy: false, editing: true});
+  const [state, setState] = useState<SSNFlowState>({digits: '', busy: false, editing: false});
   const [finishing, setFinishing] = useState(false);
   const finishingRef = useRef(false);
   useEffect(() => {
@@ -31,7 +31,8 @@ export function SSNFlow({configuration, saved, onComplete, onExit}: {
   const busy = state.busy || finishing;
   const snapshot = state.snapshot;
   const receipt = snapshot?.receipt;
-  const pending = snapshot?.recoveryNeeded;
+  const needsRecovery = snapshot?.recoveryNeeded;
+  const saving = snapshot?.state === 'finishing';
   const confirmation = snapshot?.confirmation;
   const close = <Action label="Back to Identity" secondary testID="ssn-back-to-identity" onPress={finish} disabled={finishing} />;
   const recovery = state.sheet?.kind === 'recovery' ? state.sheet : undefined;
@@ -41,10 +42,14 @@ export function SSNFlow({configuration, saved, onComplete, onExit}: {
       <Text style={styles.eyebrow}>IDENTITY</Text>
       <Text accessibilityRole="header" style={styles.title}>Social Security number</Text>
       <Text style={styles.body}>Check whether your Social Security number was issued. This does not confirm who owns the number.</Text>
-      {busy ? <Text accessibilityLiveRegion="polite" style={styles.body}>Checking…</Text> : pending ? <View style={styles.card}>
-        <Text accessibilityRole="header" style={styles.sheetTitle}>Check in progress</Text>
-        <Text style={styles.body}>Your request is saved. Check its status to continue.</Text>
-        <Action label="Check status" testID="ssn-check-status" onPress={controller.recover} />
+      {busy ? <Text accessibilityLiveRegion="polite" style={styles.body}>Checking…</Text> : saving ? <View style={styles.card}>
+        <Text accessibilityRole="header" style={styles.sheetTitle}>Save your result</Text>
+        <Text style={styles.body}>The answer arrived but could not be saved on this phone. Saving again will not send another check.</Text>
+        <Action label="Save result" testID="ssn-save-result" onPress={controller.recover} />
+      </View> : needsRecovery && !state.editing ? <View style={styles.card}>
+        <Text accessibilityRole="header" style={styles.sheetTitle}>The result was not received</Text>
+        <Text style={styles.body}>The previous check may have happened. You can leave this check here or review your number for a new request.</Text>
+        <Action label="Enter number again" testID="ssn-new-attempt" onPress={controller.beginEntry} />
       </View> : state.editing ? <>
         <Text style={styles.label}>Social Security number</Text>
         <TextInput testID="ssn-entry" accessibilityLabel="Social Security number" keyboardType="number-pad"
@@ -54,11 +59,11 @@ export function SSNFlow({configuration, saved, onComplete, onExit}: {
         <Text style={styles.body}>You will confirm every digit before the check starts. Your entered number is cleared when you leave this screen.</Text>
         <Action label="Review number" testID="ssn-review-number" disabled={busy || state.digits.length !== 9}
           onPress={() => { Keyboard.dismiss(); void controller.requestConfirmation(); }} />
-      </> : null}
+      </> : !receipt ? <Action label="Enter SSN" testID="ssn-begin-entry" onPress={controller.beginEntry} disabled={busy || !snapshot} /> : null}
       {receipt && <>
-        {pending && <Text style={styles.eyebrow}>PREVIOUS CHECK</Text>}
+        {needsRecovery && <Text style={styles.eyebrow}>PREVIOUS CHECK</Text>}
         <SSNResultDetails receipt={receipt} />
-        {!pending && !state.editing && <>
+        {!needsRecovery && !state.editing && <>
           <Action label="Done" testID="finish-ssn" onPress={finish} disabled={busy} />
           <Action label="Check another number" secondary testID="ssn-check-again" onPress={controller.edit} disabled={busy} />
         </>}
@@ -70,13 +75,16 @@ export function SSNFlow({configuration, saved, onComplete, onExit}: {
         {state.sheet.kind === 'confirmation' && confirmation ? <>
           <Text accessibilityRole="header" style={styles.sheetTitle}>Confirm your number</Text>
           <Text style={styles.body}>Check every digit. This is the number that will be sent for the issuance check.</Text>
+          {confirmation.purpose === 'replacementAfterUnknownOutcome' && <Text style={styles.body} testID="ssn-replacement-warning">
+            The previous check may have happened. Confirming sends a new request.
+          </Text>}
           <Text style={styles.title} testID="ssn-confirmation-number">{formatNumber(confirmation.digits)}</Text>
           <Action label="Confirm and check" testID="ssn-confirm" onPress={controller.confirm} disabled={busy} />
           <Action label="Edit number" testID="ssn-edit" secondary onPress={controller.edit} disabled={busy} />
         </> : recovery ? <>
           <Text accessibilityRole="header" style={styles.sheetTitle}>{recovery.title}</Text>
           <Text style={styles.body}>{recovery.message}</Text>
-          {recovery.recovery !== 'exit' && <Action label={recovery.recovery === 'status' ? 'Check status' : 'Try again'}
+          {recovery.recovery !== 'exit' && <Action label={recovery.recovery === 'localSave' ? 'Save result' : recovery.recovery === 'fresh' ? 'Enter number again' : 'Try again'}
             testID="ssn-retry" onPress={controller.retry} disabled={busy} />}
         </> : null}
         {close}
@@ -86,23 +94,14 @@ export function SSNFlow({configuration, saved, onComplete, onExit}: {
 }
 
 export function ssnSummary(receipt: SSNVerificationReceipt): string {
-  if (receipt.reportKind === 'historicalComposite') return 'Earlier check available';
   return receipt.issuance === 'issued' ? 'Issuance confirmed' : receipt.issuance === 'notIssued' ? 'Issuance not confirmed' : 'Issuance unavailable';
 }
 export function SSNResultDetails({receipt}: {receipt: SSNVerificationReceipt}) {
   return <View style={styles.card} testID="ssn-result">
     <Text accessibilityRole="header" style={styles.sheetTitle}>{ssnSummary(receipt)}</Text>
-    {receipt.reportKind === 'historicalComposite' && <>
-      <Text style={styles.body}>This earlier report included other checks. Its overall answer is shown separately.</Text>
-      <ResultRow label="Earlier overall answer" value={receipt.reportedOutcome === 'affirmative' ? 'Affirmative' : receipt.reportedOutcome === 'negative' ? 'Negative' : 'Unavailable'} />
-    </>}
     <ResultRow label="Was the number issued?" value={receipt.issuance === 'issued' ? 'Yes' : receipt.issuance === 'notIssued' ? 'No' : 'Unavailable'} />
     <ResultRow label="Checked" value={receipt.checkedAt} />
     <Text style={styles.body}>This result does not establish that the number belongs to you.</Text>
-    {receipt.details?.region && <ResultRow label="Issuance region" value={receipt.details.region} />}
-    {receipt.details?.issueStart && <ResultRow label="Issuance period starts" value={receipt.details.issueStart} />}
-    {receipt.details?.issueEnd && <ResultRow label="Issuance period ends" value={receipt.details.issueEnd} />}
-    {receipt.details?.codeDescription && <ResultRow label="Reported detail" value={receipt.details.codeDescription} />}
   </View>;
 }
 function ResultRow({label, value}: {label: string; value: string}) {

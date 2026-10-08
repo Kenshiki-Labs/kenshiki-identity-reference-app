@@ -4,19 +4,24 @@ import {SSNFlowController} from './SSNFlowController';
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(done => { resolve = done; }); return {promise, resolve}; }
 async function tick() { for (let i = 0; i < 12; ++i) await Promise.resolve(); }
 const configuration = {ssn: {}} as Configuration;
-const binding = {installationID: 'synthetic', enrollmentID: 'enrollment', documentOperationID: 'document', phoneChallengeID: 'phone'};
-const receipt: SSNVerificationReceipt = {operationID: 'operation', binding, checkedAt: '2026-10-07T20:00:00Z',
-  reportKind: 'issuanceOnly', issuance: 'issued', reportedOutcome: 'affirmative', details: null, replayed: false};
+const receipt: SSNVerificationReceipt = {operationID: 'operation', checkedAt: '2026-10-07T20:00:00Z', issuance: 'issued'};
 const ready: SSNSessionSnapshot = {state: 'ready', entryDigits: '', confirmation: null, attempt: null,
   receipt: null, failure: null, recoveryNeeded: false, busy: false};
-const pending: SSNSessionSnapshot = {...ready, state: 'pending', attempt: {operationID: 'operation', binding}, recoveryNeeded: true};
+const pending: SSNSessionSnapshot = {...ready, state: 'outcomeUnknown',
+  attempt: {operationID: 'operation', createdAt: '2026-10-07T20:00:00Z'}, recoveryNeeded: true};
 const complete: SSNSessionSnapshot = {...ready, state: 'completed', attempt: pending.attempt, receipt};
 function fixture(initial = ready, configured = true) {
   let snapshot = initial;
   const native = {
     id: 'ssn-session', ssnSnapshot: jest.fn(async () => snapshot),
     ssnRequestConfirmation: jest.fn(async (digits: string) => {
-      snapshot = {...snapshot, state: 'confirming', entryDigits: digits, confirmation: {id: 'confirmation-token', digits}};
+      snapshot = {...snapshot, state: 'confirming', entryDigits: digits,
+        confirmation: {id: 'confirmation-token', digits, purpose: 'initialCheck'}};
+      return snapshot;
+    }),
+    ssnRequestFreshConfirmation: jest.fn(async (digits: string) => {
+      snapshot = {...snapshot, state: 'confirming', entryDigits: digits,
+        confirmation: {id: 'replacement-token', digits, purpose: 'replacementAfterUnknownOutcome'}};
       return snapshot;
     }),
     ssnConfirm: jest.fn(async (_id: string) => { snapshot = complete; return snapshot; }),
@@ -30,7 +35,7 @@ function fixture(initial = ready, configured = true) {
   return {c, native, session, create, commit: (value: SSNSessionSnapshot) => { snapshot = value; }};
 }
 async function prepare(f: ReturnType<typeof fixture>) {
-  await f.c.open(); f.c.setDigits('000-00-1234'); await f.c.requestConfirmation();
+  await f.c.open(); f.c.beginEntry(); f.c.setDigits('000-00-1234'); await f.c.requestConfirmation();
 }
 
 test('review creates only the exact native confirmation; confirm consumes its token with no new digit argument', async () => {
@@ -48,23 +53,29 @@ test('editing revokes the native confirmation and keeps only transient editable 
   expect(f.c.state.snapshot?.confirmation).toBeNull(); expect(f.c.state.sheet).toBeUndefined();
   await f.c.confirm(); expect(f.native.ssnConfirm).not.toHaveBeenCalled();
 });
-test('an unresolved saved operation always recovers status before accepting another number', async () => {
-  const f = fixture(pending); await f.c.open(); f.c.setDigits('000001234'); await f.c.requestConfirmation();
-  expect(f.native.ssnRecover).toHaveBeenCalledTimes(1); expect(f.native.ssnRequestConfirmation).not.toHaveBeenCalled();
-  expect(f.native.ssnConfirm).not.toHaveBeenCalled(); expect(f.c.state.digits).toBe('');
+test('an unknown outcome requires a new explicitly marked review and makes no recovery purchase', async () => {
+  const f = fixture(pending); await f.c.open();
+  expect(f.native.ssnRecover).not.toHaveBeenCalled(); expect(f.native.ssnConfirm).not.toHaveBeenCalled();
+  f.c.beginEntry(); f.c.setDigits('000001234'); await f.c.requestConfirmation();
+  expect(f.native.ssnRequestFreshConfirmation).toHaveBeenCalledWith('000001234');
+  expect(f.native.ssnRequestConfirmation).not.toHaveBeenCalled();
+  expect(f.c.state.snapshot?.confirmation?.purpose).toBe('replacementAfterUnknownOutcome');
+  expect(f.native.ssnConfirm).not.toHaveBeenCalled();
 });
-test('a response failure reads native pending ownership and offers status recovery without resubmission', async () => {
+test('a response failure reads local uncertainty and offers fresh entry without resubmission', async () => {
   const f = fixture(); await prepare(f);
-  f.native.ssnConfirm.mockImplementationOnce(async () => { f.commit({...pending, state: 'failed', failure: 'timedOut'}); throw {code: 'timedOut'}; });
-  await f.c.confirm(); expect(f.c.state.sheet).toMatchObject({kind: 'recovery', recovery: 'status'});
+  f.native.ssnConfirm.mockImplementationOnce(async () => { f.commit({...pending, failure: 'timedOut'}); throw {code: 'timedOut'}; });
+  await f.c.confirm(); expect(f.c.state.sheet).toMatchObject({kind: 'recovery', recovery: 'fresh'});
   expect(f.c.state.snapshot?.attempt?.operationID).toBe('operation');
-  await f.c.retry(); expect(f.native.ssnRecover).toHaveBeenCalledTimes(1);
+  await f.c.retry(); expect(f.native.ssnRecover).not.toHaveBeenCalled();
+  expect(f.native.ssnRequestFreshConfirmation).not.toHaveBeenCalled(); expect(f.c.state.editing).toBe(true);
   expect(f.native.ssnConfirm).toHaveBeenCalledTimes(1); expect(f.native.ssnRequestConfirmation).toHaveBeenCalledTimes(1);
 });
 test('backgrounding immediately redacts digits and never restores a delayed confirmation response', async () => {
-  const f = fixture(); await f.c.open(); f.c.setDigits('000001234');
+  const f = fixture(); await f.c.open(); f.c.beginEntry(); f.c.setDigits('000001234');
   const confirmation = deferred<SSNSessionSnapshot>();
-  const oldSnapshot = {...ready, state: 'confirming' as const, entryDigits: '000001234', confirmation: {id: 'old-token', digits: '000001234'}};
+  const oldSnapshot = {...ready, state: 'confirming' as const, entryDigits: '000001234',
+    confirmation: {id: 'old-token', digits: '000001234', purpose: 'initialCheck' as const}};
   f.native.ssnRequestConfirmation.mockImplementationOnce(() => { f.commit(oldSnapshot); return confirmation.promise; });
   const reviewing = f.c.requestConfirmation(); await tick(); const pausing = f.c.pause();
   expect(f.c.state.digits).toBe(''); expect(f.c.state.snapshot?.confirmation).toBeNull();
@@ -103,10 +114,41 @@ test('closing during native session creation releases the late session and perfo
   const opening = c.open(); await c.dispose(); session.resolve(f.session); await opening;
   expect(f.native.release).toHaveBeenCalledTimes(1); expect(f.native.ssnSnapshot).not.toHaveBeenCalled();
 });
-test('missing setup has a prerequisite sheet with no fabricated binding or native request', async () => {
+test('backgrounding during native creation offers explicit reopening and releases the late session', async () => {
+  const old = fixture(); const next = fixture(); const delayed = deferred<IdentityCaptureSession>();
+  const create = jest.fn().mockImplementationOnce(() => delayed.promise).mockResolvedValue(next.session);
+  const c = new SSNFlowController(create, configuration, jest.fn());
+  const opening = c.open(); await c.pause();
+  delayed.resolve(old.session); await opening;
+  expect(old.native.release).toHaveBeenCalledTimes(1);
+  expect(old.native.ssnSnapshot).not.toHaveBeenCalled();
+  expect(c.state.busy).toBe(false);
+  expect(c.state.sheet).toMatchObject({kind: 'recovery', recovery: 'open'});
+  expect(create).toHaveBeenCalledTimes(1);
+  await c.retry();
+  expect(next.native.ssnSnapshot).toHaveBeenCalledTimes(1);
+  expect(c.state.snapshot?.state).toBe('ready');
+  expect(c.state.sheet).toBeUndefined();
+  expect(next.native.ssnConfirm).not.toHaveBeenCalled();
+});
+test('missing provider setup names the service, never ID or phone prerequisites', async () => {
   const f = fixture(ready, false); await f.c.open();
   expect(f.c.state.sheet).toMatchObject({kind: 'recovery', recovery: 'exit'});
+  expect(JSON.stringify(f.c.state)).not.toMatch(/document|phone check|capture|choose ID/);
   expect(f.create).not.toHaveBeenCalled(); expect(await f.c.handoff()).toBeUndefined();
+});
+test('entry opens from an introduction with no native confirmation or request', async () => {
+  const f = fixture(); await f.c.open();
+  expect(f.c.state.editing).toBe(false); expect(f.native.ssnRequestConfirmation).not.toHaveBeenCalled();
+  f.c.beginEntry(); expect(f.c.state.editing).toBe(true);
+  expect(f.native.ssnConfirm).not.toHaveBeenCalled();
+});
+test('a received unsaved answer offers local save only and preserves the original attempt', async () => {
+  const f = fixture({...pending, state: 'finishing', failure: 'storageUnavailable'}); await f.c.open();
+  expect(f.c.state.sheet).toMatchObject({kind: 'recovery', recovery: 'localSave'});
+  f.c.beginEntry(); expect(f.c.state.editing).toBe(false);
+  await f.c.retry(); expect(f.native.ssnRecover).toHaveBeenCalledTimes(1);
+  expect(f.native.ssnRequestFreshConfirmation).not.toHaveBeenCalled(); expect(f.native.ssnConfirm).not.toHaveBeenCalled();
 });
 test('failed cancellation keeps ownership and recovery visible instead of releasing unrevoked confirmation', async () => {
   const f = fixture(); await prepare(f); f.native.ssnCancel.mockRejectedValueOnce({code: 'unavailable'});

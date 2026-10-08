@@ -110,7 +110,7 @@ export default function App({configuration = emptyConfiguration}: {configuration
         </Pressable>
         <Pressable accessibilityRole="button" style={styles.card} testID="open-ssn" onPress={openSSN}>
           <Text style={styles.sheetTitle}>Social Security number</Text>
-          <Text style={styles.body}>{ssn?.snapshot.recoveryNeeded ? 'Check saved · Continue' : ssn?.snapshot.receipt
+          <Text style={styles.body}>{ssn?.snapshot.recoveryNeeded ? 'Check needs attention · Open' : ssn?.snapshot.receipt
             ? `${ssnSummary(ssn.snapshot.receipt)} · View result` : 'Check whether your number was issued'}</Text>
         </Pressable>
         {result && <Text style={styles.label}>Passport and face results are available while this app stays open. Clear them when you are finished.</Text>}

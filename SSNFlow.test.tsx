@@ -4,19 +4,22 @@ import type {Configuration, SSNSessionSnapshot, SSNVerificationReceipt} from '@k
 import App from './App';
 import {SSNResultDetails} from './SSNFlow';
 
-const mockBinding = {installationID: 'synthetic', enrollmentID: 'enrollment', documentOperationID: 'document', phoneChallengeID: 'phone'};
-const mockReceipt: SSNVerificationReceipt = {operationID: 'operation', binding: mockBinding, checkedAt: '2026-10-07T20:00:00Z',
-  reportKind: 'issuanceOnly', issuance: 'issued', reportedOutcome: 'affirmative', details: null, replayed: false};
+const mockReceipt: SSNVerificationReceipt = {operationID: 'operation', checkedAt: '2026-10-07T20:00:00Z', issuance: 'issued'};
 const mockReady: SSNSessionSnapshot = {state: 'ready', entryDigits: '', confirmation: null, attempt: null,
   receipt: null, failure: null, recoveryNeeded: false, busy: false};
 let mockSnapshot = mockReady;
 const mockSession = {
   id: 'ssn', ssnSnapshot: jest.fn(async () => mockSnapshot),
   ssnRequestConfirmation: jest.fn(async (digits: string) => {
-    mockSnapshot = {...mockSnapshot, state: 'confirming', entryDigits: digits, confirmation: {id: 'token', digits}}; return mockSnapshot;
+    mockSnapshot = {...mockSnapshot, state: 'confirming', entryDigits: digits,
+      confirmation: {id: 'token', digits, purpose: 'initialCheck'}}; return mockSnapshot;
+  }),
+  ssnRequestFreshConfirmation: jest.fn(async (digits: string) => {
+    mockSnapshot = {...mockSnapshot, state: 'confirming', entryDigits: digits,
+      confirmation: {id: 'fresh-token', digits, purpose: 'replacementAfterUnknownOutcome'}}; return mockSnapshot;
   }),
   ssnConfirm: jest.fn(async (_id: string) => {
-    mockSnapshot = {...mockReady, state: 'completed', attempt: {operationID: 'operation', binding: mockBinding}, receipt: mockReceipt}; return mockSnapshot;
+    mockSnapshot = {...mockReady, state: 'completed', attempt: {operationID: 'operation', createdAt: '2026-10-07T20:00:00Z'}, receipt: mockReceipt}; return mockSnapshot;
   }),
   ssnRecover: jest.fn(async () => mockSnapshot),
   ssnCancel: jest.fn(async () => { mockSnapshot = {...mockSnapshot, state: 'ready', entryDigits: '', confirmation: null}; return mockSnapshot; }),
@@ -43,7 +46,9 @@ async function renderApp(config = configuration) {
   return {view, tap, enter};
 }
 test('SSN review displays exact digits in a bottom sheet and a completed result reopens from Identity', async () => {
-  const {view, tap, enter} = await renderApp(); await tap('open-ssn'); await enter(); await tap('ssn-review-number');
+  const {view, tap, enter} = await renderApp(); await tap('open-ssn');
+  expect(view.root.findAllByProps({testID: 'ssn-entry'})).toHaveLength(0);
+  await tap('ssn-begin-entry'); await enter(); await tap('ssn-review-number');
   expect(view.root.findByProps({testID: 'ssn-bottom-sheet'})).toBeDefined();
   expect(view.root.findByProps({testID: 'ssn-confirmation-number'}).props.children).toBe('000-00-1234');
   expect(mockSession.ssnConfirm).not.toHaveBeenCalled();
@@ -56,27 +61,38 @@ test('SSN review displays exact digits in a bottom sheet and a completed result 
   await act(async () => { view.unmount(); }); expect(mockSession.release).toHaveBeenCalledTimes(1);
 });
 test('leaving the exact-number sheet clears the input before the Identity card can reopen it', async () => {
-  const {view, tap, enter} = await renderApp(); await tap('open-ssn'); await enter(); await tap('ssn-review-number');
+  const {view, tap, enter} = await renderApp(); await tap('open-ssn'); await tap('ssn-begin-entry'); await enter(); await tap('ssn-review-number');
   await tap('ssn-back-to-identity'); expect(JSON.stringify(view.toJSON())).not.toContain('000-00-1234');
-  await tap('open-ssn'); expect(view.root.findByProps({testID: 'ssn-entry'}).props.value).toBe('');
+  await tap('open-ssn'); await tap('ssn-begin-entry'); expect(view.root.findByProps({testID: 'ssn-entry'}).props.value).toBe('');
   expect(mockSession.ssnConfirm).not.toHaveBeenCalled();
   await act(async () => { view.unmount(); });
 });
-test('missing setup presents a prerequisite sheet and returns to Identity without submitting', async () => {
+test('missing provider presents a bottom sheet without an ID or phone CTA', async () => {
   const {view, tap} = await renderApp({}); await tap('open-ssn');
   expect(view.root.findByProps({testID: 'ssn-bottom-sheet'})).toBeDefined();
   expect(JSON.stringify(view.toJSON())).toContain('This check is not ready');
+  expect(JSON.stringify(view.toJSON())).not.toMatch(/capture or choose ID|connected document|phone check/i);
   expect(view.root.findAllByProps({testID: 'ssn-retry'})).toHaveLength(0);
   await tap('ssn-back-to-identity'); expect(view.root.findByProps({testID: 'open-ssn'})).toBeDefined();
   expect(mockSession.ssnConfirm).not.toHaveBeenCalled(); await act(async () => { view.unmount(); });
 });
-test('historical aggregate failure is not promoted to a successful identity or overall check', async () => {
+test('issuance unavailable is not promoted to identity verification', async () => {
   let view!: renderer.ReactTestRenderer;
-  await act(async () => { view = renderer.create(<SSNResultDetails receipt={{...mockReceipt,
-    reportKind: 'historicalComposite', reportedOutcome: 'negative'}} />); });
+  await act(async () => { view = renderer.create(<SSNResultDetails receipt={{...mockReceipt, issuance: 'unavailable'}} />); });
   const shown = JSON.stringify(view.toJSON());
-  expect(shown).toContain('Earlier check available'); expect(shown).toContain('Negative');
+  expect(shown).toContain('Issuance unavailable');
   expect(shown).not.toContain('Issuance confirmed'); expect(shown).not.toContain('Verified');
   expect(shown).toContain('does not establish that the number belongs to you');
+  await act(async () => { view.unmount(); });
+});
+test('an uncertain prior dispatch gets a fresh-number warning before another confirmation', async () => {
+  mockSnapshot = {...mockReady, state: 'outcomeUnknown', recoveryNeeded: true,
+    attempt: {operationID: 'old-operation', createdAt: '2026-10-07T20:00:00Z'}};
+  const {view, tap, enter} = await renderApp(); await tap('open-ssn');
+  await tap('ssn-new-attempt'); await enter(); await tap('ssn-review-number');
+  expect(view.root.findByProps({testID: 'ssn-replacement-warning'})).toBeDefined();
+  expect(mockSession.ssnRequestFreshConfirmation).toHaveBeenCalledWith('000001234');
+  expect(mockSession.ssnConfirm).not.toHaveBeenCalled();
+  await tap('ssn-confirm'); expect(mockSession.ssnConfirm).toHaveBeenCalledWith('fresh-token');
   await act(async () => { view.unmount(); });
 });

@@ -29,9 +29,18 @@ photo and selfie directly from native memory, and release blanks mounted image v
 independent protocol outcomes and measured depth details remain available in the results view.
 Passport/face review stays in memory in the RN bridge. Driver licence captures use the native
 encrypted document store and reopen from saved IDs; the app never calls `exportPassport`.
-The SSN card requires host-supplied accepted document/phone context and registered installation
-credentials. Without them it shows setup prerequisites and makes no request. With them, the native
-SDK owns confirmation/status recovery and encrypted receipts; the UI never persists entered digits.
+The SSN card is independent of document capture and phone verification. The adopting app registers
+its native provider through `IDCaptureRegisterSSNIssuanceProvider`, then supplies `ssn.context.credentialID`,
+a stable `workflowID`, the registered `providerID` and dedicated directory/Keychain custody names.
+Authentication and service signing stay in native code; the JavaScript configuration has no bearer
+token or gateway credentials. Without a provider/configuration the card reports service unavailable
+and sends no request. See the [package integration guide](../../ReactNative/identity-capture/README.md#optional-ssn-issuance-flow).
+
+The SDK owns exact-digit confirmation, encrypted phone-only retention and local recovery. The UI
+does not checkpoint entered digits; the native journal retains the exact confirmed number and reply,
+without exporting saved digits on reopening. A missing response cannot be fetched remotely or retried
+automatically. A new check after uncertainty requires a separate confirmation explaining that the
+previous request may already have happened. Local-save recovery sends nothing to the provider.
 SSN confirmation, failure and recovery use bottom sheets and results say issuance, not ownership.
 
 `Hosts/SensorHost` (Kenshiki Sensors) also has native Identity cards using the public Swift APIs.
@@ -45,7 +54,7 @@ Requires Node 22.11+, CocoaPods, Xcode and an iOS 18+ target. The tested baselin
 0.87.1 / React 19.2.3. SSA's actual React Native version and Expo/bare setup remain unknown.
 
 ```sh
-python3 create-host.py /absolute/new/IdentitySDKHost /absolute/kenshiki-identity-capture-0.2.0.tgz
+python3 create-host.py /absolute/new/IdentitySDKHost /absolute/kenshiki-identity-capture-0.3.0.tgz
 ```
 
 For a device journey, pass explicit `--trust-anchors /path/master-list.pem`,
@@ -73,10 +82,17 @@ xcodebuild test -workspace IdentitySDKHost.xcworkspace -scheme IdentitySDKHost \
 The controller tests use an explicit mocked SDK to exercise result handoff, targeted recovery,
 automatic comparison and late-result fencing. A rendered React test completes a passport read,
 returns to Identity and reopens results without rescanning or prematurely releasing evidence.
-The UI tests run the real installed native artifact: twelve bridge checks, unavailable document/MRZ
-camera recovery, and the SSN prerequisites sheet with return to Identity. The simulator host uses
-ad hoc signing because document custody uses the real Keychain. These checks do not prove live
-camera/NFC or SSN provider behavior. Release builds bundle JavaScript and need no Metro server at runtime.
+The UI tests target the installed native artifact: twelve bridge checks, unavailable document/MRZ
+camera recovery, an unavailable-SSN-service bottom sheet, and synthetic standalone SSN confirmation,
+result and reopening. The 0.3 artifact validation is in progress; these test definitions are not a
+claim that the final 0.3 package has passed.
+
+For the synthetic SSN test only, AppDelegate registers a fixture when launched with
+`--ssn-artifact-fixture`. It is compiled only for the simulator, accepts only the invalid synthetic
+number `000-00-1234`, and makes no network request. It cannot be enabled in a physical-device build.
+This proves neither live provider behavior nor supplier non-retention. Ordinary launches require
+the adopter's real native provider. The simulator host uses ad hoc signing because custody uses the
+real Keychain. Release builds bundle JavaScript and need no Metro server at runtime.
 
 For physical acceptance, scan and review a passport, read its chip, test pull-away recovery and
 cancellation, then capture and compare a real selfie. Repeat after backgrounding and restarting.

@@ -2,7 +2,7 @@ import XCTest
 
 final class ArtifactIntegrationTests: XCTestCase {
   @MainActor
-  func testSSNPrerequisitesHaveABottomSheetAndReturnToIdentity() {
+  func testUnavailableSSNProviderHasABottomSheetAndReturnToIdentity() {
     let app = XCUIApplication()
     app.launch()
     let open = app.buttons["open-ssn"]
@@ -12,10 +12,43 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(app.otherElements["ssn-bottom-sheet"].waitForExistence(timeout: 10))
     XCTAssertEqual(app.alerts.count, 0)
     XCTAssertFalse(app.buttons["ssn-confirm"].exists)
+    XCTAssertFalse(app.buttons["Capture or choose ID"].exists)
     let back = app.buttons["ssn-back-to-identity"]
     XCTAssertTrue(back.waitForExistence(timeout: 5))
     back.tap()
     XCTAssertTrue(open.waitForExistence(timeout: 5))
+  }
+
+  @MainActor
+  func testSyntheticSSNProviderThroughPackagedBridgeAndReopen() throws {
+    #if !targetEnvironment(simulator)
+    throw XCTSkip("The synthetic provider is compiled only into the simulator host")
+    #endif
+    let app = XCUIApplication()
+    app.launchArguments = ["--ssn-artifact-fixture"]
+    app.launch()
+    let open = app.buttons["open-ssn"]
+    XCTAssertTrue(open.waitForExistence(timeout: 30))
+    for _ in 0..<3 where !open.isHittable { app.swipeUp() }
+    open.tap()
+    let begin = app.buttons["ssn-begin-entry"]
+    XCTAssertTrue(begin.waitForExistence(timeout: 10))
+    begin.tap()
+    let entry = app.textFields["ssn-entry"]
+    XCTAssertTrue(entry.waitForExistence(timeout: 5))
+    entry.tap()
+    entry.typeText("000001234")
+    app.buttons["ssn-review-number"].tap()
+    XCTAssertTrue(app.otherElements["ssn-bottom-sheet"].waitForExistence(timeout: 5))
+    XCTAssertEqual(app.staticTexts["ssn-confirmation-number"].label, "000-00-1234")
+    XCTAssertEqual(app.alerts.count, 0)
+    app.buttons["ssn-confirm"].tap()
+    XCTAssertTrue(app.staticTexts["Issuance confirmed"].waitForExistence(timeout: 10))
+    app.buttons["finish-ssn"].tap()
+    XCTAssertTrue(open.waitForExistence(timeout: 5))
+    open.tap()
+    XCTAssertTrue(app.staticTexts["Issuance confirmed"].waitForExistence(timeout: 5))
+    XCTAssertFalse(app.textFields["ssn-entry"].exists)
   }
 
   @MainActor

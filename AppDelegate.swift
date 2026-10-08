@@ -2,6 +2,8 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
+import IdentityCapture
+import IdentityCaptureRuntime
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -35,12 +37,42 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         "keychainAccount": "capture-evidence-v1",
         "requiresLocation": false,
       ]
+      #if targetEnvironment(simulator)
+      // Explicit synthetic integration fixture. Never registered on a physical device.
+      if ProcessInfo.processInfo.arguments.contains("--ssn-artifact-fixture") {
+        var registrationError: NSError?
+        if IDCaptureRegisterSSNIssuanceProvider(
+          ArtifactSSNProvider(), "artifact-fixture", &registrationError) {
+          configuration["ssn"] = [
+            "context": ["credentialID": "synthetic-artifact-installation"],
+            "workflowID": UUID().uuidString.lowercased(),
+            "providerID": "artifact-fixture",
+            "directoryURL": support.appendingPathComponent("ArtifactSSN", isDirectory: true).absoluteString,
+            "keychainService": identity + ".artifact-ssn",
+            "keychainAccount": "artifact-ssn-v1",
+          ]
+        }
+      }
+      #endif
     }
     factory.startReactNative(withModuleName: "IdentitySDKHost", in: window,
       initialProperties: ["configuration": configuration], launchOptions: launchOptions)
     return true
   }
 }
+#if targetEnvironment(simulator)
+@MainActor
+private final class ArtifactSSNProvider: NSObject, SSNIssuanceProvider {
+  func checkSSN(_ digits: String, operationID: String, credentialID: String) async
+    -> SSNIssuanceProviderReply {
+    // Only the invalid, synthetic test number can produce this fixture observation.
+    SSNIssuanceProviderReply(operationID: operationID,
+      outcome: digits == "000001234" && credentialID == "synthetic-artifact-installation"
+        ? .issued : .notDispatched,
+      checkedAt: Date(timeIntervalSince1970: 1_800_000_000))
+  }
+}
+#endif
 class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
   override func sourceURL(for bridge: RCTBridge) -> URL? { bundleURL() }
   override func bundleURL() -> URL? {
