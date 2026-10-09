@@ -1,0 +1,946 @@
+// English (US) text for the React Native reference app. Every word the app shows lives in this
+// file. `generate-ui-resources.py` compiles it into `locales/strings.generated.ts`, and screens
+// read it through `t(key, values)` from `locales/i18n.ts`. A key the catalog does not hold is a
+// TypeScript compile error.
+//
+// Messages use ICU MessageFormat:
+//   {name}                                   a value filled in by the app
+//   {count, plural, one {…} other {…}}       a count; # inside a branch is the count
+//   {name, select, a {…} other {…}}          one branch per value
+// A straight apostrophe before { } or # quotes it; typographic ’ is ordinary text.
+//
+// Keys are stable identifiers: dotted paths built from this file's nesting. Rename a key only
+// together with every screen that uses it. To add a language, copy this file to
+// locales/<language>.jsonc with the same keys and placeholders, and add the language's plural
+// rule to the generator.
+{
+  "@metadata": {
+    // The BCP 47 tag dates are formatted with while this catalog is in use.
+    "formatLocale": "en-US"
+  },
+
+  // Words several screens share, with the same meaning everywhere.
+  "common": {
+    // Small uppercase line above every check screen's title; the name of the hub screen.
+    "eyebrow": "IDENTITY",
+    // Button that leaves a check and returns to the hub screen named "Identity".
+    "backToIdentity": "Back to Identity",
+    "backToResults": "Back to results",
+    "done": "Done",
+    "tryAgain": "Try again",
+    "tryCameraAgain": "Try camera again",
+    // Opens this app's page in the iOS Settings app.
+    "openSettings": "Open Settings",
+    "pleaseWait": "Please wait…",
+    "startOver": "Start over",
+    "saveResult": "Save result",
+    // Title of a card shown when a check's answer arrived but could not be saved on the phone.
+    "saveYourResult": "Save your result",
+    "runNewCheck": "Run a new check",
+    "eraseChecks": "Erase checks",
+    "checkNeedsAttention": "Check needs attention",
+    "checkPaused": "Check paused",
+    // Small uppercase line above a result kept from an earlier check.
+    "previousCheck": "PREVIOUS CHECK",
+    "letsTryAgain": "Let’s try that again",
+    // A row value: the service did not send this detail.
+    "notReturned": "Not returned",
+    // A row value: the service sent an empty list.
+    "noneReported": "None reported",
+    // A field the app has no name for.
+    "otherDetail": "Other detail",
+    "yes": "Yes",
+    "no": "No",
+    // Joins the items of a short list on one line, as in "City, Postal code".
+    "listSeparator": ", ",
+    "openingSavedResults": "Opening saved results…",
+    "socialSecurityNumber": "Social Security number",
+    "reportedOutcome": "Reported outcome",
+    // A row label: when a comparison was made. The value is a date and time.
+    "compared": "Compared"
+  },
+
+  // Dates and times.
+  "format": {
+    "timeNotRecorded": "Time not recorded",
+    "dateNotRecorded": "Date not recorded",
+    // A date printed on a passport's machine-readable lines, which carry only two year digits,
+    // so the century is not known: for example 15 Jun ’85.
+    "mrzDate": "{day} {month, select, m01 {Jan} m02 {Feb} m03 {Mar} m04 {Apr} m05 {May} m06 {Jun} m07 {Jul} m08 {Aug} m09 {Sep} m10 {Oct} m11 {Nov} m12 {Dec} other {}} ’{year}"
+  },
+
+  // The hub screen, which lists every identity check.
+  "hub": {
+    "title": "Identity",
+    "resultsTitle": "Your results",
+    "licenseTitle": "Your driver’s license",
+    "intro": "Your identity checks, together in one place.",
+    "configurationIssue": "Saved checks are unavailable because this app’s local holder record could not be read. New checks are not saved.",
+    "license": {
+      "title": "Driver’s license",
+      // {name} is the name read from the license's barcode.
+      "viewResults": "{name} · View results",
+      "continueBack": "Front saved · Continue with the back",
+      "start": "Scan your license or open a saved scan"
+    },
+    "passport": {
+      "title": "Passport",
+      // {givenNames} and {surname} are read from the passport's chip.
+      "viewResults": "{givenNames} {surname} · View results",
+      "openSaved": "Open saved passport results",
+      "start": "Scan and read your passport",
+      "notSetUp": "Passport chip checking is not set up in this app. Your other identity checks remain available."
+    },
+    "face": {
+      "title": "Face match",
+      "viewResults": "Comparison complete · View results",
+      "chooseSaved": "Choose a saved passport to view its face check",
+      "notSetUp": "Face comparison is not set up in this app.",
+      "start": "Compare a selfie with your passport photo",
+      "needsPassport": "Read a passport to add its photo first"
+    },
+    "ssn": {
+      "needsAttention": "Check needs attention · Open",
+      // {summary} is the SSN result summary, for example "Reported as issued".
+      "viewResult": "{summary} · View result",
+      "start": "Check whether your number was issued"
+    },
+    "phone": {
+      "title": "Phone",
+      "resume": "Check in progress · Resume",
+      "stopped": "Check stopped · Subscriber details differ from your ID",
+      "viewResult": "Result available · View receipt and comparison",
+      "start": "Send a text and compare subscriber details with your checked ID"
+    },
+    "action": {
+      "openSavedPassportChecks": "Open saved passport checks",
+      "savedNotice": "Saved passport and face results stay on this phone until you erase them.",
+      "eraseAll": "Erase all passport and face results",
+      "deleteLicenseScans": "Delete saved license scans",
+      // Opens the simulator-only developer checks screen.
+      "developerChecks": "Developer checks",
+      "clearResults": "Clear results"
+    },
+    "restore": {
+      "title": "Saved results could not be opened",
+      // {reason} is one of the hub.restoreError messages.
+      "body": "{reason} Nothing has been erased.",
+      "reopen": "Reopen saved results",
+      "erase": "Erase saved passport and face results"
+    },
+    "restoreError": {
+      "sessionUnavailable": "The saved results closed before they finished opening. Try reopening them.",
+      "busy": "Another check is still finishing. Wait a moment, then reopen your saved results.",
+      "other": "Your saved results could not be opened. Try reopening them."
+    },
+    "clear": {
+      "failedTitle": "Deletion could not finish",
+      "licenseTitle": "Delete all saved license scans?",
+      "passportTitle": "Erase all passport and face results?",
+      "licenseBody": "This deletes every saved driver’s license scan from this app, including its photos and read details.",
+      "passportBody": "This deletes all saved passport and face results from this app, including their photos.",
+      "deleteLicenseScans": "Delete all license scans",
+      "keep": "Keep results"
+    },
+    "clearError": {
+      "busy": "Another check is still finishing. Wait a moment, then try again. Nothing has been deleted yet.",
+      "sessionUnavailable": "This screen closed before deletion finished. Try again. Nothing has been deleted yet.",
+      "resultsNotConfigured": "Saved results are not set up in this app, so there is nothing to delete here.",
+      "resultIntegrityFailure": "This phone could not open its secure storage to delete them. Try again. Your saved results are unchanged.",
+      "documentCustodyFailed": "This phone could not open its secure storage to delete them. Try again. Your saved scans are unchanged.",
+      "storageUnavailable": "This phone could not open its secure storage to delete them. Try again. Nothing has been deleted yet.",
+      "other": "The saved results could not be deleted. They have not been removed from this screen. Try again."
+    }
+  },
+
+  // The passport and face comparison flow.
+  "passport": {
+    "title": {
+      "loading": "Opening saved checks",
+      "saved": "Saved passport checks",
+      "intro": "Your passport",
+      "scanning": "Scan your passport",
+      "review": "Check the printed details",
+      "reading": "Reading your passport",
+      "results": "Your results",
+      "comparing": "Comparing your photos",
+      "selfie": "Take a selfie"
+    },
+    "closeCheck": "Close check",
+    "action": {
+      "retakeSelfie": "Retake selfie",
+      "compareSelfie": "Compare with a selfie",
+      "readChipAgain": "Read chip again"
+    },
+    "camera": {
+      "scanHint": "Put the two lines at the bottom of the photo page inside the clear band.",
+      "ready": "Printed details found. Ready to capture.",
+      "keepInView": "Keep both lines in view.",
+      "holdSteady": "Hold the passport steady.",
+      "captureDetails": "Capture details",
+      "captureSelfie": "Capture selfie"
+    },
+    "saved": {
+      "choose": "Choose a saved passport check.",
+      // {moment} is the date and time the check was saved.
+      "savedAt": "Saved {moment}",
+      "open": "Open saved results",
+      "scanAnother": "Scan another passport"
+    },
+    "intro": {
+      "body": "Scan the photo page, then hold your phone against the passport to read its chip. You can review the passport and compare its photo with a selfie.",
+      "privacy": "Your captures stay on this phone. Starting allows camera capture; reading the chip begins when you choose to continue.",
+      "start": "Start passport scan"
+    },
+    "review": {
+      "body": "Check these details against your passport.",
+      "next": "Next, hold the top of your phone against the passport and keep it still.",
+      "read": "Read passport chip",
+      "scanAgain": "Scan again"
+    },
+    "comparing": "Your selfie was captured. Comparing it with the passport photo…",
+    "scanDifferent": "Scan a different passport",
+    "sheet": {
+      "restartTitle": "Start a new passport check?",
+      "keepCheck": "Keep this check",
+      "backToDetails": "Back to passport details",
+      "saveCompleted": "Save completed result",
+      "keepResults": "Keep passport results"
+    },
+    // Rows of passport details. Values come from the passport.
+    "field": {
+      "name": "Name",
+      "documentNumber": "Passport number",
+      "birthDate": "Date of birth",
+      "expiryDate": "Expiry date",
+      "surname": "Surname",
+      "givenNames": "Given names",
+      "nationality": "Nationality",
+      "issuedBy": "Issued by",
+      "placeOfBirth": "Place of birth",
+      "issuingAuthority": "Issuing authority",
+      "dateOfIssue": "Date of issue",
+      "sex": "Sex recorded on the chip",
+      "personalNumber": "Personal number"
+    },
+    "result": {
+      "title": "Passport",
+      "chipChecksRecorded": "Chip checks recorded",
+      // {moment} is when the chip checks were first recorded.
+      "chipChecksRecordedAt": "{moment}. Opening saved results does not repeat them.",
+      "readAt": "Read at",
+      "failedNotice": "A failed chip check means this passport read should not be relied on. Read the chip again, or use another document.",
+      "chipPhoto": "Passport chip photo",
+      "passportPhoto": "Passport photo",
+      "comparedSelfie": "Compared selfie",
+      "yourSelfie": "Your selfie",
+      "noPortrait": "No usable chip photo was available. Read the chip again to try for a photo.",
+      // Heading above rows comparing the printed lines with the chip. Shown in capitals.
+      "correspondenceHeading": "PRINTED DETAILS AND CHIP",
+      "matches": "Matches",
+      "differs": "Different — review this field",
+      "notCompared": "Not compared",
+      "noCorrespondence": "Printed details were not compared with the chip."
+    },
+    // Names of the chip security checks.
+    "protocol": {
+      "countrySigningChain": "Issuer signing chain (revocation and expiry are not checked)",
+      "documentSignature": "Chip data signature",
+      "dataGroupHashes": "Data integrity",
+      "activeAuthentication": "Active authentication",
+      "chipAuthentication": "Chip authentication",
+      "pace": "PACE connection",
+      "basicAccessControl": "BAC connection"
+    },
+    "protocolFailed": {
+      "countrySigningChain": "Issuer signing chain failed",
+      "documentSignature": "Chip data signature failed",
+      "dataGroupHashes": "Data integrity check failed",
+      "activeAuthentication": "Active authentication failed",
+      "chipAuthentication": "Chip authentication failed",
+      "pace": "PACE connection failed",
+      "basicAccessControl": "BAC connection failed"
+    },
+    "protocolStatus": {
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "notPerformed": "Not performed"
+    },
+    "details": {
+      "show": "View check details",
+      "hide": "Hide check details",
+      "title": "Check details"
+    },
+    // Messages shown in the iOS NFC sheet while the chip is read. {progress} is filled in by the
+    // system sheet as the read advances; keep it, and the % after it, in the translation.
+    "nfc": {
+      "presenting": "Hold the top of your phone against your passport.",
+      "authenticating": "Connecting — {progress}%",
+      "reading": "Reading passport — {progress}%",
+      "activeAuthentication": "Checking the chip.",
+      "transportFinishing": "Read complete.",
+      "failure": "We could not finish reading your passport. Please try again."
+    },
+    // Progress shown on screen while the chip is read.
+    "progress": {
+      "connecting": "Connecting to your passport…",
+      "checking": "Checking the passport data…",
+      // {hasGroup} is yes when {group}, the chip file being read (for example DG2), is known;
+      // {hasPercent} is yes when {percent} is known.
+      "reading": "Reading passport{hasGroup, select, yes { ({group})} other {}}{hasPercent, select, yes { — {percent}%} other {}}. Keep your phone still.",
+      "authenticating": "Connecting{hasPercent, select, yes { — {percent}%} other {}}. Keep your phone still.",
+      "waiting": "Keep your phone against the passport…"
+    },
+    "message": {
+      "completed": "This check completed. Your results are ready to review.",
+      "saveFailed": "The check completed, but its result could not be saved. Try saving again without repeating the check.",
+      "other": "We could not finish this check. Please try again.",
+      "correspondenceDiffers": "The printed details and chip differ. Scan the passport again before comparing a selfie.",
+      "paused": "Your check is paused. Continue when you are ready.",
+      "restart": "Start a new passport scan? Previously saved results stay on this phone until you erase them.",
+      "cameraStopped": "The camera stopped. Please try again."
+    },
+    "error": {
+      "cameraUnavailable": "This device cannot start this camera check.",
+      "nfcUnsupported": "This device cannot read a passport chip.",
+      "cameraPermissionDenied": "Allow camera access in Settings, then try again.",
+      "cameraPermissionRestricted": "Camera use is restricted on this iPhone, for example by Screen Time or a device management profile. Ask whoever manages this iPhone to allow it.",
+      "trustAnchorsUnavailable": "Passport chip checking is not set up in this app, so this passport cannot be checked here. Your other identity checks remain available.",
+      "trustAnchorNotFound": "This app has no trusted issuer key for this passport’s country, so its chip cannot be checked here. Your other identity checks remain available.",
+      "invalidConfiguration": "This check is not set up in this app. Return to Identity; your other identity checks remain available.",
+      "passportNotConfigured": "Passport chip checking is not set up in this app, so this passport cannot be checked here. Your other identity checks remain available.",
+      "faceComparisonNotConfigured": "Face comparison is not set up in this app. Your passport results are kept.",
+      "faceModelUnavailable": "Face comparison is not set up in this app. Your passport results are kept.",
+      "faceComparisonUnavailable": "Face comparison could not run on this iPhone. Your passport results are kept.",
+      "resultIntegrityFailure": "Your saved passport and face results could not be verified on this phone. Try reopening them, or erase them and scan again.",
+      "depthEvidenceUnavailable": "Your face depth could not be measured with that selfie. Take a new selfie looking straight at the camera.",
+      "connectionLost": "The connection to your passport was lost. Hold the phone still and try again.",
+      "multipleTags": "Move other contactless cards away and try again.",
+      "passportDataIntegrityFailure": "We could not verify the passport data. Try reading the passport again.",
+      "invalidAccessKey": "The printed details could not open the chip. Scan your passport again.",
+      "cancelled": "The check was stopped. You can try again when you are ready.",
+      "depthUnavailable": "We could not measure your face. Clear the front camera and try again.",
+      "busy": "The previous camera request is still finishing. Wait a moment, then try again."
+    },
+    // Guidance while the selfie camera waits for a capture it can accept.
+    "selfieHint": {
+      "start": "Place your face inside the oval.",
+      "noFaceObserved": "Place your face inside the oval.",
+      "outsideGuide": "Move your face inside the oval.",
+      "multipleFacesObserved": "Only one person should be in view.",
+      "eyesClosed": "Open your eyes.",
+      "blinkNotObserved": "Blink once, then open your eyes.",
+      "blinkExpired": "Blink once more, then keep your eyes open.",
+      "depthFlat": "Look directly at the camera with your face inside the oval.",
+      "depthUnavailable": "Clear the front camera and keep your face in view.",
+      "ready": "Hold still.",
+      "other": "Keep looking at the camera."
+    },
+    // Developer-facing: thrown if the app takes the result before a passport check has finished.
+    // The holder never sees it.
+    "handoffNotReady": "No completed passport check is ready"
+  },
+
+  // The face comparison card on passport results.
+  "face": {
+    "title": "Face comparison",
+    "notTaken": "Not taken yet",
+    "noDepth": "This comparison has no depth record, so its result is not shown. Take a new selfie to compare again.",
+    "outcome": {
+      "pass": "Photos match",
+      "fail": "Photos did not match",
+      "manualReview": "Needs another look",
+      "other": "Unrecognized comparison result"
+    },
+    "checkedAt": "Checked at",
+    "depth": "Face depth (TrueDepth camera)",
+    "depthMeasured": "Face depth measured with this selfie",
+    "expression": "Expression",
+    "blinkCompleted": "Blink completed; eyes reopened",
+    "notAvailable": "Not available",
+    // Technical rows under "Check details". Units are in brackets.
+    "technical": {
+      "similarity": "Similarity",
+      "route": "Comparison route",
+      "relief": "Face relief (RMS, metres)",
+      "unavailable": "Unavailable",
+      "samples": "Depth samples",
+      "age": "Depth age (seconds)",
+      "smoothing": "Depth smoothing",
+      "filtered": "Filtered",
+      "unfiltered": "Unfiltered",
+      "policy": "Depth policy",
+      "minimumRelief": "Minimum relief (metres)",
+      "minimumSamples": "Minimum samples",
+      "maximumAge": "Maximum depth age (seconds)",
+      "window": "Depth window (metres)",
+      // {near} and {far} are distances in metres.
+      "windowRange": "{near}–{far}",
+      "samplesPerAxis": "Samples per axis",
+      "blinkAge": "Blink age (seconds)",
+      "steadyHold": "Steady hold (seconds)",
+      "modelLoading": "Model loading (seconds)",
+      "comparisonTime": "Comparison time (seconds)",
+      "referenceDigest": "Reference SHA-256",
+      "selfieDigest": "Selfie SHA-256"
+    }
+  },
+
+  // The driver's license capture flow.
+  "license": {
+    "title": {
+      "front": "Front of your license",
+      "back": "Back of your license",
+      "frontReview": "Front captured",
+      "result": "Your driver’s license",
+      "saved": "Saved license scans",
+      "default": "Driver’s license"
+    },
+    // Shown in capitals above the camera title.
+    "step": "STEP {step} OF {total}",
+    "stepComplete": "STEP {step} OF {total} COMPLETE",
+    "cameraHint": "Keep the whole card inside the guide. Hold it still and avoid glare.",
+    "retake": "Retake this license",
+    "captureFront": "Capture front",
+    "captureBack": "Capture back",
+    "loading": "Opening saved scans…",
+    "intro": {
+      "body": "Take a photo of the front, then the back. You can review both photos and the details read from the barcode.",
+      "privacy": "Starting allows camera capture. Your photos are saved on this phone.",
+      "start": "Scan the front"
+    },
+    "saved": {
+      "choose": "Choose a saved scan to view it or continue where you left off.",
+      // {number} counts the saved scans from 1.
+      "title": "Saved scan {number}",
+      "complete": "Front and back photos",
+      "frontOnly": "Front photo · Back still needed",
+      "view": "View scan",
+      "continue": "Continue scan",
+      "scanAnother": "Scan another license"
+    },
+    "frontReview": {
+      "body": "Turn the card over. Capture the back, including the whole barcode.",
+      "scanBack": "Scan the back",
+      "retakeFront": "Retake front"
+    },
+    "hint": {
+      "capturing": "Capturing the photo…",
+      "ready": "Hold still. The photo can be captured now.",
+      "consentRequired": "Choose to start the scan before taking a photo.",
+      "locationRequired": "Location access is needed for this capture.",
+      "captureFailed": "The photo could not be completed. Try again.",
+      "cameraUnavailable": "The camera is not available.",
+      "nativeControlsPaused": "The camera paused. Continue when you are ready.",
+      "other": "Keep all four corners in view and hold the card still."
+    },
+    "result": {
+      "photos": "Your photos",
+      "front": "Front",
+      "back": "Back",
+      "frontImage": "Captured front of your license",
+      "backImage": "Captured back of your license",
+      "backNeeded": "The front is saved. The back still needs a photo.",
+      "barcodeTitle": "Details from the barcode",
+      "name": "Name",
+      "licenseNumber": "License number",
+      "birthDate": "Date of birth, as read",
+      "expiryDate": "Expiry date, as read",
+      "address": "Address",
+      "showAll": "View all read details",
+      "hideAll": "Hide all read details",
+      // {code} is a three-letter barcode element code the app has no name for, such as DCK.
+      "unknownField": "Field {code}",
+      "missingElements": "Details missing from the barcode"
+    },
+    // Names of driver's license barcode elements (AAMVA element codes).
+    "field": {
+      "DAA": "Full name",
+      "DCS": "Last name",
+      "DAC": "First name",
+      "DAD": "Middle name",
+      "DAQ": "License number",
+      "DBB": "Date of birth",
+      "DBA": "Expiry date",
+      "DBD": "Issue date",
+      "DAG": "Street address",
+      "DAH": "Address line 2",
+      "DAI": "City",
+      "DAJ": "State or province",
+      "DAK": "Postal code",
+      "DCG": "Country",
+      "DBC": "Sex",
+      "DAY": "Eye color",
+      "DAU": "Height",
+      "DAW": "Weight",
+      "DCA": "Vehicle class",
+      "DCB": "Restrictions",
+      "DCD": "Endorsements",
+      "DCF": "Document reference",
+      "DDA": "Compliance field",
+      "DDB": "Revision date"
+    },
+    // What happened when the barcode on the back was read. None of these is issuer validation.
+    "barcode": {
+      "notFound": "No barcode was found in the photo of the back. Retake the back with the whole barcode in view.",
+      "ambiguous": "More than one barcode was found in the photo of the back. Retake it with only this license in view.",
+      "failed": "The barcode could not be decoded. Retake the back, holding it still and avoiding glare.",
+      "notRequested": "The barcode was not read from this photo.",
+      "readableMissing": "Read from the back of your license. Some required details were missing; review them against the card.",
+      "readable": "Read from the back of your license.",
+      "malformed": "The barcode was read, but its contents do not follow the license barcode standard. Review any details below against the card.",
+      "unsupported": "The barcode was read, but this license’s barcode version is not supported. Review any details below against the card.",
+      "unread": "The barcode was found, but its details could not be read. You can retake the license photos."
+    },
+    "sheet": {
+      "allowCameraTitle": "Allow camera access",
+      "allowCameraBody": "Open Settings to allow camera access, then return to continue.",
+      "restrictedTitle": "Camera access is restricted",
+      "restrictedBody": "Camera use is restricted on this iPhone, for example by Screen Time or a device management profile. Ask whoever manages this iPhone to allow it. You can return to your saved results.",
+      "cameraUnavailableTitle": "Camera unavailable",
+      "notAvailableTitle": "Capture is not available",
+      "notAvailableBody": "Driver’s license capture has not been set up for this app.",
+      "mismatchTitle": "This back belongs to a different license",
+      "mismatchBody": "The back you captured comes from a different license than the saved front. Capture the back of the same license, or retake the front.",
+      "savedTitle": "Saved scan could not be opened",
+      "savedBody": "Your saved scan could not be read. Try again without clearing it.",
+      "paused": "Your scan is paused. Continue when you are ready.",
+      "pausedTitle": "Scan paused",
+      "pausedBody": "Continue when you are ready. Your saved results are kept."
+    },
+    "cameraError": {
+      "backCameraUnavailable": "This device has no back camera this app can use. You can return to your saved results.",
+      "cameraUnavailable": "The camera could not start on this device. You can return to your saved results.",
+      "cannotAddCameraInput": "The camera could not start on this device. You can return to your saved results.",
+      "cannotAddPhotoOutput": "The camera could not take photos on this device. You can return to your saved results.",
+      "cannotAddVideoOutput": "The camera could not start on this device. You can return to your saved results."
+    },
+    "captureError": {
+      "locationRequired": "Location access is needed for this capture. Allow it in Settings, then try again.",
+      "cameraNotReady": "The camera was not ready yet. Hold the card in view and try again.",
+      "captureFailed": "The photo could not be completed. Keep the whole card in view and try again.",
+      "captureQualityNotReady": "The photo was not sharp enough yet. Hold the card still, avoid glare and try again.",
+      "busy": "The previous photo is still being saved. Wait a moment, then try again.",
+      "consentRequired": "Choose to start the scan before taking a photo.",
+      "recordingTerminated": "The camera stopped before the photo was saved. Try again.",
+      "nativeControlsPaused": "The camera paused. Continue when you are ready.",
+      "other": "The photo could not be completed. Keep the whole card in view and try again."
+    }
+  },
+
+  // The license record check panel on driver's license results.
+  "documentCheck": {
+    "title": "License record check",
+    "notConfigured": "Record checking is not configured for this app. Your saved photos and barcode details remain available.",
+    "busy": "Opening or checking the saved record…",
+    "outcome": {
+      "recordMatched": "Issuing record matched",
+      "recordNotMatched": "Issuing record did not match",
+      "pending": "Check still pending",
+      "unavailable": "No answer available",
+      "needsCorrection": "Review the requested details",
+      "inconclusive": "No conclusive record comparison"
+    },
+    "state": {
+      "unanswered": "A request was sent. No answer is saved yet.",
+      "readerUnavailable": "The document reader could not complete this check.",
+      "unreadable": "The saved image could not be read.",
+      "unavailable": "The check could not finish. Reopen its saved status.",
+      "notStarted": "No record check has been made."
+    },
+    // {moment} is the date and time of the check.
+    "checkedAt": "Checked {moment}",
+    "providerChecks": "The checking service returned {count, plural, one {# individual check} other {# individual checks}}.",
+    "noProviderChecks": "Individual checks were not returned.",
+    // Heading above the details the app sent. Shown in capitals.
+    "submittedHeading": "DETAILS SENT FOR THE CHECK",
+    "noSubmitted": "The details sent for the check were not returned.",
+    "replayed": "The service returned the existing answer.",
+    "fresh": "The service returned a new answer.",
+    "receipt": {
+      "title": "Service receipt",
+      // {value} is a version string from the service.
+      "version": "Version: {value}",
+      // {value} is a SHA-256 digest.
+      "answeredRequest": "Answered request: {value}",
+      // {value} is a SHA-256 digest.
+      "observations": "Read observations: {value}",
+      "missing": "Service receipt was not returned."
+    },
+    // {value} is an identifier from the service.
+    "operation": "Operation: {value}",
+    // {value} is an identifier from the service.
+    "verification": "Verification: {value}",
+    "action": {
+      "check": "Check license record",
+      "askAgain": "Ask for the existing check’s answer",
+      "reviewCorrections": "Review requested corrections",
+      "readAgain": "Try reading the saved photo again",
+      "reopenStatus": "Reopen saved check status",
+      "submitCorrections": "Submit corrections",
+      "reopenSaved": "Reopen saved status"
+    },
+    "sheet": {
+      "correctionTitle": "Correct the requested details"
+    },
+    "field": {
+      "givenName": "Given name",
+      "familyName": "Family name",
+      "middleName": "Middle name",
+      "birthDate": "Date of birth",
+      "documentNumber": "License number",
+      "expiryDate": "Expiry date",
+      "issueDate": "Issue date",
+      "addressLine1": "Street address",
+      "addressLine2": "Address line 2",
+      "city": "City",
+      "region": "State",
+      "postalCode": "Postal code",
+      "issuingState": "Issuing state"
+    },
+    "correction": {
+      "required": "This detail is required.",
+      "mismatch": "This detail did not match the record.",
+      "invalid": "This detail was not in a usable form.",
+      "other": "The checking service asked you to review this detail."
+    },
+    "failure": {
+      "readerUnbound": "The document reader is not set up for this check. Your photos and barcode details remain available.",
+      "requestRejected": "The checking service refused this request. Your photos and barcode details remain available.",
+      "serviceUnavailable": "The checking service did not answer. You can ask for this check’s answer later; no new check is started.",
+      "replyRejected": "The checking service answered, but the answer could not be verified and was not accepted.",
+      "requestConflict": "The checking service already holds a different request for this license. Reopen the saved status.",
+      "nothingToAskAgain": "There is no earlier request to ask about. Start the record check when you are ready.",
+      "correctionNotRequested": "Only the details the checking service asked about can be corrected.",
+      "busy": "The previous request is still finishing. Wait a moment, then try again.",
+      "cancelled": "The check was stopped before it finished. Reopen its saved status.",
+      "custodyUnavailable": "The saved check could not be opened on this phone. Reopen its saved status.",
+      "consentRequired": "Agree to the record check before it is sent.",
+      "documentCheckNotConfigured": "Record checking is not set up in this app. Your photos and barcode details remain available.",
+      "documentFrontRequired": "Capture the front of the license before checking its record.",
+      "invalidArgument": "Enter a value for each requested detail before submitting.",
+      "documentCustodyFailed": "The saved license photos could not be opened on this phone. Reopen the saved status.",
+      "sessionUnavailable": "This screen closed before the check finished. Open the license again to see its saved status.",
+      "other": "The check could not finish. Reopen the saved status before sending another request."
+    }
+  },
+
+  // The Social Security number issuance check.
+  "ssn": {
+    "intro": "Check whether your Social Security number was issued. This does not confirm who owns the number.",
+    "checking": "Checking…",
+    "saveBody": "The answer arrived but could not be saved on this phone. Saving again will not send another check.",
+    "notReceivedTitle": "The result was not received",
+    "notReceivedBody": "The previous check may have happened. You can leave this check here or review your number for a new request.",
+    "enterAgain": "Enter number again",
+    // Placeholder in the empty number field: nine digits, no separators.
+    "placeholder": "000000000",
+    "entryNotice": "You will confirm every digit before the check starts. Your entered number is cleared when you leave this screen.",
+    "reviewNumber": "Review number",
+    // "SSN" is the common abbreviation for Social Security number.
+    "enter": "Enter SSN",
+    "erase": "Erase saved SSN checks",
+    "confirm": {
+      "title": "Confirm your number",
+      "body": "Check every digit. This is the number that will be sent for the issuance check.",
+      "replacement": "The previous check may have happened. Confirming sends a new request.",
+      "action": "Confirm and check",
+      "edit": "Edit number"
+    },
+    "eraseSheet": {
+      "title": "Erase saved SSN checks?",
+      "body": "This removes your saved Social Security number check and its result from this app. It does not recall a check that was already sent.",
+      "keep": "Keep checks"
+    },
+    // What the checking service reported. Issuance is never presented as verification.
+    "summary": {
+      "issued": "Reported as issued",
+      "notIssued": "Not reported as issued",
+      "unavailable": "Issuance not available"
+    },
+    "result": {
+      "reportedLabel": "What the checking service reported",
+      "issued": "The number was issued",
+      "notIssued": "The number was not issued",
+      "unavailable": "No issuance answer was available",
+      "findings": "Returned findings",
+      "region": "Issuing state",
+      "issueStart": "Issuance period begins",
+      "issueEnd": "Issuance period ends",
+      "classification": "Reported classification",
+      "classificationCode": "Classification code",
+      "reportedStatus": "Reported status",
+      "responseCode": "Response code",
+      "issuanceOnly": "This earlier check saved only the issuance result. Its details were not retained. A new confirmed check is needed to obtain them.",
+      "checked": "Checked",
+      "ownership": "This result does not establish that the number belongs to you."
+    },
+    "sheet": {
+      "notReadyTitle": "This check is not ready",
+      "notConnected": "The verification service is not connected. Your other identity checks remain available.",
+      "failedTitle": "The check could not finish",
+      "localSave": "The answer arrived but could not be saved on this phone. Try saving it again; this will not send another check.",
+      "unknown": "The previous check may have happened. Starting again sends a new request. You will review and confirm the number first.",
+      "other": "Enter your number again and confirm every digit before continuing.",
+      "pausedOpen": "Open this check again when you are ready.",
+      "pausedEntry": "Enter your number again when you are ready."
+    },
+    "setupError": {
+      "ssnNotConfigured": "This check is not set up in this app. Return to Identity; your other identity checks remain available.",
+      "invalidConfiguration": "This check is not set up in this app. Return to Identity; your other identity checks remain available.",
+      "notConfigured": "The verification service is not set up for this app. Return to Identity; your other identity checks remain available.",
+      "unauthorized": "The verification service did not accept this app. Return to Identity; your other identity checks remain available.",
+      "contextChanged": "The sign-in this check belongs to has changed. Return to Identity and open the check again."
+    },
+    "entryError": {
+      "storageUnavailable": "The saved check could not be opened. Try opening it again.",
+      "rateLimited": "The service asked us to wait. Enter your number again in a moment.",
+      "confirmationRequired": "Confirm every digit of your number before the check starts.",
+      "invalidRequest": "The number could not be sent as entered. Enter all nine digits again.",
+      "busy": "The previous request is still finishing. Wait a moment, then enter your number again."
+    }
+  },
+
+  // The phone possession check: the holder sends one text from this phone.
+  "phone": {
+    "title": "Phone",
+    "saveBody": "The answer arrived. Saving again will not send another text or run another comparison.",
+    "waitingTitle": "Waiting for your text",
+    "waitingBody": "We are checking for the text from your number. Sending it alone does not complete this check.",
+    "resume": "Resume check",
+    // {moment} is the date and time after which the text may be sent again.
+    "sendAgainAfter": "Another send is available after {moment}. It uses the same challenge.",
+    "sendAgain": "Send text again",
+    "startTitle": "Send one text from this phone",
+    "startBody": "A message opens here with the number and code filled in. Tap Send, then return here for the result.",
+    "consent": "By continuing, you agree to have the sending number checked and its subscriber details compared with your checked ID. Your carrier may charge for the text.",
+    "send": "Send text",
+    "checkExisting": "Check for existing text",
+    "startNew": "Start a new check",
+    "erase": "Erase saved phone checks",
+    "sheet": {
+      "eraseTitle": "Erase saved phone checks?",
+      "restartTitle": "Start a new phone check?",
+      "eraseBody": "This removes saved phone receipts and pending checks from this app. It does not recall a text already sent.",
+      "restartBody": "Your previous result stays available until the new check completes. You will choose when to send the next text.",
+      "startNew": "Start new check",
+      "backToCheck": "Back to check",
+      "keepCurrent": "Keep current check"
+    },
+    "result": {
+      "stoppedTitle": "Subscriber details differ from your ID",
+      "confirmedTitle": "Phone possession confirmed",
+      "stoppedBody": "Your text was received, but the subscriber details held for this number do not match your checked ID. This check stops here and its result cannot be used. You can start a new check.",
+      "senderStopped": "Number that sent the text",
+      "senderConfirmed": "Confirmed number",
+      "received": "Text received",
+      "completed": "Check completed",
+      "possessionOnly": "The service received a text from this number. Subscriber agreement is a separate finding.",
+      "comparisonTitle": "Comparison with your ID",
+      "noComparison": "No comparison returned",
+      "fieldsCounted": "Fields counted",
+      "noFieldGrades": "No individual field grades were returned.",
+      "noNumberChecks": "No number checks were returned.",
+      "noEvidence": "Number check details are not present in this saved receipt. Opening it does not run another check.",
+      "showReceipt": "Show receipt details",
+      "hideReceipt": "Hide receipt details",
+      "challenge": "Challenge reference",
+      "messageDigest": "Message digest",
+      "requestReference": "Number check request reference",
+      "comparisonReference": "Comparison reference",
+      "policyVersion": "Policy version",
+      "profileVersion": "Profile version"
+    },
+    // How the subscriber details held for the number compared with the checked ID.
+    "comparison": {
+      "agreed": "Subscriber details agree",
+      "singleSource": "One source reports agreement",
+      "contradicted": "Subscriber details differ",
+      "unavailable": "Comparison unavailable",
+      "notCompared": "Not compared"
+    },
+    // One check of the number by a carrier data source. Rows appear only for values it returned.
+    "numberCheck": {
+      // {number} counts the checks from 1.
+      "title": "Number check {number}",
+      "answered": "Answered",
+      "failure": "Reported a failure",
+      "carrier": "Carrier",
+      "lineType": "Line type",
+      "originalCarrier": "Original carrier",
+      "carrierChanged": "Carrier change reported",
+      "risk": "Reported risk",
+      "messageFraudScore": "Message fraud risk score",
+      "numberRiskScore": "Number risk score",
+      "numberValid": "Number valid",
+      "formatValid": "Number format valid"
+    },
+    "field": {
+      "givenName": "Given name",
+      "familyName": "Family name",
+      "birthdate": "Date of birth",
+      "address": "Street address",
+      "locality": "City",
+      "region": "State or region",
+      "postalCode": "Postal code",
+      "country": "Country",
+      "idDocument": "ID document"
+    },
+    "grade": {
+      "match": "Matches",
+      "noMatch": "Does not match",
+      "partial": "Partial result",
+      "noData": "No data",
+      "unknown": "Unrecognized result"
+    },
+    "setupError": {
+      "compositionUnavailable": "Text messaging is unavailable. Use an iPhone with text messaging enabled.",
+      "phoneNotConfigured": "The phone check is not set up in this app. Return to Identity; your other checks remain available.",
+      "notConfigured": "The phone verification service is not available for this check. Return to Identity.",
+      "invalidConfiguration": "The phone check is not set up in this app. Return to Identity; your other checks remain available.",
+      "unauthorized": "The phone verification service is not available for this check. Return to Identity.",
+      "contextChanged": "The checked ID or installation changed. Return to Identity and review your ID check.",
+      "recoveryRequired": "Resume the existing check before starting another one. Your text may already have arrived.",
+      "messageNotSent": "The text was not sent. You can send the same message again."
+    },
+    "checkError": {
+      "expired": "This text challenge can no longer complete. Start a new check when you are ready.",
+      "unknownChallenge": "This text challenge can no longer complete. Start a new check when you are ready.",
+      "conflict": "The service could not bind this text to one sender. Start a new check when you are ready.",
+      "refused": "The phone verification service declined this check. Start a new check when you are ready.",
+      "invalidResponse": "The service returned a result that could not be verified. No new result was accepted.",
+      "rateLimited": "The service asked us to wait. Resume this check in a moment.",
+      "timedOut": "The service did not answer in time. Resume the check to look for the same text.",
+      "storageUnavailable": "The check could not be saved or opened on this phone. Your previous result has not been replaced.",
+      "busy": "The previous request is still finishing. Wait a moment, then try again.",
+      "finishing": "The answer arrived but could not be saved. Save it again without sending another text.",
+      "other": "The check could not finish. Resume it to look for the same text. Your previous result is retained."
+    }
+  },
+
+  // The subscriber comparison inside a phone result.
+  "subscriber": {
+    "noResult": "Your text was received. A usable subscriber comparison was not returned.",
+    "status": {
+      "satisfied": "Required details agree",
+      "notSatisfied": "Some details differ",
+      "incomplete": "Comparison incomplete"
+    },
+    "requiredDetails": "Required details",
+    "outsidePolicy": "Details outside the accepted grades",
+    "incompleteDetails": "Details missing usable evidence",
+    "result": "Result",
+    "submitted": "Submitted",
+    "comparedByCarrier": "Compared by the carrier source",
+    "scope": "Comparison scope",
+    "fieldsCovered": "Fields covered",
+    "reason": "Reason",
+    "wholeAddressTitle": "Whole address",
+    "wholeAddressNotice": "This combined observation does not fill in missing individual address checks.",
+    "coverageBasis": "Coverage basis",
+    "recordSource": "Record source",
+    "sourceObserved": "Source observed",
+    // Why the comparison did not return a usable answer. Phone possession stays confirmed.
+    "failure": {
+      "busy": "Your text was received. The subscriber comparison could not start because another request was still finishing.",
+      "consentRequired": "Your text was received. The subscriber comparison was not run because agreement to compare was not recorded.",
+      "invalidRequest": "Your text was received. The subscriber comparison was not run because your checked ID did not supply the details it needs.",
+      "contextChanged": "Your text was received. The subscriber comparison was not run because your checked ID changed during the check.",
+      "storageUnavailable": "Your text was received. The subscriber comparison could not be saved or opened on this phone.",
+      "notConfigured": "Your text was received. The subscriber comparison was not run because the comparison service is not set up for this app.",
+      "unauthorized": "Your text was received. The subscriber comparison was not run because the comparison service did not accept this app’s credentials.",
+      "forbidden": "Your text was received. The subscriber comparison was not run because the comparison service does not permit it for this app.",
+      "profileChanged": "Your text was received. The subscriber comparison was not run because the comparison rules changed. You can start the phone check again.",
+      "expiredRequest": "Your text was received. The subscriber comparison was not run because the request expired before it could be sent. You can start the phone check again.",
+      "invalidEvidence": "Your text was received. The subscriber comparison was not run because the comparison service did not accept the phone check’s proof.",
+      "rateLimited": "Your text was received. The subscriber comparison was not run because the comparison service asked this app to wait.",
+      "capabilityUnavailable": "Your text was received. The subscriber comparison was not run because the comparison is not available for this number.",
+      "outcomeUnknown": "Your text was received. The subscriber comparison may have run, but its answer was not received. Opening this result will not run it again.",
+      "invalidResponse": "Your text was received. The subscriber comparison answered, but the answer could not be verified and was not accepted."
+    },
+    // Names for the values a subscriber comparison reports: fields, grades, scopes and sources.
+    "label": {
+      "givenName": "Given name",
+      "familyName": "Family name",
+      "birthDate": "Date of birth",
+      "addressLines": "Street address",
+      "addressLine1": "Address line 1",
+      "addressLine2": "Address line 2",
+      "city": "City",
+      "region": "State or region",
+      "postalCode": "Postal code",
+      "country": "Country",
+      "exactMatch": "Exact match",
+      "highPartialMatch": "High partial match",
+      "partialMatch": "Partial match",
+      "lowPartialMatch": "Low partial match",
+      "noMatch": "Does not match",
+      "noData": "No data",
+      "unsupported": "Unsupported",
+      "unavailable": "Unavailable",
+      "indeterminate": "Indeterminate",
+      "notRequested": "Not requested",
+      "individualAttribute": "Individual field",
+      "combinedAddressLines": "Address lines together",
+      "wholeAddress": "Whole address",
+      "unqualified": "Not established",
+      "notApplicable": "Not applicable",
+      "reportedGrade": "The carrier source reported this grade",
+      "unsupportedField": "Field unsupported",
+      "unsupportedNetwork": "Network unsupported",
+      "supplierUnavailable": "The carrier source was unavailable",
+      "notAuthorized": "Not authorized",
+      "omittedResult": "Result omitted",
+      "unknownSupplierValue": "Unrecognized carrier source value",
+      "unqualifiedSemantics": "Meaning not established",
+      "invalidSupplierResponse": "Invalid carrier source response",
+      "qualified": "Established",
+      "unverified": "Not established",
+      "operator": "Operator",
+      "thirdParty": "Third party",
+      "mixed": "Mixed",
+      "unknown": "Unknown",
+      "other": "Unrecognized value"
+    }
+  },
+
+  // The simulator-only developer checks screen. Developers read these; the holder never does.
+  "developer": {
+    "title": "SDK package integration",
+    "environment": "React Native 0.87.1 · iOS · installed npm artifact",
+    "run": "Run simulator checks",
+    "preview": "Native preview component (camera stopped)",
+    "status": {
+      "ready": "Ready",
+      "running": "Running",
+      // {code} is a closed error code, or developer.noCode.
+      "createFailed": "Create failed: {code}",
+      "passed": "{count, plural, one {# check passed} other {# checks passed}}",
+      // {message} is the name of the check that failed.
+      "failed": "FAILED: {message}"
+    },
+    "noCode": "no code returned",
+    // {code} is the error code a check expected.
+    "expected": "Expected {code}",
+    "missingCameraFailure": "Missing camera failure event",
+    "check": {
+      "independentSessions": "Independent native sessions",
+      "emptyResults": "Isolated completed-result list starts empty",
+      "resultErasure": "Completed-result custody erasure",
+      "mrzParser": "Packaged MRZ parser",
+      "partialRead": "Partial read remains partial",
+      "cameraFailsClosed": "Simulator fails closed without TrueDepth",
+      "releaseIsolation": "Release preserves the other session"
+    },
+    // Messages passed to the NFC sheet by a check that expects the read to be refused. {group}
+    // and {progress} are filled in by the system sheet.
+    "nfc": {
+      "presenting": "Hold your phone against your passport.",
+      "authenticating": "Connecting — {progress}%",
+      "reading": "Reading {group} — {progress}%",
+      "activeAuthentication": "Checking the chip.",
+      "transportFinishing": "Read complete.",
+      "failure": "The passport could not be read. Try again."
+    }
+  }
+}

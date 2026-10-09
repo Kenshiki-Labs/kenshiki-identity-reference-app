@@ -1,10 +1,11 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {AppState, Linking, ScrollView, Text, View} from 'react-native';
+import {AppState, Linking, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {IdentityCaptureImage, IdentityCapturePreview, IdentityCaptureSession} from '@kenshiki/identity-capture';
 import type {Configuration, DocumentObservation, DocumentSideObservation} from '@kenshiki/identity-capture';
 import {DocumentCheckPanel} from './DocumentCheckPanel';
 import {Action, styles} from './IdentityCaptureFlow';
 import {DocumentFlowController, type DocumentFlowState, type SavedDocumentCapture} from './DocumentFlowController';
+import {t} from './locales/i18n';
 
 export function DriverLicenseFlow({configuration, saved, resume, onComplete, onExit}: {
   configuration: Configuration; saved?: SavedDocumentCapture;
@@ -47,61 +48,61 @@ export function DriverLicenseFlow({configuration, saved, resume, onComplete, onE
   const action = (label: string, press: () => unknown, id?: string, secondary = false, disabled = false) =>
     <Action label={label} onPress={press} testID={id} secondary={secondary}
       disabled={state.busy || finishing || disabled} />;
-  const close = <Action label="Back to Identity" secondary testID="document-back-to-identity"
+  const close = <Action label={t('common.backToIdentity')} secondary testID="document-back-to-identity"
     disabled={finishing} onPress={exit} />;
-  const title = state.phase === 'front' ? 'Front of your license' : state.phase === 'back' ? 'Back of your license' :
-    state.phase === 'frontReview' ? 'Front captured' : state.phase === 'result' ? 'Your driver’s license' :
-      state.phase === 'saved' ? 'Saved license scans' : 'Driver’s license';
+  const title = state.phase === 'front' ? t('license.title.front') : state.phase === 'back' ? t('license.title.back') :
+    state.phase === 'frontReview' ? t('license.title.frontReview') : state.phase === 'result' ? t('license.title.result') :
+      state.phase === 'saved' ? t('license.title.saved') : t('license.title.default');
   return <View style={styles.root}>
     {camera ? <View style={styles.camera} accessibilityElementsHidden={!!state.sheet}
       importantForAccessibility={state.sheet ? 'no-hide-descendants' : 'auto'}>
       {state.session && <IdentityCapturePreview key={`document-${state.preview}`} session={state.session}
-        kind="document" style={{position: 'absolute', top: 0, bottom: 0, left: 0, right: 0}} />}
+        kind="document" style={StyleSheet.absoluteFill} />}
       <View style={styles.cameraTop}>
-        <Text style={[styles.eyebrow, styles.white]}>{state.phase === 'front' ? 'STEP 1 OF 2' : 'STEP 2 OF 2'}</Text>
+        <Text style={[styles.eyebrow, styles.white]}>{t('license.step', {step: state.phase === 'front' ? 1 : 2, total: 2})}</Text>
         <Text accessibilityRole="header" style={[styles.title, styles.white]}>{title}</Text>
-        <Text style={[styles.body, styles.white]}>Keep the whole card inside the guide. Hold it still and avoid glare.</Text>
+        <Text style={[styles.body, styles.white]}>{t('license.cameraHint')}</Text>
       </View>
       <View style={styles.cameraBottom}>
         <Text style={[styles.body, styles.white]} accessibilityLiveRegion="polite">{documentHint(state)}</Text>
-        {action(state.phase === 'front' ? 'Capture front' : 'Capture back', controller.capture,
+        {action(state.phase === 'front' ? t('license.captureFront') : t('license.captureBack'), controller.capture,
           'capture-document', false, !state.ready || state.capturing)}
         {close}
       </View>
     </View> : <ScrollView contentContainerStyle={styles.content} accessibilityElementsHidden={!!state.sheet}
       importantForAccessibility={state.sheet ? 'no-hide-descendants' : 'auto'}>
-      <Text style={styles.eyebrow}>IDENTITY</Text>
+      <Text style={styles.eyebrow}>{t('common.eyebrow')}</Text>
       <Text accessibilityRole="header" style={styles.title}>{title}</Text>
-      {state.phase === 'loading' && <Text style={styles.body} accessibilityLiveRegion="polite">Opening saved scans…</Text>}
+      {state.phase === 'loading' && <Text style={styles.body} accessibilityLiveRegion="polite">{t('license.loading')}</Text>}
       {state.phase === 'intro' && <>
-        <Text style={styles.body}>Take a photo of the front, then the back. You can review both photos and the details read from the barcode.</Text>
-        <Text style={styles.body}>Starting allows camera capture. Your photos are saved on this phone.</Text>
-        {action('Scan the front', controller.startFront, 'start-document-front')}
+        <Text style={styles.body}>{t('license.intro.body')}</Text>
+        <Text style={styles.body}>{t('license.intro.privacy')}</Text>
+        {action(t('license.intro.start'), controller.startFront, 'start-document-front')}
       </>}
-      {state.phase === 'saved' && <View style={{gap: 16}} testID="saved-documents-list">
-        <Text style={styles.body}>Choose a saved scan to view it or continue where you left off.</Text>
+      {state.phase === 'saved' && <View style={styles.list} testID="saved-documents-list">
+        <Text style={styles.body}>{t('license.saved.choose')}</Text>
         {state.saved.map((choice, index) => <View key={choice.workflowID} style={styles.card}>
-          <Text style={styles.sheetTitle}>Saved scan {index + 1}</Text>
-          <Text style={styles.body}>{choice.hasBack ? 'Front and back photos' : 'Front photo · Back still needed'}</Text>
-          {action(choice.hasBack ? 'View scan' : 'Continue scan', () => controller.recoverSaved(choice.captureID), `saved-document-${index}`)}
+          <Text style={styles.sheetTitle}>{t('license.saved.title', {number: index + 1})}</Text>
+          <Text style={styles.body}>{choice.hasBack ? t('license.saved.complete') : t('license.saved.frontOnly')}</Text>
+          {action(choice.hasBack ? t('license.saved.view') : t('license.saved.continue'), () => controller.recoverSaved(choice.captureID), `saved-document-${index}`)}
         </View>)}
-        {action('Scan another license', controller.startFront, 'start-document-front', true)}
+        {action(t('license.saved.scanAnother'), controller.startFront, 'start-document-front', true)}
       </View>}
       {state.phase === 'frontReview' && state.draft?.front && state.session && <>
-        <Text style={styles.eyebrow}>STEP 1 OF 2 COMPLETE</Text>
+        <Text style={styles.eyebrow}>{t('license.stepComplete', {step: 1, total: 2})}</Text>
         <IdentityCaptureImage session={state.session} image="documentFront" sha256={state.draft.front.sha256}
-          accessibilityLabel="Captured front of your license" style={{height: 220}} />
-        <Text style={styles.body}>Turn the card over. Capture the back, including the whole barcode.</Text>
-        {action('Scan the back', controller.startBack, 'start-document-back')}
-        {action('Retake front', controller.startFront, 'retake-document-front', true)}
+          accessibilityLabel={t('license.result.frontImage')} style={styles.documentPreview} />
+        <Text style={styles.body}>{t('license.frontReview.body')}</Text>
+        {action(t('license.frontReview.scanBack'), controller.startBack, 'start-document-back')}
+        {action(t('license.frontReview.retakeFront'), controller.startFront, 'retake-document-front', true)}
       </>}
       {state.phase === 'result' && state.completed && state.session && <>
         <DocumentResultDetails result={{session: state.session, document: state.completed}} />
         <DocumentCheckPanel key={state.completed.front?.captureID} session={state.session} configured={!!configuration.document?.check} />
-        {action('Done', finish, 'finish-document')}
-        {action('Retake this license', controller.startFront, 'start-document-front', true)}
+        {action(t('common.done'), finish, 'finish-document')}
+        {action(t('license.retake'), controller.startFront, 'start-document-front', true)}
       </>}
-      {state.busy && state.phase !== 'loading' && <Text style={styles.body} accessibilityLiveRegion="polite">Please wait…</Text>}
+      {state.busy && state.phase !== 'loading' && <Text style={styles.body} accessibilityLiveRegion="polite">{t('common.pleaseWait')}</Text>}
       {close}
     </ScrollView>}
     {state.sheet && <View style={styles.scrim}>
@@ -110,8 +111,8 @@ export function DriverLicenseFlow({configuration, saved, resume, onComplete, onE
           <Text accessibilityRole="header" style={styles.sheetTitle}>{state.sheet.title}</Text>
           <Text style={styles.body}>{state.sheet.message}</Text>
           {state.sheet.recovery === 'details' ? close : <>
-            {state.sheet.recovery === 'settings' && action('Open Settings', () => Linking.openSettings(), 'document-open-settings')}
-            {action(state.sheet.recovery === 'settings' ? 'Try camera again' : 'Try again', controller.retry, 'retry-document')}
+            {state.sheet.recovery === 'settings' && action(t('common.openSettings'), () => Linking.openSettings(), 'document-open-settings')}
+            {action(state.sheet.recovery === 'settings' ? t('common.tryCameraAgain') : t('common.tryAgain'), controller.retry, 'retry-document')}
             {close}
           </>}
         </ScrollView>
@@ -121,21 +122,21 @@ export function DriverLicenseFlow({configuration, saved, resume, onComplete, onE
 }
 
 function documentHint(state: DocumentFlowState): string {
-  if (state.capturing) return 'Capturing the photo…';
-  if (state.ready) return 'Hold still. The photo can be captured now.';
+  if (state.capturing) return t('license.hint.capturing');
+  if (state.ready) return t('license.hint.ready');
   const hints: Record<string, string> = {
-    consentRequired: 'Choose to start the scan before taking a photo.',
-    locationRequired: 'Location access is needed for this capture.',
-    captureFailed: 'The photo could not be completed. Try again.',
-    cameraUnavailable: 'The camera is not available.',
-    nativeControlsPaused: 'The camera paused. Continue when you are ready.',
+    consentRequired: t('license.hint.consentRequired'),
+    locationRequired: t('license.hint.locationRequired'),
+    captureFailed: t('license.hint.captureFailed'),
+    cameraUnavailable: t('license.hint.cameraUnavailable'),
+    nativeControlsPaused: t('license.hint.nativeControlsPaused'),
   };
-  return hints[state.issue ?? ''] ?? 'Keep all four corners in view and hold the card still.';
+  return hints[state.issue ?? ''] ?? t('license.hint.other');
 }
 
 export function documentName(document: DocumentObservation): string {
   const fields = document.back?.pdf417?.fields ?? {};
-  return fields.DAA || [fields.DAC, fields.DAD, fields.DCS].filter(Boolean).join(' ') || 'Driver’s license';
+  return fields.DAA || [fields.DAC, fields.DAD, fields.DCS].filter(Boolean).join(' ') || t('license.title.default');
 }
 export function DocumentResultDetails({result}: {result: SavedDocumentCapture}) {
   const {document, session} = result;
@@ -145,55 +146,56 @@ export function DocumentResultDetails({result}: {result: SavedDocumentCapture}) 
   const address = [fields.DAG, fields.DAH, fields.DAI, fields.DAJ, fields.DAK].filter(Boolean).join('\n');
   return <>
     <View style={styles.card} testID="document-result">
-      <Text accessibilityRole="header" style={styles.sheetTitle}>Your photos</Text>
+      <Text accessibilityRole="header" style={styles.sheetTitle}>{t('license.result.photos')}</Text>
       {document.front && <>
-        <Text style={styles.label}>Front</Text>
+        <Text style={styles.label}>{t('license.result.front')}</Text>
         <IdentityCaptureImage key={document.front.sha256} session={session} image="documentFront" sha256={document.front.sha256}
-          accessibilityLabel="Captured front of your license" style={{height: 200}} />
+          accessibilityLabel={t('license.result.frontImage')} style={styles.documentImage} />
       </>}
       {document.back ? <>
-        <Text style={styles.label}>Back</Text>
+        <Text style={styles.label}>{t('license.result.back')}</Text>
         <IdentityCaptureImage key={document.back.sha256} session={session} image="documentBack" sha256={document.back.sha256}
-          accessibilityLabel="Captured back of your license" style={{height: 200}} />
-      </> : <Text style={styles.body}>The front is saved. The back still needs a photo.</Text>}
+          accessibilityLabel={t('license.result.backImage')} style={styles.documentImage} />
+      </> : <Text style={styles.body}>{t('license.result.backNeeded')}</Text>}
     </View>
     {document.back && <View style={styles.card} testID="document-barcode-details">
-      <Text accessibilityRole="header" style={styles.sheetTitle}>Details from the barcode</Text>
+      <Text accessibilityRole="header" style={styles.sheetTitle}>{t('license.result.barcodeTitle')}</Text>
       <Text style={styles.body} testID="document-barcode-status">{barcodeStatus(document.back)}</Text>
-      {(fields.DAA || fields.DCS || fields.DAC) && <Detail label="Name" value={documentName(document)} />}
-      {fields.DAQ && <Detail label="License number" value={fields.DAQ} />}
-      {fields.DBB && <Detail label="Date of birth, as read" value={fields.DBB} />}
-      {fields.DBA && <Detail label="Expiry date, as read" value={fields.DBA} />}
-      {address && <Detail label="Address" value={address} />}
+      {(fields.DAA || fields.DCS || fields.DAC) && <Detail label={t('license.result.name')} value={documentName(document)} />}
+      {fields.DAQ && <Detail label={t('license.result.licenseNumber')} value={fields.DAQ} />}
+      {fields.DBB && <Detail label={t('license.result.birthDate')} value={fields.DBB} />}
+      {fields.DBA && <Detail label={t('license.result.expiryDate')} value={fields.DBA} />}
+      {address && <Detail label={t('license.result.address')} value={address} />}
     </View>}
-    {barcode && <Action label={details ? 'Hide all read details' : 'View all read details'} secondary onPress={() => setDetails(!details)} />}
+    {barcode && <Action label={details ? t('license.result.hideAll') : t('license.result.showAll')} secondary onPress={() => setDetails(!details)} />}
     {details && barcode && <View style={styles.card}>
-      {Object.entries(fields).map(([field, value]) => <Detail key={field} label={fieldLabels[field] ?? `Field ${field}`} value={value} />)}
-      {!!barcode.missingRequiredElements.length && <Detail label="Details missing from the barcode" value={barcode.missingRequiredElements.map(field => fieldLabels[field] ?? field).join(', ')} />}
+      {Object.entries(fields).map(([field, value]) => <Detail key={field} label={fieldLabels[field] ?? t('license.result.unknownField', {code: field})} value={value} />)}
+      {!!barcode.missingRequiredElements.length && <Detail label={t('license.result.missingElements')} value={barcode.missingRequiredElements.map(field => fieldLabels[field] ?? field).join(t('common.listSeparator'))} />}
     </View>}
   </>;
 }
 const fieldLabels: Record<string, string> = {
-  DAA: 'Full name', DCS: 'Last name', DAC: 'First name', DAD: 'Middle name', DAQ: 'License number',
-  DBB: 'Date of birth', DBA: 'Expiry date', DBD: 'Issue date', DAG: 'Street address', DAH: 'Address line 2',
-  DAI: 'City', DAJ: 'State or province', DAK: 'Postal code', DCG: 'Country', DBC: 'Sex',
-  DAY: 'Eye color', DAU: 'Height', DAW: 'Weight', DCA: 'Vehicle class', DCB: 'Restrictions',
-  DCD: 'Endorsements', DCF: 'Document reference', DDA: 'Compliance field', DDB: 'Revision date',
+  DAA: t('license.field.DAA'), DCS: t('license.field.DCS'), DAC: t('license.field.DAC'), DAD: t('license.field.DAD'),
+  DAQ: t('license.field.DAQ'), DBB: t('license.field.DBB'), DBA: t('license.field.DBA'), DBD: t('license.field.DBD'),
+  DAG: t('license.field.DAG'), DAH: t('license.field.DAH'), DAI: t('license.field.DAI'), DAJ: t('license.field.DAJ'),
+  DAK: t('license.field.DAK'), DCG: t('license.field.DCG'), DBC: t('license.field.DBC'), DAY: t('license.field.DAY'),
+  DAU: t('license.field.DAU'), DAW: t('license.field.DAW'), DCA: t('license.field.DCA'), DCB: t('license.field.DCB'),
+  DCD: t('license.field.DCD'), DCF: t('license.field.DCF'), DDA: t('license.field.DDA'), DDB: t('license.field.DDB'),
 };
 /** Each decoder and parser state has its own text; none of them is issuer validation. */
 function barcodeStatus(back: DocumentSideObservation): string {
   switch (back.pdf417Status) {
-    case 'notFound': return 'No barcode was found in the photo of the back. Retake the back with the whole barcode in view.';
-    case 'ambiguous': return 'More than one barcode was found in the photo of the back. Retake it with only this license in view.';
-    case 'failed': return 'The barcode could not be decoded. Retake the back, holding it still and avoiding glare.';
-    case 'notRequested': return 'The barcode was not read from this photo.';
+    case 'notFound': return t('license.barcode.notFound');
+    case 'ambiguous': return t('license.barcode.ambiguous');
+    case 'failed': return t('license.barcode.failed');
+    case 'notRequested': return t('license.barcode.notRequested');
     case 'readable': switch (back.pdf417?.status) {
       case 'readable': return back.pdf417.missingRequiredElements.length
-        ? 'Read from the back of your license. Some required details were missing; review them against the card.'
-        : 'Read from the back of your license.';
-      case 'malformed': return 'The barcode was read, but its contents do not follow the license barcode standard. Review any details below against the card.';
-      case 'unsupported': return 'The barcode was read, but this license’s barcode version is not supported. Review any details below against the card.';
-      case undefined: return 'The barcode was found, but its details could not be read. You can retake the license photos.';
+        ? t('license.barcode.readableMissing')
+        : t('license.barcode.readable');
+      case 'malformed': return t('license.barcode.malformed');
+      case 'unsupported': return t('license.barcode.unsupported');
+      case undefined: return t('license.barcode.unread');
     }
   }
 }

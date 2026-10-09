@@ -13,30 +13,32 @@ import {IdentitySheetHost} from './IdentitySheetHost';
 import {PhoneFlow, phoneCheckStopped} from './PhoneFlow';
 import type {SavedPhoneCheck} from './PhoneFlowController';
 import {errorCode, errorText, type ErrorText} from './HolderText';
+import {t} from './locales/i18n';
 
 const rows = [
   ['P<UTOSPECIMEN<<SYNTHETIC<<<<<<<<<<<<<<<<<<<<'],
   ['X1234567<7UTO8506151F3201015<<<<<<<<<<<<<<08'],
 ];
+/** Templates for the system NFC sheet, which fills in `{group}` and `{progress}` itself. */
 const messages = {
-  presenting: 'Hold your phone against your passport.',
-  authenticating: 'Connecting — {progress}%',
-  reading: 'Reading {group} — {progress}%',
-  activeAuthentication: 'Checking the chip.',
-  transportFinishing: 'Read complete.',
-  failure: 'The passport could not be read. Try again.',
+  presenting: t('developer.nfc.presenting'),
+  authenticating: t('developer.nfc.authenticating', {progress: '{progress}'}),
+  reading: t('developer.nfc.reading', {group: '{group}', progress: '{progress}'}),
+  activeAuthentication: t('developer.nfc.activeAuthentication'),
+  transportFinishing: t('developer.nfc.transportFinishing'),
+  failure: t('developer.nfc.failure'),
 };
 const clearErrors: ErrorText = {
-  busy: 'Another check is still finishing. Wait a moment, then try again. Nothing has been deleted yet.',
-  sessionUnavailable: 'This screen closed before deletion finished. Try again. Nothing has been deleted yet.',
-  resultsNotConfigured: 'Saved results are not set up in this app, so there is nothing to delete here.',
-  resultIntegrityFailure: 'This phone could not open its secure storage to delete them. Try again. Your saved results are unchanged.',
-  documentCustodyFailed: 'This phone could not open its secure storage to delete them. Try again. Your saved scans are unchanged.',
-  storageUnavailable: 'This phone could not open its secure storage to delete them. Try again. Nothing has been deleted yet.',
+  busy: t('hub.clearError.busy'),
+  sessionUnavailable: t('hub.clearError.sessionUnavailable'),
+  resultsNotConfigured: t('hub.clearError.resultsNotConfigured'),
+  resultIntegrityFailure: t('hub.clearError.resultIntegrityFailure'),
+  documentCustodyFailed: t('hub.clearError.documentCustodyFailed'),
+  storageUnavailable: t('hub.clearError.storageUnavailable'),
 };
 const restoreErrors: ErrorText = {
-  sessionUnavailable: 'The saved results closed before they finished opening. Try reopening them.',
-  busy: 'Another check is still finishing. Wait a moment, then reopen your saved results.',
+  sessionUnavailable: t('hub.restoreError.sessionUnavailable'),
+  busy: t('hub.restoreError.busy'),
 };
 
 const emptyConfiguration: Configuration = {};
@@ -98,7 +100,7 @@ export default function App({configuration = emptyConfiguration, developerChecks
         }
         setRestoreFailure(undefined);
       } catch (error) {
-        if (active) setRestoreFailure(errorText(errorCode(error), restoreErrors, 'Your saved results could not be opened. Try reopening them.'));
+        if (active) setRestoreFailure(errorText(errorCode(error), restoreErrors, t('hub.restoreError.other')));
       } finally { await controller.dispose(); if (active) setOpeningResults(false); }
     })();
     return () => { active = false; void controller.dispose(); };
@@ -162,8 +164,7 @@ export default function App({configuration = emptyConfiguration, developerChecks
       }
       setClearSheet(undefined); setScreen('identity');
     } catch (error) {
-      setClearError(errorText(errorCode(error), clearErrors,
-        'The saved results could not be deleted. They have not been removed from this screen. Try again.'));
+      setClearError(errorText(errorCode(error), clearErrors, t('hub.clearError.other')));
     } finally { setClearing(false); }
   }
   const passportReady = !!configuration.trustAnchorsURL;
@@ -181,83 +182,83 @@ export default function App({configuration = emptyConfiguration, developerChecks
       onComplete={acceptSSN} onExit={() => { setSSNInput(undefined); setScreen('identity'); }} /> :
     screen === 'phone' ? <PhoneFlow configuration={configuration} saved={phoneInput}
       onComplete={acceptPhone} onExit={() => { setPhoneInput(undefined); setScreen('identity'); }} /> :
-    screen === 'checks' && developerChecks && __DEV__ ? <View style={{flex: 1}}><Action label="Back to Identity" onPress={() => setScreen('identity')} /><IntegrationChecks configuration={configuration} /></View> :
+    screen === 'checks' && developerChecks && __DEV__ ? <View style={{flex: 1}}><Action label={t('common.backToIdentity')} onPress={() => setScreen('identity')} /><IntegrationChecks configuration={configuration} /></View> :
     <ScrollView contentContainerStyle={styles.content} testID="identity-hub" accessibilityElementsHidden={covered}
       importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}>
-      <Text accessibilityRole="header" style={styles.title}>{screen === 'result' ? 'Your results' : screen === 'documentResult' ? 'Your driver’s license' : 'Identity'}</Text>
+      <Text accessibilityRole="header" style={styles.title}>{screen === 'result' ? t('hub.resultsTitle') : screen === 'documentResult' ? t('hub.licenseTitle') : t('hub.title')}</Text>
       {screen === 'identity' ? <>
-        <Text style={styles.body}>Your identity checks, together in one place.</Text>
+        <Text style={styles.body}>{t('hub.intro')}</Text>
         {configurationIssue === 'holderScopeUnreadable' && <Text style={styles.body} testID="configuration-issue">
-          Saved checks are unavailable because this app’s local holder record could not be read. New checks are not saved.</Text>}
+          {t('hub.configurationIssue')}</Text>}
         <Pressable accessibilityRole="button" style={styles.card} testID="open-driver-license"
           onPress={() => document && isCompleteDocument(document.document) ? setScreen('documentResult') : startDocument()}>
-          <Text style={styles.sheetTitle}>Driver’s license</Text>
+          <Text style={styles.sheetTitle}>{t('hub.license.title')}</Text>
           <Text style={styles.body}>{document ? isCompleteDocument(document.document)
-            ? `${documentName(document.document)} · View results` : 'Front saved · Continue with the back' : 'Scan your license or open a saved scan'}</Text>
+            ? t('hub.license.viewResults', {name: documentName(document.document)}) : t('hub.license.continueBack') : t('hub.license.start')}</Text>
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityState={{disabled: passportDisabled}} disabled={passportDisabled}
           style={[styles.card, passportDisabled && styles.disabled]} testID="open-capture-flow"
           onPress={() => { setFocus('passport'); if (result) setScreen('result'); else start(); }}>
-          <Text style={styles.sheetTitle}>Passport</Text>
-          <Text style={styles.body}>{result ? `${result.passport.givenNames} ${result.passport.surname} · View results` : openingResults ? 'Opening saved results…'
-            : savedCount ? 'Open saved passport results' : passportReady ? 'Scan and read your passport'
-              : 'Passport chip checking is not set up in this app. Your other identity checks remain available.'}</Text>
+          <Text style={styles.sheetTitle}>{t('hub.passport.title')}</Text>
+          <Text style={styles.body}>{result ? t('hub.passport.viewResults', {givenNames: result.passport.givenNames, surname: result.passport.surname}) : openingResults ? t('common.openingSavedResults')
+            : savedCount ? t('hub.passport.openSaved') : passportReady ? t('hub.passport.start')
+              : t('hub.passport.notSetUp')}</Text>
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityState={{disabled: faceDisabled}} disabled={faceDisabled}
           style={[styles.card, faceDisabled && styles.disabled]}
           testID="face-match-card" onPress={() => { setFocus('face'); if (result?.comparison) setScreen('result'); else start(result ? 'selfie' : undefined); }}>
-          <Text style={styles.sheetTitle}>Face match</Text>
-          <Text style={styles.body}>{result?.comparison ? 'Comparison complete · View results' : !result && savedCount ? 'Choose a saved passport to view its face check'
-            : !faceReady ? 'Face comparison is not set up in this app.' : result ? 'Compare a selfie with your passport photo' : 'Read a passport to add its photo first'}</Text>
+          <Text style={styles.sheetTitle}>{t('hub.face.title')}</Text>
+          <Text style={styles.body}>{result?.comparison ? t('hub.face.viewResults') : !result && savedCount ? t('hub.face.chooseSaved')
+            : !faceReady ? t('hub.face.notSetUp') : result ? t('hub.face.start') : t('hub.face.needsPassport')}</Text>
         </Pressable>
         <Pressable accessibilityRole="button" style={styles.card} testID="open-ssn" onPress={openSSN}>
-          <Text style={styles.sheetTitle}>Social Security number</Text>
-          <Text style={styles.body}>{ssn?.snapshot.recoveryNeeded ? 'Check needs attention · Open' : ssn?.snapshot.receipt
-            ? `${ssnSummary(ssn.snapshot.receipt)} · View result` : 'Check whether your number was issued'}</Text>
+          <Text style={styles.sheetTitle}>{t('common.socialSecurityNumber')}</Text>
+          <Text style={styles.body}>{ssn?.snapshot.recoveryNeeded ? t('hub.ssn.needsAttention') : ssn?.snapshot.receipt
+            ? t('hub.ssn.viewResult', {summary: ssnSummary(ssn.snapshot.receipt)}) : t('hub.ssn.start')}</Text>
         </Pressable>
         <Pressable accessibilityRole="button" style={styles.card} testID="open-phone" onPress={openPhone}>
-          <Text style={styles.sheetTitle}>Phone</Text>
-          <Text style={styles.body}>{phone?.snapshot.pending ? 'Check in progress · Resume' : phone?.snapshot.receipt
-            ? phoneCheckStopped(phone.snapshot.receipt) ? 'Check stopped · Subscriber details differ from your ID'
-              : 'Result available · View receipt and comparison' : 'Send a text and compare subscriber details with your checked ID'}</Text>
+          <Text style={styles.sheetTitle}>{t('hub.phone.title')}</Text>
+          <Text style={styles.body}>{phone?.snapshot.pending ? t('hub.phone.resume') : phone?.snapshot.receipt
+            ? phoneCheckStopped(phone.snapshot.receipt) ? t('hub.phone.stopped')
+              : t('hub.phone.viewResult') : t('hub.phone.start')}</Text>
         </Pressable>
-        {configuration.results && result && <Action label="Open saved passport checks" secondary disabled={openingResults} onPress={openSavedResults} />}
-        {configuration.results && result && <Text style={styles.label}>Saved passport and face results stay on this phone until you erase them.</Text>}
-        {result && <Action label="Erase all passport and face results" secondary onPress={() => requestClear('passport')} />}
-        {document && <Action label="Delete saved license scans" secondary onPress={() => requestClear('document')} />}
-        {developerChecks && __DEV__ && <Action label="Developer checks" secondary onPress={() => setScreen('checks')} testID="open-sdk-checks" />}
+        {configuration.results && result && <Action label={t('hub.action.openSavedPassportChecks')} secondary disabled={openingResults} onPress={openSavedResults} />}
+        {configuration.results && result && <Text style={styles.label}>{t('hub.action.savedNotice')}</Text>}
+        {result && <Action label={t('hub.action.eraseAll')} secondary onPress={() => requestClear('passport')} />}
+        {document && <Action label={t('hub.action.deleteLicenseScans')} secondary onPress={() => requestClear('document')} />}
+        {developerChecks && __DEV__ && <Action label={t('hub.action.developerChecks')} secondary onPress={() => setScreen('checks')} testID="open-sdk-checks" />}
       </> : screen === 'documentResult' && document ? <>
         <DocumentResultDetails result={document} />
         <DocumentCheckPanel key={document.document.front?.captureID} session={document.session} configured={!!configuration.document?.check} />
-        <Action label="Back to Identity" testID="document-result-back" onPress={() => setScreen('identity')} />
-        <Action label="Retake this license" secondary testID="retake-saved-document" onPress={() => startDocument('front')} />
-        <Action label="Delete saved license scans" secondary onPress={() => requestClear('document')} />
+        <Action label={t('common.backToIdentity')} testID="document-result-back" onPress={() => setScreen('identity')} />
+        <Action label={t('license.retake')} secondary testID="retake-saved-document" onPress={() => startDocument('front')} />
+        <Action label={t('hub.action.deleteLicenseScans')} secondary onPress={() => requestClear('document')} />
       </> : result && <>
         <CaptureResultDetails result={result} focus={focus} />
-        <Action label="Back to Identity" onPress={() => setScreen('identity')} />
-        <Action label={result.comparison ? 'Retake selfie' : 'Compare with a selfie'} secondary
+        <Action label={t('common.backToIdentity')} onPress={() => setScreen('identity')} />
+        <Action label={result.comparison ? t('passport.action.retakeSelfie') : t('passport.action.compareSelfie')} secondary
           disabled={!result.passport.portraitAvailable || !faceReady} onPress={() => start('selfie')} />
-        {!faceReady && <Text style={styles.body}>Face comparison is not set up in this app.</Text>}
-        <Action label="Read chip again" secondary disabled={!passportReady} onPress={() => start('read')} />
-        <Action label="Clear results" secondary onPress={() => requestClear('passport')} />
+        {!faceReady && <Text style={styles.body}>{t('hub.face.notSetUp')}</Text>}
+        <Action label={t('passport.action.readChipAgain')} secondary disabled={!passportReady} onPress={() => start('read')} />
+        <Action label={t('hub.action.clearResults')} secondary onPress={() => requestClear('passport')} />
       </>}
     </ScrollView>}
     {restoreFailure && !clearSheet && <View style={styles.scrim}><View style={styles.sheet} accessibilityViewIsModal testID="restore-bottom-sheet">
-      <View style={styles.sheetContent}><Text accessibilityRole="header" style={styles.sheetTitle}>Saved results could not be opened</Text>
-        <Text style={styles.body}>{restoreFailure} Nothing has been erased.</Text>
-        <Action label="Reopen saved results" disabled={openingResults} onPress={() => setRestoreAttempt(value => value + 1)} />
-        {configuration.results && <Action label="Erase saved passport and face results" secondary disabled={openingResults}
+      <View style={styles.sheetContent}><Text accessibilityRole="header" style={styles.sheetTitle}>{t('hub.restore.title')}</Text>
+        <Text style={styles.body}>{t('hub.restore.body', {reason: restoreFailure})}</Text>
+        <Action label={t('hub.restore.reopen')} disabled={openingResults} onPress={() => setRestoreAttempt(value => value + 1)} />
+        {configuration.results && <Action label={t('hub.restore.erase')} secondary disabled={openingResults}
           testID="erase-unreadable-results" onPress={() => requestClear('passport')} />}
       </View>
     </View></View>}
     {clearSheet && <View style={styles.scrim}><View style={styles.sheet} accessibilityViewIsModal>
       <View style={styles.sheetContent}>
-        <Text accessibilityRole="header" style={styles.sheetTitle}>{clearError ? 'Deletion could not finish' : clearSheet === 'document' ? 'Delete all saved license scans?' : 'Erase all passport and face results?'}</Text>
+        <Text accessibilityRole="header" style={styles.sheetTitle}>{clearError ? t('hub.clear.failedTitle') : clearSheet === 'document' ? t('hub.clear.licenseTitle') : t('hub.clear.passportTitle')}</Text>
         <Text style={styles.body}>{clearError ?? (clearSheet === 'document'
-          ? 'This deletes every saved driver’s license scan from this app, including its photos and read details.'
-          : 'This deletes all saved passport and face results from this app, including their photos.')}</Text>
-        <Action label={clearError ? 'Try again' : clearSheet === 'document' ? 'Delete all license scans' : 'Clear results'} onPress={clear} disabled={clearing} />
-        <Action label="Keep results" secondary onPress={() => setClearSheet(undefined)} disabled={clearing} />
+          ? t('hub.clear.licenseBody')
+          : t('hub.clear.passportBody'))}</Text>
+        <Action label={clearError ? t('common.tryAgain') : clearSheet === 'document' ? t('hub.clear.deleteLicenseScans') : t('hub.action.clearResults')} onPress={clear} disabled={clearing} />
+        <Action label={t('hub.clear.keep')} secondary onPress={() => setClearSheet(undefined)} disabled={clearing} />
       </View>
     </View></View>}
   </SafeAreaView></IdentitySheetHost>;
@@ -266,7 +267,7 @@ export default function App({configuration = emptyConfiguration, developerChecks
 /** Simulator Debug only (see AppDelegate). Uses its own isolated custody names, never the holder's stores. */
 function IntegrationChecks({configuration}: {configuration: Configuration}) {
   const [session, setSession] = useState<IdentityCaptureSession>();
-  const [status, setStatus] = useState('Ready');
+  const [status, setStatus] = useState(t('developer.status.ready'));
   const [results, setResults] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -275,13 +276,13 @@ function IntegrationChecks({configuration}: {configuration: Configuration}) {
     IdentityCaptureSession.create().then(value => {
       active = value;
       if (alive) setSession(value); else void value.release();
-    }, error => setStatus(`Create failed: ${errorCode(error) ?? 'no code returned'}`));
+    }, error => setStatus(t('developer.status.createFailed', {code: errorCode(error) ?? t('developer.noCode')})));
     return () => { alive = false; void active?.release(); };
   }, []);
 
   async function run() {
     if (busy) return;
-    setBusy(true); setResults([]); setStatus('Running');
+    setBusy(true); setResults([]); setStatus(t('developer.status.running'));
     const checks: string[] = [];
     let first: IdentityCaptureSession | undefined;
     let second: IdentityCaptureSession | undefined;
@@ -293,7 +294,7 @@ function IntegrationChecks({configuration}: {configuration: Configuration}) {
       try { await operation(); } catch (error) {
         check(errorCode(error) === code, code); return;
       }
-      throw new Error(`Expected ${code}`);
+      throw new Error(t('developer.expected', {code}));
     }
     try {
       const isolated = <T extends {directoryURL: string; keychainService: string}>(value: T): T => ({...value,
@@ -305,16 +306,16 @@ function IntegrationChecks({configuration}: {configuration: Configuration}) {
         results: configuration.results && isolated(configuration.results),
         document: configuration.document && isolated(configuration.document)});
       second = await IdentityCaptureSession.create();
-      check(first.id !== second.id, 'Independent native sessions');
+      check(first.id !== second.id, t('developer.check.independentSessions'));
       await rejects(() => second!.listResults(), 'resultsNotConfigured');
-      check((await first.listResults()).length === 0, 'Isolated completed-result list starts empty');
+      check((await first.listResults()).length === 0, t('developer.check.emptyResults'));
       await rejects(() => first!.documentCheckRestore(), configuration.document?.check ? 'documentFrontRequired' : 'documentCheckNotConfigured');
       await first.eraseResults();
-      check((await first.listResults()).length === 0, 'Completed-result custody erasure');
+      check((await first.listResults()).length === 0, t('developer.check.resultErasure'));
       const parsed = await first.parseMRZ(rows);
-      check(parsed.documentNumber === 'X1234567' && parsed.completeness === 'complete', 'Packaged MRZ parser');
+      check(parsed.documentNumber === 'X1234567' && parsed.completeness === 'complete', t('developer.check.mrzParser'));
       const partial = await second.parseMRZ([rows[1]]);
-      check(partial.completeness === 'partial' && partial.missingFields.includes('name'), 'Partial read remains partial');
+      check(partial.completeness === 'partial' && partial.missingFields.includes('name'), t('developer.check.partialRead'));
       await rejects(() => first!.parseMRZ([[rows[0][0]], [rows[1][0].slice(0, 43) + '9']]), 'incompleteMRZ');
       await rejects(() => first!.captureMRZ(), 'incompleteMRZ');
       await rejects(() => first!.compareFace(), 'referenceUnavailable');
@@ -324,7 +325,7 @@ function IntegrationChecks({configuration}: {configuration: Configuration}) {
       await rejects(() => first!.phoneCancel(), 'phoneNotConfigured');
       await rejects(() => first!.readPassport({...parsed, consent: true, messages}), 'passportNotConfigured');
       const cameraFailure = new Promise<CaptureErrorCode>((resolve, reject) => {
-        const timer = setTimeout(() => { off(); reject(new Error('Missing camera failure event')); }, 5000);
+        const timer = setTimeout(() => { off(); reject(new Error(t('developer.missingCameraFailure'))); }, 5000);
         const off = first!.subscribe(event => {
           if (event.type === 'failure' && event.capability === 'selfie') {
             clearTimeout(timer); off(); resolve(event.code);
@@ -332,25 +333,25 @@ function IntegrationChecks({configuration}: {configuration: Configuration}) {
         });
       });
       await first.startSelfie(true);
-      check(await cameraFailure === 'cameraUnavailable', 'Simulator fails closed without TrueDepth');
+      check(await cameraFailure === 'cameraUnavailable', t('developer.check.cameraFailsClosed'));
       await first.cancel();
       await first.release();
       await rejects(() => first!.parseMRZ(rows), 'sessionUnavailable');
-      check((await second.parseMRZ(rows)).documentNumber === 'X1234567', 'Release preserves the other session');
-      setStatus(`${checks.length} checks passed`);
+      check((await second.parseMRZ(rows)).documentNumber === 'X1234567', t('developer.check.releaseIsolation'));
+      setStatus(t('developer.status.passed', {count: checks.length}));
     } catch (error) {
-      setStatus(`FAILED: ${(error as Error).message}`);
+      setStatus(t('developer.status.failed', {message: (error as Error).message}));
     } finally {
       await first?.release(); await second?.release(); setBusy(false);
     }
   }
-  return <SafeAreaView style={{flex: 1}}><ScrollView contentContainerStyle={{padding: 24, gap: 16}}>
-    <Text style={{fontSize: 24, fontWeight: 'bold'}}>SDK package integration</Text>
-    <Text>React Native 0.87.1 · iOS · installed npm artifact</Text>
-    <Button title="Run simulator checks" onPress={run} disabled={busy} testID="run-sdk-checks" />
-    <Text testID="sdk-check-status" accessibilityLabel={status}>{status}</Text>
-    {results.map((result, index) => <Text key={`${index}-${result}`}>{result}</Text>)}
-    <Text>Native preview component (camera stopped)</Text>
-    <View style={{height: 180}}>{session && <IdentityCapturePreview session={session} kind="mrz" style={{flex: 1}} />}</View>
+  return <SafeAreaView style={styles.root}><ScrollView contentContainerStyle={styles.developerContent}>
+    <Text style={styles.developerTitle}>{t('developer.title')}</Text>
+    <Text style={styles.body}>{t('developer.environment')}</Text>
+    <Button title={t('developer.run')} onPress={run} disabled={busy} testID="run-sdk-checks" />
+    <Text style={styles.body} testID="sdk-check-status" accessibilityLabel={status}>{status}</Text>
+    {results.map((result, index) => <Text style={styles.body} key={`${index}-${result}`}>{result}</Text>)}
+    <Text style={styles.body}>{t('developer.preview')}</Text>
+    <View style={styles.developerPreview}>{session && <IdentityCapturePreview session={session} kind="mrz" style={{flex: 1}} />}</View>
   </ScrollView></SafeAreaView>;
 }

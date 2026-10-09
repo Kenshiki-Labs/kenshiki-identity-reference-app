@@ -1,5 +1,6 @@
 import type {CaptureErrorCode, Configuration, IdentityCaptureSession, SSNSessionSnapshot} from '@kenshiki/identity-capture';
 import {errorCode, errorText, type ErrorText} from './HolderText';
+import {t} from './locales/i18n';
 
 export type SavedSSNCheck = {session: IdentityCaptureSession; snapshot: SSNSessionSnapshot};
 type Recovery = 'localSave' | 'entry' | 'open' | 'exit' | 'fresh';
@@ -10,18 +11,18 @@ export type SSNFlowState = {
 };
 /** Codes that mean the check cannot run in this app as configured; the holder can only leave. */
 const setupErrors: ErrorText = {
-  ssnNotConfigured: 'This check is not set up in this app. Return to Identity; your other identity checks remain available.',
-  invalidConfiguration: 'This check is not set up in this app. Return to Identity; your other identity checks remain available.',
-  notConfigured: 'The verification service is not set up for this app. Return to Identity; your other identity checks remain available.',
-  unauthorized: 'The verification service did not accept this app. Return to Identity; your other identity checks remain available.',
-  contextChanged: 'The sign-in this check belongs to has changed. Return to Identity and open the check again.',
+  ssnNotConfigured: t('ssn.setupError.ssnNotConfigured'),
+  invalidConfiguration: t('ssn.setupError.invalidConfiguration'),
+  notConfigured: t('ssn.setupError.notConfigured'),
+  unauthorized: t('ssn.setupError.unauthorized'),
+  contextChanged: t('ssn.setupError.contextChanged'),
 };
 const entryErrors: ErrorText = {
-  storageUnavailable: 'The saved check could not be opened. Try opening it again.',
-  rateLimited: 'The service asked us to wait. Enter your number again in a moment.',
-  confirmationRequired: 'Confirm every digit of your number before the check starts.',
-  invalidRequest: 'The number could not be sent as entered. Enter all nine digits again.',
-  busy: 'The previous request is still finishing. Wait a moment, then enter your number again.',
+  storageUnavailable: t('ssn.entryError.storageUnavailable'),
+  rateLimited: t('ssn.entryError.rateLimited'),
+  confirmationRequired: t('ssn.entryError.confirmationRequired'),
+  invalidRequest: t('ssn.entryError.invalidRequest'),
+  busy: t('ssn.entryError.busy'),
 };
 
 /** The native SDK owns exact confirmation, single dispatch and encrypted local recovery.
@@ -92,8 +93,8 @@ export class SSNFlowController {
   }
   open = async () => {
     if (!this.configuration.ssn) {
-      this.update({sheet: {kind: 'recovery', title: 'This check is not ready',
-        message: 'The verification service is not connected. Your other identity checks remain available.', recovery: 'exit'}});
+      this.update({sheet: {kind: 'recovery', title: t('ssn.sheet.notReadyTitle'),
+        message: t('ssn.sheet.notConnected'), recovery: 'exit'}});
       return;
     }
     await this.run(session => session.ssnSnapshot());
@@ -152,11 +153,11 @@ export class SSNFlowController {
     const localSave = this.state.snapshot?.state === 'finishing';
     const unknown = this.state.snapshot?.recoveryNeeded && !localSave;
     this.update({digits: '', snapshot: this.state.snapshot && redact(this.state.snapshot), sheet: {
-      kind: 'recovery', title: unavailable ? 'This check is not ready' : unknown ? 'The result was not received' : 'The check could not finish',
+      kind: 'recovery', title: unavailable ? t('ssn.sheet.notReadyTitle') : unknown ? t('ssn.notReceivedTitle') : t('ssn.sheet.failedTitle'),
       message: unavailable ? errorText(code, setupErrors, '') :
-        localSave ? 'The answer arrived but could not be saved on this phone. Try saving it again; this will not send another check.' :
-          unknown ? 'The previous check may have happened. Starting again sends a new request. You will review and confirm the number first.' :
-            errorText(code, entryErrors, 'Enter your number again and confirm every digit before continuing.'),
+        localSave ? t('ssn.sheet.localSave') :
+          unknown ? t('ssn.sheet.unknown') :
+            errorText(code, entryErrors, t('ssn.sheet.other')),
       recovery: unavailable ? 'exit' : localSave ? 'localSave' : unknown ? 'fresh' :
         code === 'storageUnavailable' || !this.state.snapshot ? 'open' : 'entry',
     }});
@@ -178,11 +179,11 @@ export class SSNFlowController {
     try {
       await this.settle();
       if (epoch === this.epoch && !this.closed) {
-        if (!this.state.snapshot) this.update({sheet: {kind: 'recovery', title: 'Check paused',
-          message: 'Open this check again when you are ready.', recovery: 'open'}});
+        if (!this.state.snapshot) this.update({sheet: {kind: 'recovery', title: t('common.checkPaused'),
+          message: t('ssn.sheet.pausedOpen'), recovery: 'open'}});
         else if (this.state.snapshot.recoveryNeeded) this.showFailure(this.state.snapshot.failure ?? undefined);
-        else if (wasEditing && !this.state.snapshot?.receipt) this.update({sheet: {kind: 'recovery', title: 'Check paused',
-          message: 'Enter your number again when you are ready.', recovery: 'entry'}});
+        else if (wasEditing && !this.state.snapshot?.receipt) this.update({sheet: {kind: 'recovery', title: t('common.checkPaused'),
+          message: t('ssn.sheet.pausedEntry'), recovery: 'entry'}});
       }
     } catch (error) { if (epoch === this.epoch) this.fail(error); }
     finally { this.pausing = false; if (epoch === this.epoch) this.update({busy: false}); }

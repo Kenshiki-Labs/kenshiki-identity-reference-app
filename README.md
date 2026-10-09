@@ -186,6 +186,7 @@ Supplier non-retention requires independent qualification.
 | `DocumentCheckPanel.tsx` | Explicit document-check consent, actual returned findings, local reply restore, requested corrections and reconciliation |
 | `SSNFlow.tsx`, `PhoneFlow.tsx` and their controllers | Independent service journeys, native session ownership and interruption handling |
 | `IdentitySheetHost.tsx` | Screen-level bottom-sheet host; wrap panels above scroll/navigation content |
+| `ui/tokens.jsonc`, `locales/en.jsonc`, `generate-ui-resources.py` | Design tokens (iOS system colors, Dynamic Type styles, spacing, radii) and every UI string, compiled into `ui/tokens.generated.ts` and `locales/strings.generated.ts`; screens read text through `t()` in `locales/i18n.ts`. Edit the JSONC and rerun the generator; `--check` fails when the modules are stale |
 
 All app recovery/confirmation prompts use bottom sheets. Apple's permission, NFC and message
 composer interfaces remain system-owned. Active work cancels and drains on backgrounding; the user
@@ -292,8 +293,10 @@ the reference app does not build them:
   device.
 - **The Privacy Act notice at SSN entry.** The reference SSN screen shows none (`SSNFlow.tsx`). The
   SSA app supplies the notice and places it before the number is entered.
-- **Localization.** Every string is US English and written in the source files; dates use the en-US
-  format in the device time zone. Strings are not externalized.
+- **Localization.** Every string is US English, in `locales/en.jsonc`, with ICU placeholders and
+  plurals; dates use that catalog's en-US format in the device time zone. The app picks the catalog
+  for the device language and falls back to English, the only catalog. Translations, and the
+  permission strings `configure-host.rb` writes into `Info.plist`, are the SSA app's to supply.
 - **The holder model.** The AppDelegate keeps one local holder UUID from first launch and scopes every
   store and Keychain name to it. There is no sign-in, holder picker or holder-switch screen. The SSA
   app resolves the local holder from its own authorization. On logout or a holder switch it releases

@@ -5,6 +5,7 @@ import type {Configuration, SSNVerificationReceipt} from '@kenshiki/identity-cap
 import {Action, styles} from './IdentityCaptureFlow';
 import {SSNFlowController, type SavedSSNCheck, type SSNFlowState} from './SSNFlowController';
 import {formatCalendarDate, formatMoment} from './HolderText';
+import {t} from './locales/i18n';
 
 export function SSNFlow({configuration, saved, onComplete, onExit}: {
   configuration: Configuration; saved?: SavedSSNCheck;
@@ -39,63 +40,63 @@ export function SSNFlow({configuration, saved, onComplete, onExit}: {
   const needsRecovery = snapshot?.recoveryNeeded;
   const saving = snapshot?.state === 'finishing';
   const confirmation = snapshot?.confirmation;
-  const close = <Action label="Back to Identity" secondary testID="ssn-back-to-identity" onPress={finish} disabled={finishing} />;
+  const close = <Action label={t('common.backToIdentity')} secondary testID="ssn-back-to-identity" onPress={finish} disabled={finishing} />;
   const recovery = state.sheet?.kind === 'recovery' ? state.sheet : undefined;
   return <View style={styles.root}>
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled"
       accessibilityElementsHidden={!!state.sheet} importantForAccessibility={state.sheet ? 'no-hide-descendants' : 'auto'}>
-      <Text style={styles.eyebrow}>IDENTITY</Text>
-      <Text accessibilityRole="header" style={styles.title}>Social Security number</Text>
-      <Text style={styles.body}>Check whether your Social Security number was issued. This does not confirm who owns the number.</Text>
-      {busy ? <Text accessibilityLiveRegion="polite" style={styles.body}>Checking…</Text> : saving ? <View style={styles.card}>
-        <Text accessibilityRole="header" style={styles.sheetTitle}>Save your result</Text>
-        <Text style={styles.body}>The answer arrived but could not be saved on this phone. Saving again will not send another check.</Text>
-        <Action label="Save result" testID="ssn-save-result" onPress={controller.recover} />
+      <Text style={styles.eyebrow}>{t('common.eyebrow')}</Text>
+      <Text accessibilityRole="header" style={styles.title}>{t('common.socialSecurityNumber')}</Text>
+      <Text style={styles.body}>{t('ssn.intro')}</Text>
+      {busy ? <Text accessibilityLiveRegion="polite" style={styles.body}>{t('ssn.checking')}</Text> : saving ? <View style={styles.card}>
+        <Text accessibilityRole="header" style={styles.sheetTitle}>{t('common.saveYourResult')}</Text>
+        <Text style={styles.body}>{t('ssn.saveBody')}</Text>
+        <Action label={t('common.saveResult')} testID="ssn-save-result" onPress={controller.recover} />
       </View> : needsRecovery && !state.editing ? <View style={styles.card}>
-        <Text accessibilityRole="header" style={styles.sheetTitle}>The result was not received</Text>
-        <Text style={styles.body}>The previous check may have happened. You can leave this check here or review your number for a new request.</Text>
-        <Action label="Enter number again" testID="ssn-new-attempt" onPress={controller.beginEntry} />
+        <Text accessibilityRole="header" style={styles.sheetTitle}>{t('ssn.notReceivedTitle')}</Text>
+        <Text style={styles.body}>{t('ssn.notReceivedBody')}</Text>
+        <Action label={t('ssn.enterAgain')} testID="ssn-new-attempt" onPress={controller.beginEntry} />
       </View> : state.editing ? <>
-        <Text style={styles.label}>Social Security number</Text>
-        <TextInput testID="ssn-entry" accessibilityLabel="Social Security number" keyboardType="number-pad"
+        <Text style={styles.label}>{t('common.socialSecurityNumber')}</Text>
+        <TextInput testID="ssn-entry" accessibilityLabel={t('common.socialSecurityNumber')} keyboardType="number-pad"
           autoCorrect={false} autoCapitalize="none" autoComplete="off" importantForAutofill="no"
           value={state.digits} onChangeText={controller.setDigits} editable={!busy}
-          placeholder="000000000" style={[styles.card, {fontSize: 28, color: '#112f59'}]} />
-        <Text style={styles.body}>You will confirm every digit before the check starts. Your entered number is cleared when you leave this screen.</Text>
-        <Action label="Review number" testID="ssn-review-number" disabled={busy || state.digits.length !== 9}
+          placeholder={t('ssn.placeholder')} style={[styles.card, styles.entry]} />
+        <Text style={styles.body}>{t('ssn.entryNotice')}</Text>
+        <Action label={t('ssn.reviewNumber')} testID="ssn-review-number" disabled={busy || state.digits.length !== 9}
           onPress={() => { Keyboard.dismiss(); void controller.requestConfirmation(); }} />
-      </> : !receipt ? <Action label="Enter SSN" testID="ssn-begin-entry" onPress={controller.beginEntry} disabled={busy || !snapshot} /> : null}
+      </> : !receipt ? <Action label={t('ssn.enter')} testID="ssn-begin-entry" onPress={controller.beginEntry} disabled={busy || !snapshot} /> : null}
       {receipt && <>
-        {needsRecovery && <Text style={styles.eyebrow}>PREVIOUS CHECK</Text>}
+        {needsRecovery && <Text style={styles.eyebrow}>{t('common.previousCheck')}</Text>}
         <SSNResultDetails receipt={receipt} />
         {!needsRecovery && !state.editing && <>
-          <Action label="Done" testID="finish-ssn" onPress={finish} disabled={busy} />
-          <Action label="Run a new check" secondary testID="ssn-check-again" onPress={controller.edit} disabled={busy} />
+          <Action label={t('common.done')} testID="finish-ssn" onPress={finish} disabled={busy} />
+          <Action label={t('common.runNewCheck')} secondary testID="ssn-check-again" onPress={controller.edit} disabled={busy} />
         </>}
       </>}
-      {snapshot && <Action label="Erase saved SSN checks" secondary testID="ssn-erase" onPress={controller.askErase} disabled={busy} />}
+      {snapshot && <Action label={t('ssn.erase')} secondary testID="ssn-erase" onPress={controller.askErase} disabled={busy} />}
       {close}
     </ScrollView>
     {state.sheet && <View style={styles.scrim}><View style={styles.sheet} accessibilityViewIsModal testID="ssn-bottom-sheet">
       <ScrollView contentContainerStyle={styles.sheetContent}>
         {state.sheet.kind === 'confirmation' && confirmation ? <>
-          <Text accessibilityRole="header" style={styles.sheetTitle}>Confirm your number</Text>
-          <Text style={styles.body}>Check every digit. This is the number that will be sent for the issuance check.</Text>
+          <Text accessibilityRole="header" style={styles.sheetTitle}>{t('ssn.confirm.title')}</Text>
+          <Text style={styles.body}>{t('ssn.confirm.body')}</Text>
           {confirmation.purpose === 'replacementAfterUnknownOutcome' && <Text style={styles.body} testID="ssn-replacement-warning">
-            The previous check may have happened. Confirming sends a new request.
+            {t('ssn.confirm.replacement')}
           </Text>}
           <Text style={styles.title} testID="ssn-confirmation-number">{formatNumber(confirmation.digits)}</Text>
-          <Action label="Confirm and check" testID="ssn-confirm" onPress={controller.confirm} disabled={busy} />
-          <Action label="Edit number" testID="ssn-edit" secondary onPress={controller.edit} disabled={busy} />
+          <Action label={t('ssn.confirm.action')} testID="ssn-confirm" onPress={controller.confirm} disabled={busy} />
+          <Action label={t('ssn.confirm.edit')} testID="ssn-edit" secondary onPress={controller.edit} disabled={busy} />
         </> : state.sheet.kind === 'erase' ? <>
-          <Text accessibilityRole="header" style={styles.sheetTitle}>Erase saved SSN checks?</Text>
-          <Text style={styles.body}>This removes your saved Social Security number check and its result from this app. It does not recall a check that was already sent.</Text>
-          <Action label="Erase checks" testID="ssn-confirm-erase" onPress={controller.erase} disabled={busy} />
-          <Action label="Keep checks" secondary onPress={controller.dismiss} disabled={busy} />
+          <Text accessibilityRole="header" style={styles.sheetTitle}>{t('ssn.eraseSheet.title')}</Text>
+          <Text style={styles.body}>{t('ssn.eraseSheet.body')}</Text>
+          <Action label={t('common.eraseChecks')} testID="ssn-confirm-erase" onPress={controller.erase} disabled={busy} />
+          <Action label={t('ssn.eraseSheet.keep')} secondary onPress={controller.dismiss} disabled={busy} />
         </> : recovery ? <>
           <Text accessibilityRole="header" style={styles.sheetTitle}>{recovery.title}</Text>
           <Text style={styles.body}>{recovery.message}</Text>
-          {recovery.recovery !== 'exit' && <Action label={recovery.recovery === 'localSave' ? 'Save result' : recovery.recovery === 'fresh' ? 'Enter number again' : 'Try again'}
+          {recovery.recovery !== 'exit' && <Action label={recovery.recovery === 'localSave' ? t('common.saveResult') : recovery.recovery === 'fresh' ? t('ssn.enterAgain') : t('common.tryAgain')}
             testID="ssn-retry" onPress={controller.retry} disabled={busy} />}
         </> : null}
         {close}
@@ -106,27 +107,27 @@ export function SSNFlow({configuration, saved, onComplete, onExit}: {
 
 /** States what the checking service reported. Issuance is never presented as verification. */
 export function ssnSummary(receipt: SSNVerificationReceipt): string {
-  return receipt.issuance === 'issued' ? 'Reported as issued' : receipt.issuance === 'notIssued' ? 'Not reported as issued' : 'Issuance not available';
+  return receipt.issuance === 'issued' ? t('ssn.summary.issued') : receipt.issuance === 'notIssued' ? t('ssn.summary.notIssued') : t('ssn.summary.unavailable');
 }
 export function SSNResultDetails({receipt}: {receipt: SSNVerificationReceipt}) {
   const details = receipt.details;
-  const reported = (value?: string | null) => value?.trim() || 'Not returned';
+  const reported = (value?: string | null) => value?.trim() || t('common.notReturned');
   return <View style={styles.card} testID="ssn-result">
     <Text accessibilityRole="header" style={styles.sheetTitle}>{ssnSummary(receipt)}</Text>
-    <ResultRow label="What the checking service reported" value={receipt.issuance === 'issued' ? 'The number was issued'
-      : receipt.issuance === 'notIssued' ? 'The number was not issued' : 'No issuance answer was available'} />
+    <ResultRow label={t('ssn.result.reportedLabel')} value={receipt.issuance === 'issued' ? t('ssn.result.issued')
+      : receipt.issuance === 'notIssued' ? t('ssn.result.notIssued') : t('ssn.result.unavailable')} />
     {details ? <>
-      <Text accessibilityRole="header" style={styles.sheetTitle}>Returned findings</Text>
-      <ResultRow label="Issuing state" value={reported(details.region)} />
-      <ResultRow label="Issuance period begins" value={details.issueStart ? formatCalendarDate(details.issueStart) : 'Not returned'} />
-      <ResultRow label="Issuance period ends" value={details.issueEnd ? formatCalendarDate(details.issueEnd) : 'Not returned'} />
-      <ResultRow label="Reported classification" value={reported(details.codeDescription)} />
-      <ResultRow label="Classification code" value={reported(details.code)} />
-      <ResultRow label="Reported status" value={reported(details.reportedStatus)} />
-      <ResultRow label="Response code" value={details.responseCode == null ? 'Not returned' : String(details.responseCode)} />
-    </> : <Text style={styles.body}>This earlier check saved only the issuance result. Its details were not retained. A new confirmed check is needed to obtain them.</Text>}
-    <ResultRow label="Checked" value={formatMoment(receipt.checkedAt)} />
-    <Text style={styles.body}>This result does not establish that the number belongs to you.</Text>
+      <Text accessibilityRole="header" style={styles.sheetTitle}>{t('ssn.result.findings')}</Text>
+      <ResultRow label={t('ssn.result.region')} value={reported(details.region)} />
+      <ResultRow label={t('ssn.result.issueStart')} value={details.issueStart ? formatCalendarDate(details.issueStart) : t('common.notReturned')} />
+      <ResultRow label={t('ssn.result.issueEnd')} value={details.issueEnd ? formatCalendarDate(details.issueEnd) : t('common.notReturned')} />
+      <ResultRow label={t('ssn.result.classification')} value={reported(details.codeDescription)} />
+      <ResultRow label={t('ssn.result.classificationCode')} value={reported(details.code)} />
+      <ResultRow label={t('ssn.result.reportedStatus')} value={reported(details.reportedStatus)} />
+      <ResultRow label={t('ssn.result.responseCode')} value={details.responseCode == null ? t('common.notReturned') : String(details.responseCode)} />
+    </> : <Text style={styles.body}>{t('ssn.result.issuanceOnly')}</Text>}
+    <ResultRow label={t('ssn.result.checked')} value={formatMoment(receipt.checkedAt)} />
+    <Text style={styles.body}>{t('ssn.result.ownership')}</Text>
   </View>;
 }
 function ResultRow({label, value}: {label: string; value: string}) {

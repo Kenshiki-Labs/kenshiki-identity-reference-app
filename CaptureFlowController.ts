@@ -3,6 +3,7 @@ import type {
   MRZObservation, PassportObservation, PassportReadOptions, CompletedResultDescriptor,
 } from '@kenshiki/identity-capture';
 import {errorCode, errorText, type ErrorText} from './HolderText';
+import {t} from './locales/i18n';
 
 // Host orchestration only. All parsing, acquisition, liveness and comparison use public SDK APIs.
 export type Phase = 'loading' | 'saved' | 'intro' | 'scanning' | 'review' | 'reading' | 'passport' |
@@ -22,33 +23,35 @@ export type CompletedCapture = {
   comparison?: FaceComparison;
 };
 const initial = (): FlowState => ({phase: 'intro', busy: false, preview: 0, ready: false});
+/** Templates for the system NFC sheet, which fills in `{progress}` itself as the read advances. */
 const messages: PassportReadOptions['messages'] = {
-  presenting: 'Hold the top of your phone against your passport.',
-  authenticating: 'Connecting — {progress}%', reading: 'Reading passport — {progress}%',
-  activeAuthentication: 'Checking the chip.', transportFinishing: 'Read complete.',
-  failure: 'We could not finish reading your passport. Please try again.',
+  presenting: t('passport.nfc.presenting'),
+  authenticating: t('passport.nfc.authenticating', {progress: '{progress}'}),
+  reading: t('passport.nfc.reading', {progress: '{progress}'}),
+  activeAuthentication: t('passport.nfc.activeAuthentication'), transportFinishing: t('passport.nfc.transportFinishing'),
+  failure: t('passport.nfc.failure'),
 };
 const errors: ErrorText = {
-  cameraUnavailable: 'This device cannot start this camera check.',
-  nfcUnsupported: 'This device cannot read a passport chip.',
-  cameraPermissionDenied: 'Allow camera access in Settings, then try again.',
-  cameraPermissionRestricted: 'Camera use is restricted on this iPhone, for example by Screen Time or a device management profile. Ask whoever manages this iPhone to allow it.',
-  trustAnchorsUnavailable: 'Passport chip checking is not set up in this app, so this passport cannot be checked here. Your other identity checks remain available.',
-  trustAnchorNotFound: 'This app has no trusted issuer key for this passport’s country, so its chip cannot be checked here. Your other identity checks remain available.',
-  invalidConfiguration: 'This check is not set up in this app. Return to Identity; your other identity checks remain available.',
-  passportNotConfigured: 'Passport chip checking is not set up in this app, so this passport cannot be checked here. Your other identity checks remain available.',
-  faceComparisonNotConfigured: 'Face comparison is not set up in this app. Your passport results are kept.',
-  faceModelUnavailable: 'Face comparison is not set up in this app. Your passport results are kept.',
-  faceComparisonUnavailable: 'Face comparison could not run on this iPhone. Your passport results are kept.',
-  resultIntegrityFailure: 'Your saved passport and face results could not be verified on this phone. Try reopening them, or erase them and scan again.',
-  depthEvidenceUnavailable: 'Your face depth could not be measured with that selfie. Take a new selfie looking straight at the camera.',
-  connectionLost: 'The connection to your passport was lost. Hold the phone still and try again.',
-  multipleTags: 'Move other contactless cards away and try again.',
-  passportDataIntegrityFailure: 'We could not verify the passport data. Try reading the passport again.',
-  invalidAccessKey: 'The printed details could not open the chip. Scan your passport again.',
-  cancelled: 'The check was stopped. You can try again when you are ready.',
-  depthUnavailable: 'We could not measure your face. Clear the front camera and try again.',
-  busy: 'The previous camera request is still finishing. Wait a moment, then try again.',
+  cameraUnavailable: t('passport.error.cameraUnavailable'),
+  nfcUnsupported: t('passport.error.nfcUnsupported'),
+  cameraPermissionDenied: t('passport.error.cameraPermissionDenied'),
+  cameraPermissionRestricted: t('passport.error.cameraPermissionRestricted'),
+  trustAnchorsUnavailable: t('passport.error.trustAnchorsUnavailable'),
+  trustAnchorNotFound: t('passport.error.trustAnchorNotFound'),
+  invalidConfiguration: t('passport.error.invalidConfiguration'),
+  passportNotConfigured: t('passport.error.passportNotConfigured'),
+  faceComparisonNotConfigured: t('passport.error.faceComparisonNotConfigured'),
+  faceModelUnavailable: t('passport.error.faceModelUnavailable'),
+  faceComparisonUnavailable: t('passport.error.faceComparisonUnavailable'),
+  resultIntegrityFailure: t('passport.error.resultIntegrityFailure'),
+  depthEvidenceUnavailable: t('passport.error.depthEvidenceUnavailable'),
+  connectionLost: t('passport.error.connectionLost'),
+  multipleTags: t('passport.error.multipleTags'),
+  passportDataIntegrityFailure: t('passport.error.passportDataIntegrityFailure'),
+  invalidAccessKey: t('passport.error.invalidAccessKey'),
+  cancelled: t('passport.error.cancelled'),
+  depthUnavailable: t('passport.error.depthUnavailable'),
+  busy: t('passport.error.busy'),
 };
 /** Codes with no in-flow remedy; the holder returns to results or Identity. */
 const details: CaptureErrorCode[] = ['cameraUnavailable', 'nfcUnsupported', 'cameraPermissionRestricted', 'trustAnchorsUnavailable',
@@ -56,12 +59,14 @@ const details: CaptureErrorCode[] = ['cameraUnavailable', 'nfcUnsupported', 'cam
   'faceModelUnavailable', 'faceComparisonUnavailable'];
 const newSelfie: CaptureErrorCode[] = ['faceImageUnreadable', 'noFaceDetected', 'depthEvidenceUnavailable', 'selfieUnavailable', 'comparisonUnavailable'];
 const hints: Record<string, string> = {
-  noFaceObserved: 'Place your face inside the oval.', outsideGuide: 'Move your face inside the oval.',
-  multipleFacesObserved: 'Only one person should be in view.',
-  eyesClosed: 'Open your eyes.', blinkNotObserved: 'Blink once, then open your eyes.',
-  blinkExpired: 'Blink once more, then keep your eyes open.',
-  depthFlat: 'Look directly at the camera with your face inside the oval.',
-  depthUnavailable: 'Clear the front camera and keep your face in view.',
+  noFaceObserved: t('passport.selfieHint.noFaceObserved'),
+  outsideGuide: t('passport.selfieHint.outsideGuide'),
+  multipleFacesObserved: t('passport.selfieHint.multipleFacesObserved'),
+  eyesClosed: t('passport.selfieHint.eyesClosed'),
+  blinkNotObserved: t('passport.selfieHint.blinkNotObserved'),
+  blinkExpired: t('passport.selfieHint.blinkExpired'),
+  depthFlat: t('passport.selfieHint.depthFlat'),
+  depthUnavailable: t('passport.selfieHint.depthUnavailable'),
 };
 
 export class CaptureFlowController {
@@ -150,7 +155,7 @@ export class CaptureFlowController {
         this.update(evidence);
         const sheet = this.state.sheet;
         if (sheet) this.update({sheet: {...sheet, recovery: 'details',
-          message: sheet.kind === 'recovery' ? 'This check completed. Your results are ready to review.' : sheet.message}});
+          message: sheet.kind === 'recovery' ? t('passport.message.completed') : sheet.message}});
       }
     } catch (error) {
       if (epoch === this.epoch && !this.closed) {
@@ -163,8 +168,8 @@ export class CaptureFlowController {
         const next = code === 'resultSaveFailed' ? 'save' : this.errorRecovery(code, recovery);
         this.update({ready: false, sheet: {kind: 'recovery',
           recovery: next,
-          message: code === 'resultSaveFailed' ? 'The check completed, but its result could not be saved. Try saving again without repeating the check.'
-            : errorText(code, errors, 'We could not finish this check. Please try again.')}});
+          message: code === 'resultSaveFailed' ? t('passport.message.saveFailed')
+            : errorText(code, errors, t('passport.message.other'))}});
       }
     } finally {
       if (this.activeWork === pending) this.activeWork = undefined;
@@ -180,7 +185,7 @@ export class CaptureFlowController {
   read = () => this.run('reading', 'read', async session => {
     const mrz = this.state.mrz;
     if (!mrz) throw {code: 'invalidAccessKey'};
-    this.update({progress: 'Connecting to your passport…'});
+    this.update({progress: t('passport.progress.connecting')});
     return {passport: await session.readPassport({...mrz, consent: true, messages}), passportMRZ: mrz,
       comparison: undefined, phase: 'passport'};
   });
@@ -188,10 +193,10 @@ export class CaptureFlowController {
     if (this.closed || this.state.busy) return Promise.resolve();
     if (Object.values(this.state.passport?.correspondence ?? {}).includes('differs')) {
       this.update({sheet: {kind: 'recovery', recovery: 'scan',
-        message: 'The printed details and chip differ. Scan the passport again before comparing a selfie.'}});
+        message: t('passport.message.correspondenceDiffers')}});
       return Promise.resolve();
     }
-    this.update({ready: false, hint: 'Place your face inside the oval.'});
+    this.update({ready: false, hint: t('passport.selfieHint.start')});
     return this.run('selfie', 'selfie', async session => { await session.startSelfie(true); return {}; });
   };
   capture = () => this.run('selfie', 'selfie', async session => { await session.captureSelfie(); return {}; });
@@ -242,10 +247,10 @@ export class CaptureFlowController {
   pause = () => {
     if (this.closed || this.state.sheet || (!this.state.busy && this.recovery() === 'dismiss')) return Promise.resolve();
     return this.interrupt({kind: 'recovery', recovery: this.recovery(),
-      message: 'Your check is paused. Continue when you are ready.'});
+      message: t('passport.message.paused')});
   };
   requestRestart = () => this.interrupt({kind: 'restart', recovery: this.recovery(),
-    message: 'Start a new passport scan? Previously saved results stay on this phone until you erase them.'});
+    message: t('passport.message.restart')});
   restart = async () => {
     if (this.closed || this.state.busy) return;
     const epoch = ++this.epoch;
@@ -264,7 +269,7 @@ export class CaptureFlowController {
   /** Transfers ownership before the flow unmounts. No evidence is released by this method. */
   handoff = async (): Promise<CompletedCapture> => {
     if (this.closed || this.state.busy || !this.current || !this.state.passport) {
-      throw new Error('No completed passport check is ready');
+      throw new Error(t('passport.handoffNotReady'));
     }
     const result = {session: this.current, mrz: this.state.passportMRZ,
       passport: this.state.passport, comparison: this.state.comparison};
@@ -285,17 +290,19 @@ export class CaptureFlowController {
       this.update({mrz: event.observation});
     } else if (event.type === 'passportProgress' && this.state.phase === 'reading') {
       const checking = ['transportComplete', 'passiveAuthentication'].includes(event.stage);
-      const progress = event.progress != null && Number.isFinite(event.progress)
-        ? ` — ${Math.round(Math.max(0, Math.min(100, event.progress)))}%` : '';
-      const group = event.group && /^(DG\d{1,2}|SOD|COM)$/.test(event.group) ? ` (${event.group})` : '';
-      this.update({progress: checking ? 'Checking the passport data…' :
-        event.stage === 'reading' ? `Reading passport${group}${progress}. Keep your phone still.` :
-        event.stage === 'authenticating' ? `Connecting${progress}. Keep your phone still.` : 'Keep your phone against the passport…'});
+      const percent = event.progress != null && Number.isFinite(event.progress)
+        ? Math.round(Math.max(0, Math.min(100, event.progress))) : undefined;
+      const group = event.group && /^(DG\d{1,2}|SOD|COM)$/.test(event.group) ? event.group : undefined;
+      const shown = {hasGroup: group === undefined ? 'no' : 'yes', group: group ?? '',
+        hasPercent: percent === undefined ? 'no' : 'yes', percent: percent ?? 0};
+      this.update({progress: checking ? t('passport.progress.checking') :
+        event.stage === 'reading' ? t('passport.progress.reading', shown) :
+        event.stage === 'authenticating' ? t('passport.progress.authenticating', shown) : t('passport.progress.waiting')});
     } else if (event.type === 'previewChanged' && this.state.phase === 'selfie') {
       this.update({preview: this.state.preview + 1});
     } else if (event.type === 'selfieReadiness' && this.state.phase === 'selfie') {
       this.update({ready: event.permitsCapture,
-        hint: event.permitsCapture ? 'Hold still.' : hints[event.reason ?? ''] ?? 'Keep looking at the camera.'});
+        hint: event.permitsCapture ? t('passport.selfieHint.ready') : hints[event.reason ?? ''] ?? t('passport.selfieHint.other')});
     } else if (event.type === 'selfieCaptured' && this.state.phase === 'selfie') {
       this.update({phase: 'captured', ready: false});
       this.pendingComparison = true;
@@ -306,7 +313,7 @@ export class CaptureFlowController {
       // Capture failure events carry the same closed vocabulary as command rejections.
       const code = event.code;
       void this.interrupt({kind: 'recovery', recovery: this.errorRecovery(code, this.recovery()),
-        message: errorText(code, errors, 'The camera stopped. Please try again.')});
+        message: errorText(code, errors, t('passport.message.cameraStopped'))});
     }
   }
 }
