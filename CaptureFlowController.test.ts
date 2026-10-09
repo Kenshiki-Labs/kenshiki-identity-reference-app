@@ -145,17 +145,43 @@ test('confirming restart clears a read that settled during restart confirmation'
   expect(c.state.session).toBeUndefined();
   expect(native.release).toHaveBeenCalledTimes(1);
 });
-test('closing during session creation releases the late native session without starting capture', async () => {
-  const { native } = fixture();
-  const create = deferred<CaptureSession>();
-  const c = new CaptureFlowController(() => create.promise, {}, jest.fn());
-  const pending = c.scan();
-  await c.dispose();
-  create.resolve(makeSession(native));
-  await pending;
-  expect(native.startMRZ).not.toHaveBeenCalled();
-  expect(native.release).toHaveBeenCalledTimes(1);
-});
+test.each([false, true])(
+  'closing during creation drains custody (release fails: %s)',
+  async (releaseFails) => {
+    const { native } = fixture();
+    const create = deferred<CaptureSession>();
+    const c = new CaptureFlowController(() => create.promise, {}, jest.fn());
+    const pending = c.scan();
+    const released = deferred<void>();
+    const failure = { code: 'operationFailed' };
+    native.release.mockImplementation(async () => {
+      await released.promise;
+      if (releaseFails) throw failure;
+    });
+    let closed = false;
+    const closing = c.dispose().then(
+      () => {
+        closed = true;
+        return undefined;
+      },
+      (error: unknown) => {
+        closed = true;
+        return error;
+      },
+    );
+    await settle();
+    expect(closed).toBe(false);
+    create.resolve(makeSession(native));
+    await settle();
+    expect(closed).toBe(false);
+    released.resolve();
+    await pending;
+    expect(await closing).toEqual(releaseFails ? failure : undefined);
+    if (releaseFails) await expect(c.dispose()).rejects.toEqual(failure);
+    expect(native.startMRZ).not.toHaveBeenCalled();
+    expect(native.release).toHaveBeenCalledTimes(1);
+  },
+);
 test('repeated taps do not launch overlapping native commands', async () => {
   const { controller: c, native } = fixture();
   const started = deferred<void>();

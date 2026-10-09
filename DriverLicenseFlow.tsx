@@ -345,13 +345,13 @@ export function DocumentResultDetails({ result }: { result: SavedDocumentCapture
           <Text style={styles.body} testID="document-barcode-status">
             {barcodeStatus(document.back)}
           </Text>
-          {(fields.DAA || fields.DCS || fields.DAC) && (
+          {!!(fields.DAA || fields.DCS || fields.DAC) && (
             <Detail label={t('license.result.name')} value={documentName(document)} />
           )}
-          {fields.DAQ && <Detail label={t('license.result.licenseNumber')} value={fields.DAQ} />}
-          {fields.DBB && <Detail label={t('license.result.birthDate')} value={fields.DBB} />}
-          {fields.DBA && <Detail label={t('license.result.expiryDate')} value={fields.DBA} />}
-          {address && <Detail label={t('license.result.address')} value={address} />}
+          {!!fields.DAQ && <Detail label={t('license.result.licenseNumber')} value={fields.DAQ} />}
+          {!!fields.DBB && <Detail label={t('license.result.birthDate')} value={fields.DBB} />}
+          {!!fields.DBA && <Detail label={t('license.result.expiryDate')} value={fields.DBA} />}
+          {address.length > 0 && <Detail label={t('license.result.address')} value={address} />}
         </View>
       )}
       {barcode && (

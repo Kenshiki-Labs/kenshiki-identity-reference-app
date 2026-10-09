@@ -11,6 +11,7 @@ import type {
 } from '@kenshiki/identity-capture';
 import { type ErrorText, errorCode, errorText } from './HolderText';
 import { t } from './locales/i18n';
+import { SessionAcquisition } from './SessionAcquisition';
 
 // Host orchestration only. All parsing, acquisition, liveness and comparison use public SDK APIs.
 export type Phase =
@@ -119,6 +120,7 @@ export class CaptureFlowController {
   private current?: CaptureSession | undefined;
   private pendingComparison = false;
   private activeWork?: Promise<Partial<FlowState>> | undefined;
+  private readonly acquisition = new SessionAcquisition();
   private releasing?: Promise<void>;
   private disposal?: Promise<void>;
   constructor(
@@ -192,14 +194,16 @@ export class CaptureFlowController {
     if (this.releasing) await this.releasing;
     if (epoch !== this.epoch || this.closed) throw { code: 'cancelled' };
     if (this.current) return this.current;
-    const session = await this.create(this.config);
-    if (epoch !== this.epoch || this.closed) {
-      await session.release();
-      throw { code: 'cancelled' };
-    }
-    this.current = session;
-    this.listen(session);
-    this.update({ session });
+    const session = await this.acquisition.open(
+      () => this.create(this.config),
+      () => epoch === this.epoch && !this.closed,
+      (created) => {
+        this.current = created;
+        this.listen(created);
+        this.update({ session: created });
+      },
+    );
+    if (!session) throw { code: 'cancelled' };
     return session;
   }
   private listen(session: CaptureSession) {
@@ -391,7 +395,12 @@ export class CaptureFlowController {
     this.update({ busy: true, ready: false, sheet });
     const pending = this.activeWork;
     try {
-      await Promise.allSettled([this.current?.cancel(), pending]);
+      const [, , acquired] = await Promise.allSettled([
+        this.current?.cancel(),
+        pending,
+        this.acquisition.drain(),
+      ]);
+      if (acquired.status === 'rejected') throw acquired.reason;
     } finally {
       if (epoch === this.epoch) this.update({ busy: false });
     }
@@ -438,10 +447,11 @@ export class CaptureFlowController {
   };
   private release(session: CaptureSession | undefined): Promise<void> {
     const release = Promise.resolve().then(() => session?.release());
-    return Promise.allSettled([release, this.releasing, this.activeWork]).then(
-      ([released, previousRelease]) => {
+    return Promise.allSettled([release, this.releasing, this.activeWork, this.acquisition.drain()]).then(
+      ([released, previousRelease, , acquired]) => {
         if (released.status === 'rejected') throw released.reason;
         if (previousRelease.status === 'rejected') throw previousRelease.reason;
+        if (acquired.status === 'rejected') throw acquired.reason;
       },
     );
   }

@@ -211,18 +211,43 @@ test('failed cancellation keeps ownership and blocks returning a still active se
   expect(f.native.release).not.toHaveBeenCalled();
   expect(f.c.state.sheet?.kind).toBe('error');
 });
-test('closing during creation releases the late session and never opens it', async () => {
-  const f = fixture();
-  const created = deferred<CaptureSession>();
-  const c = new PhoneFlowController(() => created.promise, {}, jest.fn());
-  const opening = c.open();
-  const closing = c.dispose();
-  created.resolve(f.session);
-  await opening;
-  await closing;
-  expect(f.native.release).toHaveBeenCalledTimes(1);
-  expect(f.native.phoneSnapshot).not.toHaveBeenCalled();
-});
+test.each([false, true])(
+  'closing during creation drains custody without opening it (release fails: %s)',
+  async (releaseFails) => {
+    const f = fixture();
+    const created = deferred<CaptureSession>();
+    const c = new PhoneFlowController(() => created.promise, {}, jest.fn());
+    const opening = c.open();
+    const released = deferred<void>();
+    const failure = { code: 'operationFailed' };
+    f.native.release.mockImplementation(async () => {
+      await released.promise;
+      if (releaseFails) throw failure;
+    });
+    let closed = false;
+    const closing = c.dispose().then(
+      () => {
+        closed = true;
+        return undefined;
+      },
+      (error: unknown) => {
+        closed = true;
+        return error;
+      },
+    );
+    await tick();
+    expect(closed).toBe(false);
+    created.resolve(f.session);
+    await tick();
+    expect(closed).toBe(false);
+    released.resolve();
+    await opening;
+    expect(await closing).toEqual(releaseFails ? failure : undefined);
+    if (releaseFails) await expect(c.dispose()).rejects.toEqual(failure);
+    expect(f.native.release).toHaveBeenCalledTimes(1);
+    expect(f.native.phoneSnapshot).not.toHaveBeenCalled();
+  },
+);
 test('a missing native provider shows a recoverable sheet and still allows exit', async () => {
   const c = new PhoneFlowController(
     async () => {

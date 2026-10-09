@@ -234,17 +234,43 @@ test('duplicate confirm taps cannot issue overlapping requests', async () => {
   answer.resolve(complete);
   await checking;
 });
-test('closing during native session creation releases the late session and performs no check', async () => {
-  const f = fixture();
-  const session = deferred<CaptureSession>();
-  const c = new SSNFlowController(() => session.promise, configuration, jest.fn());
-  const opening = c.open();
-  await c.dispose();
-  session.resolve(f.session);
-  await opening;
-  expect(f.native.release).toHaveBeenCalledTimes(1);
-  expect(f.native.ssnSnapshot).not.toHaveBeenCalled();
-});
+test.each([false, true])(
+  'closing during creation drains custody without a check (release fails: %s)',
+  async (releaseFails) => {
+    const f = fixture();
+    const session = deferred<CaptureSession>();
+    const c = new SSNFlowController(() => session.promise, configuration, jest.fn());
+    const opening = c.open();
+    const released = deferred<void>();
+    const failure = { code: 'operationFailed' };
+    f.native.release.mockImplementation(async () => {
+      await released.promise;
+      if (releaseFails) throw failure;
+    });
+    let closed = false;
+    const closing = c.dispose().then(
+      () => {
+        closed = true;
+        return undefined;
+      },
+      (error: unknown) => {
+        closed = true;
+        return error;
+      },
+    );
+    await tick();
+    expect(closed).toBe(false);
+    session.resolve(f.session);
+    await tick();
+    expect(closed).toBe(false);
+    released.resolve();
+    await opening;
+    expect(await closing).toEqual(releaseFails ? failure : undefined);
+    if (releaseFails) await expect(c.dispose()).rejects.toEqual(failure);
+    expect(f.native.release).toHaveBeenCalledTimes(1);
+    expect(f.native.ssnSnapshot).not.toHaveBeenCalled();
+  },
+);
 test('backgrounding during native creation offers explicit reopening and releases the late session', async () => {
   const old = fixture();
   const next = fixture();
@@ -255,9 +281,11 @@ test('backgrounding during native creation offers explicit reopening and release
     .mockResolvedValue(next.session);
   const c = new SSNFlowController(create, configuration, jest.fn());
   const opening = c.open();
-  await c.pause();
+  const pausing = c.pause();
+  expect(c.state.busy).toBe(true);
   delayed.resolve(old.session);
   await opening;
+  await pausing;
   expect(old.native.release).toHaveBeenCalledTimes(1);
   expect(old.native.ssnSnapshot).not.toHaveBeenCalled();
   expect(c.state.busy).toBe(false);

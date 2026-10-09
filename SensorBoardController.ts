@@ -6,6 +6,7 @@ import {
   type SensorBoardState,
 } from '@kenshiki/identity-capture';
 import { t } from './locales/i18n';
+import { SessionAcquisition } from './SessionAcquisition';
 
 export type SensorBoardPresentation = {
   board: SensorBoardState | null;
@@ -19,6 +20,8 @@ type CreateSession = (configuration: Configuration) => Promise<CaptureSession>;
 export class SensorBoardController {
   private session: CaptureSession | null = null;
   private opening: Promise<void> | null = null;
+  private readonly acquisition = new SessionAcquisition();
+  private disposal?: Promise<void>;
   private queue: Promise<void> = Promise.resolve();
   private timer: ReturnType<typeof setTimeout> | undefined;
   private active = true;
@@ -38,7 +41,7 @@ export class SensorBoardController {
   ) {}
 
   open(): Promise<void> {
-    if (this.opening) return this.opening;
+    if (this.opening !== null) return this.opening;
     this.opening = this.initialize();
     this.queue = this.opening;
     return this.opening;
@@ -46,17 +49,20 @@ export class SensorBoardController {
 
   private async initialize(): Promise<void> {
     if (this.disposed) return;
-    if (!this.configuration.sensors) {
+    const sensors = this.configuration.sensors;
+    if (!sensors) {
       this.fail(t('sensors.failure.notConfigured'));
       return;
     }
     try {
-      const session = await this.create({ sensors: this.configuration.sensors });
-      if (this.disposed) {
-        await session.release();
-        return;
-      }
-      this.session = session;
+      const session = await this.acquisition.open(
+        () => this.create({ sensors }),
+        () => !this.disposed,
+        (created) => {
+          this.session = created;
+        },
+      );
+      if (!session) return;
       this.board = await session.sensorBoard({ action: 'status' });
       if (this.disposed) return;
       if (this.active && this.desiredRunning)
@@ -125,14 +131,15 @@ export class SensorBoardController {
     }
   }
 
-  async dispose(): Promise<void> {
-    if (this.disposed) return;
+  dispose(): Promise<void> {
+    if (this.disposal !== undefined) return this.disposal;
     this.disposed = true;
     this.generation += 1;
     this.stopTimer();
     const session = this.session;
     this.session = null;
-    if (session) {
+    const release = async () => {
+      if (!session) return;
       try {
         await session.cancel();
         await this.queue;
@@ -140,8 +147,14 @@ export class SensorBoardController {
       } catch {
         throw new Error(t('sensors.failure.close'));
       }
-    }
-    await this.opening;
+    };
+    this.disposal = Promise.allSettled([release(), this.opening, this.acquisition.drain()]).then(
+      ([released, , acquired]) => {
+        if (released.status === 'rejected') throw released.reason;
+        if (acquired.status === 'rejected') throw acquired.reason;
+      },
+    );
+    return this.disposal;
   }
 
   private schedule(): void {

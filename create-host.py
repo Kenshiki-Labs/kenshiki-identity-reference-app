@@ -32,7 +32,7 @@ parser.add_argument('--integration-manifest', type=Path,
 args = parser.parse_args()
 host = args.host.resolve()
 artifact = args.artifact.resolve()
-if host.exists():
+if args.host.is_symlink() or host.exists():
     raise SystemExit('Choose a new host directory')
 if not artifact.is_file():
     raise SystemExit('Package artifact does not exist')
@@ -112,8 +112,9 @@ icons = sorted(brand.glob('*.icon'))
 if len(icons) != 1 or not (brand / 'LaunchScreen.storyboard').is_file():
     raise SystemExit('brand/ must hold exactly one Icon Composer .icon and a LaunchScreen.storyboard: ' + str(brand))
 subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'IdentitySDKHost',
-                '--version', '0.87.1', '--directory', str(host), '--skip-install', '--skip-git-init'], check=True)
-for filename in ['App.tsx', 'AppNavigator.tsx', 'useIdentityWorkspace.ts',
+                '--version', '0.87.1', '--directory', str(host), '--replace-directory', 'false',
+                '--skip-install', '--skip-git-init'], check=True)
+for filename in ['App.tsx', 'AppNavigator.tsx', 'useIdentityWorkspace.ts', 'SessionAcquisition.ts',
                  'IdentityHome.tsx', 'IdentityResults.tsx', 'IdentitySettings.tsx', 'IdentityRecovery.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
                  'DriverLicenseFlow.tsx', 'DocumentFlowController.ts', 'DocumentCheckPanel.tsx',
                  'DocumentCheckPanel.test.tsx',
