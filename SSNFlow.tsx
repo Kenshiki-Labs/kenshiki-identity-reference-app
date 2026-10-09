@@ -26,6 +26,9 @@ export function SSNFlow({
   const [controller, setController] = useState<SSNFlowController>();
   const [state, setState] = useState<SSNFlowState>({ digits: '', busy: false, editing: false });
   const [finishing, setFinishing] = useState(false);
+  // Bumped only when what was typed held something other than digits, so the entry restarts from
+  // what the controller kept (see the entry below).
+  const [entryGeneration, setEntryGeneration] = useState(0);
   const finishingRef = useRef(false);
   useEffect(() => {
     const active = new SSNFlowController(IdentityCaptureSession.create, configuration, setState, saved);
@@ -135,7 +138,12 @@ export function SSNFlow({
       return (
         <>
           <Text style={styles.label}>{t('common.socialSecurityNumber')}</Text>
+          {/* Uncontrolled (S-12): the field owns what is typed and JavaScript only reads it. A
+              controlled `value` lets a render that lags fast typing push older text back into the
+              field, which moves the caret: 000001234 became 000123400. Input that is not only
+              digits restarts the field from the digits the controller kept. */}
           <TextInput
+            key={entryGeneration}
             testID="ssn-entry"
             accessibilityLabel={t('common.socialSecurityNumber')}
             keyboardType="number-pad"
@@ -143,8 +151,13 @@ export function SSNFlow({
             autoCapitalize="none"
             autoComplete="off"
             importantForAutofill="no"
-            value={state.digits}
-            onChangeText={activeController.setDigits}
+            autoFocus={entryGeneration > 0}
+            maxLength={9}
+            defaultValue={state.digits}
+            onChangeText={(typed) => {
+              activeController.setDigits(typed);
+              if (!/^\d*$/.test(typed)) setEntryGeneration((generation) => generation + 1);
+            }}
             editable={!busy}
             placeholder={t('ssn.placeholder')}
             style={[styles.card, styles.entry]}

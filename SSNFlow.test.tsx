@@ -109,7 +109,8 @@ test('SSN review displays exact digits in a bottom sheet and a completed result 
   expect(view.root.findAllByProps({ testID: 'ssn-entry' })).toHaveLength(0);
   await tap('ssn-begin-entry');
   await enter();
-  expect(view.root.findByProps({ testID: 'ssn-entry' }).props.value).toBe('000001234');
+  // The field owns what is typed (S-12): JavaScript never writes a value back into it.
+  expect(view.root.findByProps({ testID: 'ssn-entry' }).props.value).toBeUndefined();
   await tap('ssn-review-number');
   expect(view.root.findByProps({ testID: 'ssn-bottom-sheet' })).toBeDefined();
   expect(view.root.findByProps({ testID: 'ssn-confirmation-number' }).props.children).toBe('000-00-1234');
@@ -138,7 +139,7 @@ test('leaving the exact-number sheet clears the input before the Identity card c
   expect(JSON.stringify(view.toJSON())).not.toContain('000-00-1234');
   await tap('open-ssn');
   await tap('ssn-begin-entry');
-  expect(view.root.findByProps({ testID: 'ssn-entry' }).props.value).toBe('');
+  expect(view.root.findByProps({ testID: 'ssn-entry' }).props.defaultValue).toBe('');
   expect(mockSession.ssnConfirm).not.toHaveBeenCalled();
   await act(async () => {
     view.unmount();
@@ -246,4 +247,43 @@ test('returned findings show source values, while older receipts explain why det
   await act(async () => {
     view.unmount();
   });
+});
+
+/** S-12. Keystrokes arrive faster than React renders: each change event below is delivered with no
+ * render between it and the next, as on a phone when typing outruns the JavaScript thread. Every
+ * digit must survive in order, and no render may write older text back into the field. */
+test('fast SSN entry keeps every digit in order and never writes stale text back', async () => {
+  const { view, tap } = await renderApp();
+  await tap('open-ssn');
+  await tap('ssn-begin-entry');
+  const field = view.root.findByProps({ testID: 'ssn-entry' });
+  const typed = '000001234';
+  const pushedBack: unknown[] = [];
+  await act(async () => {
+    for (let length = 1; length <= typed.length; length += 1) {
+      invoke(field, 'onChangeText', typed.slice(0, length));
+      pushedBack.push(view.root.findByProps({ testID: 'ssn-entry' }).props.value);
+    }
+  });
+  expect(pushedBack.every((value) => value === undefined)).toBe(true);
+  const entry = view.root.findByProps({ testID: 'ssn-entry' });
+  expect(entry.props.value).toBeUndefined();
+  expect(entry.props.maxLength).toBe(9);
+  await tap('ssn-review-number');
+  expect(mockSession.ssnRequestConfirmation).toHaveBeenCalledWith(typed);
+  expect(view.root.findByProps({ testID: 'ssn-confirmation-number' }).props.children).toBe('000-00-1234');
+  await act(async () => view.unmount());
+});
+
+test('pasted text that is not only digits restarts the field from the digits kept', async () => {
+  const { view, tap } = await renderApp();
+  await tap('open-ssn');
+  await tap('ssn-begin-entry');
+  await act(async () => {
+    invoke(view.root.findByProps({ testID: 'ssn-entry' }), 'onChangeText', '000-00-1234');
+  });
+  const restarted = view.root.findByProps({ testID: 'ssn-entry' });
+  expect(restarted.props.defaultValue).toBe('000001234');
+  expect(restarted.props.autoFocus).toBe(true);
+  await act(async () => view.unmount());
 });
