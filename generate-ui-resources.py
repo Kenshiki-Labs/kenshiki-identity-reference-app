@@ -13,6 +13,8 @@ What is refused, and why each refusal fails generation instead of being skipped:
     unknown name renders as clear on iOS, which no screenshot of a light-mode default would show.
   * A text style that names a step missing from the type ramp, and any token group or field this
     script does not know. A typo must not become a style that silently does nothing.
+  * A symbol that is not written as an SF Symbol name. The generated module types each name as a
+    literal, so the tab bar's typed SF Symbol option refuses one iOS does not have.
   * A message whose ICU syntax does not parse, a plural or select without an `other` branch, `#`
     outside a plural, and an argument used as two different kinds in one message.
   * A language whose keys or placeholders differ from English, and a language with no plural rule.
@@ -54,8 +56,12 @@ FIXED_COLORS = {"white": (255, 255, 255), "black": (0, 0, 0)}
 TEXT_STYLES = {"largeTitle", "title1", "title2", "title3", "headline", "body", "callout",
                "subheadline", "footnote", "caption1", "caption2"}
 FONT_WEIGHTS = {"100", "200", "300", "400", "500", "600", "700", "800", "900"}
-NUMBER_GROUPS = ("spacing", "radius", "border", "opacity", "elevation")
-TOKEN_GROUPS = ("color", "typeRamp", "text") + NUMBER_GROUPS + ("size",)
+NUMBER_GROUPS = ("spacing", "radius", "border", "opacity")
+TOKEN_GROUPS = ("color", "typeRamp", "text") + NUMBER_GROUPS + ("size", "symbol", "symbolTint")
+SYMBOL_NAME = re.compile(r"[a-z0-9]+(?:\.[a-z0-9]+)*\Z")
+# The system colors the SDK's IdentitySymbol draws a symbol in: `symbolView` in the runtime's
+# IdentityCaptureRuntime.swift. Any other name would draw nothing.
+SYMBOL_TINTS = {"white", "label", "secondaryLabel", "tertiaryLabel"}
 IDENTIFIER = re.compile(r"[A-Za-z][A-Za-z0-9]*\Z")
 KEY_SEGMENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9_]*\Z")
 # CLDR cardinal plural rules, as TypeScript, for each language this app ships. A language with no
@@ -155,7 +161,7 @@ def generate_tokens() -> str:
     for group in TOKEN_GROUPS:
         if not isinstance(tokens[group], dict) or not tokens[group]:
             fail(f"ui/tokens.jsonc: {group} is not a non-empty object")
-    elevation = tokens["elevation"]
+    opacities = tokens["opacity"]
     lines = [HEADER.format(source="ui/tokens.jsonc"), "",
              "import {PlatformColor} from 'react-native';", ""]
 
@@ -174,9 +180,9 @@ def generate_tokens() -> str:
                 fail(f"{where}: fixed color {spec['fixed']!r} is not one of {sorted(FIXED_COLORS)}")
             red, green, blue = FIXED_COLORS[spec["fixed"]]
             if "opacity" in spec:
-                if spec["opacity"] not in elevation:
-                    fail(f"{where}: opacity names {spec['opacity']!r}, which elevation does not define")
-                alpha = number(elevation[spec["opacity"]], f"elevation.{spec['opacity']}")
+                if spec["opacity"] not in opacities:
+                    fail(f"{where}: opacity names {spec['opacity']!r}, which opacity does not define")
+                alpha = number(opacities[spec["opacity"]], f"opacity.{spec['opacity']}")
                 value = ts_string(f"rgba({red}, {green}, {blue}, {alpha})")
             else:
                 value = ts_string(f"#{red:02X}{green:02X}{blue:02X}")
@@ -227,6 +233,24 @@ def generate_tokens() -> str:
             lines.append(f"  {key}: {ts_string(value)},")
         else:
             lines.append(f"  {key}: {number(value, where)},")
+    lines += ["} as const;", ""]
+
+    lines.append("/** SF Symbol names: tab bar items and the icons of list rows. */")
+    lines.append("export const symbol = {")
+    for key, value in tokens["symbol"].items():
+        where = f"symbol.{name(key, 'symbol')}"
+        if not isinstance(value, str) or not SYMBOL_NAME.match(value):
+            fail(f"{where}: {value!r} is not written as an SF Symbol name")
+        lines.append(f"  {key}: {ts_string(value)},")
+    lines += ["} as const;", ""]
+
+    lines.append("/** The system color each kind of symbol is drawn in. */")
+    lines.append("export const symbolTint = {")
+    for key, value in tokens["symbolTint"].items():
+        where = f"symbolTint.{name(key, 'symbolTint')}"
+        if value not in SYMBOL_TINTS:
+            fail(f"{where}: {value!r} is not one of {sorted(SYMBOL_TINTS)}")
+        lines.append(f"  {key}: {ts_string(value)},")
     lines += ["} as const;", ""]
     return "\n".join(lines)
 

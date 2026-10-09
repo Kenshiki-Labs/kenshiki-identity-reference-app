@@ -1,0 +1,73 @@
+import { type ReactNode, useEffect, useRef } from 'react';
+import { ActionSheetIOS, Modal, ScrollView, StyleSheet, View } from 'react-native';
+import { color, spacing } from './tokens.generated';
+
+/** A UIKit page sheet: the system presents it, dims what is behind it and keeps VoiceOver inside it.
+ * Without `onDismiss` it can only be left through its own actions, as a recovery prompt must be;
+ * with it, a downward swipe calls `onDismiss`. */
+export function NativeSheet({
+  testID,
+  onDismiss,
+  children,
+}: {
+  testID?: string | undefined;
+  onDismiss?: (() => void) | undefined;
+  children: ReactNode;
+}) {
+  return (
+    <Modal
+      visible
+      animationType="slide"
+      presentationStyle="pageSheet"
+      allowSwipeDismissal={!!onDismiss}
+      onRequestClose={onDismiss}
+    >
+      <View style={sheetStyles.surface} testID={testID} accessibilityViewIsModal>
+        <ScrollView contentContainerStyle={sheetStyles.content}>{children}</ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
+/** A destructive choice, asked with the iOS action sheet. */
+export type Confirmation = {
+  /** Identifies the question; the sheet is shown once each time the key appears. */
+  key: string;
+  title: string;
+  message: string;
+  /** The destructive action's label. */
+  confirm: string;
+  /** The label that leaves everything as it is. */
+  keep: string;
+  onConfirm: () => void;
+  onKeep: () => void;
+};
+
+/** Shows `request` as an action sheet while it is present. The caller's state stays the source of
+ * truth: the sheet appears when a request with a new key appears, and each choice calls back. */
+export function useConfirmation(request: Confirmation | undefined) {
+  const latest = useRef(request);
+  useEffect(() => {
+    latest.current = request;
+  });
+  const key = request?.key;
+  useEffect(() => {
+    const asked = latest.current;
+    if (key === undefined || asked === undefined) return;
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        title: asked.title,
+        message: asked.message,
+        options: [asked.confirm, asked.keep],
+        destructiveButtonIndex: 0,
+        cancelButtonIndex: 1,
+      },
+      (index) => (index === 0 ? asked.onConfirm() : asked.onKeep()),
+    );
+  }, [key]);
+}
+
+const sheetStyles = StyleSheet.create({
+  surface: { flex: 1, backgroundColor: color.sheet },
+  content: { padding: spacing.xxl, paddingBottom: spacing.xxxl, gap: spacing.xl },
+});

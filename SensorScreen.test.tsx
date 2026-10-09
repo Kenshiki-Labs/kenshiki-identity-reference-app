@@ -1,11 +1,13 @@
 import type { Configuration } from '@kenshiki/identity-capture';
+import { useState } from 'react';
 import { Alert, AppState, Linking, Switch } from 'react-native';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { sensorBoardFixture } from './__tests__/SensorBoardFixtures';
 import { invoke, required } from './__tests__/support';
 import { Action } from './IdentityCaptureFlow';
 import type { SensorBoardPresentation } from './SensorBoardController';
-import { SensorScreen } from './SensorScreen';
+import type { SensorPage } from './SensorPresentation';
+import { SensorBoardScreen, SensorDetailScreen, SensorSession, SensorSettingsScreen } from './SensorScreen';
 
 const mockPerform = jest.fn(async () => {});
 const mockDispose = jest.fn(async () => {});
@@ -33,10 +35,26 @@ const configuration: Configuration = {};
 function button(view: ReactTestRenderer, label: string) {
   return required(view.root.findAllByType(Action).find((node) => node.props.label === label));
 }
-async function render() {
+/** Stands in for the navigation stack: the board pushes a detail page or the settings screen, and
+ * every screen shares the one session, as the pushed screens do in App. */
+function Screens({ initial }: { initial: 'board' | 'settings' }) {
+  const [page, setPage] = useState<SensorPage | null>(null);
+  return (
+    <SensorSession configuration={configuration} open>
+      {initial === 'settings' ? (
+        <SensorSettingsScreen />
+      ) : page ? (
+        <SensorDetailScreen page={page} />
+      ) : (
+        <SensorBoardScreen onOpenPage={setPage} />
+      )}
+    </SensorSession>
+  );
+}
+async function render(initial: 'board' | 'settings' = 'board') {
   let view: ReactTestRenderer | undefined;
   await act(async () => {
-    view = create(<SensorScreen configuration={configuration} onExit={() => {}} />);
+    view = create(<Screens initial={initial} />);
   });
   return required(view);
 }
@@ -70,17 +88,17 @@ test('renders all sensor sections, location map and navigable documentation; rel
   await act(async () => {
     invoke(button(view, 'About Location'), 'onPress');
   });
-  expect(button(view, 'All sensors')).toBeDefined();
+  const detail = view.root.findByProps({ testID: 'sensor-detail' });
+  expect(JSON.stringify(view.toJSON())).toContain('Apple APIs');
+  expect(detail.findAll((node) => node.props.label === 'About Motion')).toHaveLength(0);
+  expect(mockOpen).toHaveBeenCalledTimes(1);
   await act(async () => view.unmount());
   expect(mockDispose).toHaveBeenCalledTimes(1);
 });
 test('permission switch requests once or opens OS Settings; destructive erase requires confirmation', async () => {
   const settings = jest.spyOn(Linking, 'openSettings').mockResolvedValue();
   const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-  const view = await render();
-  await act(async () => {
-    invoke(button(view, 'Settings'), 'onPress');
-  });
+  const view = await render('settings');
   const motion = required(
     view.root.findAllByType(Switch).find((node) => node.props.accessibilityLabel === 'Motion & Fitness'),
   );

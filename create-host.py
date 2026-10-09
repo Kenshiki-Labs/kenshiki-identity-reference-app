@@ -94,19 +94,29 @@ if subprocess.run([sys.executable, str(generator), '--check']).returncode != 0:
 subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'IdentitySDKHost',
                 '--version', '0.87.1', '--directory', str(host), '--skip-install', '--skip-git-init'], check=True)
 for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
-                 'DriverLicenseFlow.tsx', 'DocumentFlowController.ts', 'DocumentCheckPanel.tsx', 'IdentitySheetHost.tsx',
+                 'DriverLicenseFlow.tsx', 'DocumentFlowController.ts', 'DocumentCheckPanel.tsx',
                  'DocumentCheckPanel.test.tsx',
                  'DriverLicenseFlow.test.tsx', 'DocumentFlowController.test.ts',
                  'PhoneFlow.tsx', 'SubscriberResultDetails.tsx', 'PhoneFlowController.ts', 'PhoneFlow.test.tsx', 'PhoneFlowController.test.ts',
                  'SSNFlow.tsx', 'SSNFlowController.ts', 'SSNFlow.test.tsx', 'SSNFlowController.test.ts',
                  'HolderText.ts', 'ReferenceFindings.test.tsx', 'HolderLifecycle.test.tsx',
-                 'IntegrationChecks.tsx', 'PhonePolicy.ts', 'DocumentCheckController.ts', 'DocumentCheckController.test.ts']:
+                 'IntegrationChecks.tsx', 'PhonePolicy.ts', 'DocumentCheckController.ts', 'DocumentCheckController.test.ts',
+                 'SensorScreen.tsx', 'SensorScreen.test.tsx', 'SensorBoardController.ts', 'SensorBoardController.test.ts',
+                 'SensorBoardDocuments.tsx', 'SensorBoardLocation.tsx', 'SensorBoardRows.tsx', 'SensorBoardSettings.tsx',
+                 'SensorBoardSlider.tsx', 'SensorPresentation.ts', 'SensorPresentation.test.ts']:
     contents = Path(__file__).with_name(filename).read_text()
     contents = contents.replace('../../ReactNative/identity-capture/src/codes', '@kenshiki/identity-capture/src/codes')
     (host / filename).write_text(contents)
 (host / 'CaptureFlowController.test.ts').write_text(Path(__file__).with_name('CaptureFlowController.test.ts').read_text().replace('../../ReactNative/identity-capture/src/codes', '@kenshiki/identity-capture/src/codes'))
 (host / 'IdentityCaptureFlow.test.tsx').write_text(Path(__file__).with_name('IdentityCaptureFlow.test.tsx').read_text().replace('../../ReactNative/identity-capture/src/codes', '@kenshiki/identity-capture/src/codes'))
 shutil.copyfile(Path(__file__).parent / '__tests__/support.ts', host / '__tests__/support.ts')
+shutil.copyfile(Path(__file__).parent / '__tests__/SensorBoardFixtures.ts', host / '__tests__/SensorBoardFixtures.ts')
+# The sensor screens read SensorHost's own words, configuration and documentation pages, generated
+# from Hosts/SensorHost by sensor-presentation/generate.py. Only the generated files travel: the
+# generator reads the Swift host's sources, which a delivery does not carry.
+(host / 'sensor-presentation').mkdir()
+for name in ['config.json', 'copy.json', 'pages.json']:
+    shutil.copyfile(Path(__file__).parent / 'sensor-presentation' / name, host / 'sensor-presentation' / name)
 # Design tokens and UI text: the JSONC sources, their generated modules, the t() runtime and its
 # test, and the generator, so the new host can change its look and words and regenerate.
 for folder in ['ui', 'locales']:
@@ -133,6 +143,24 @@ if template_platform not in podfile.read_text():
                      'set the platform to 18.0 by hand in ' + str(podfile))
 podfile.write_text(podfile.read_text().replace(template_platform, "platform :ios, '18.0'"))
 subprocess.run(['npm', 'install', './vendor/' + artifact.name], cwd=host, check=True)
+# Native navigation, pinned to the versions the SDK checkout typechecks and tests against: native
+# stacks, and bottom-tabs' native UITabBar navigator (its `unstable` entry). react-native-screens
+# 4.28.0 is built against React Native 0.87.0-rc.3 and supports Fabric on 0.84+.
+navigation = ['@react-navigation/native@7.5.0', '@react-navigation/native-stack@7.20.0',
+              '@react-navigation/bottom-tabs@7.20.0', 'react-native-screens@4.28.0',
+              'react-native-safe-area-context@5.10.1']
+subprocess.run(['npm', 'install', '--save-exact'] + navigation, cwd=host, check=True)
+# The copied Jest suites render the navigator, whose packages ship ES modules.
+jest_config = host / 'jest.config.js'
+preset = re.fullmatch(r"module\.exports = \{\s*preset: '([^']+)',?\s*\};?\s*", jest_config.read_text())
+if preset is None:
+    raise SystemExit('The generated jest.config.js is not the one-line preset this script extends; add '
+                     '@react-navigation, react-native-screens and react-native-safe-area-context to its '
+                     'transformIgnorePatterns by hand: ' + str(jest_config))
+jest_config.write_text(
+    "module.exports = {\n  preset: '" + preset.group(1) + "',\n  transformIgnorePatterns: [\n"
+    "    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-navigation"
+    "|react-native-screens|react-native-safe-area-context)/)',\n  ],\n};\n")
 subprocess.run(['ruby', str(Path(__file__).with_name('configure-host.rb')), str(host)], check=True)
 subprocess.run(['pod', 'install'], cwd=host / 'ios', check=True)
 print('Independent host ready:', host)

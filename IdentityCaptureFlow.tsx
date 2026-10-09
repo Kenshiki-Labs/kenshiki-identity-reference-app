@@ -6,9 +6,12 @@ import {
 } from '@kenshiki/identity-capture';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CaptureFlowController, type CompletedCapture, type FlowState } from './CaptureFlowController';
 import { formatMoment } from './HolderText';
 import { t } from './locales/i18n';
+import { type CancelHandle, useCancel } from './ui/ModalCancel';
+import { NativeSheet, useConfirmation } from './ui/NativeSheet';
 import { border, color, opacity, radius, size, spacing, text } from './ui/tokens.generated';
 
 /** Completion transfers the session to the adopter. Cancellation releases it. */
@@ -18,18 +21,22 @@ export function IdentityCaptureFlow({
   onComplete,
   completed,
   resume,
+  cancelRef,
 }: {
   configuration: Configuration;
   onExit: () => void;
   onComplete: (result: CompletedCapture) => void;
   completed?: CompletedCapture | undefined;
   resume?: ('selfie' | 'read') | undefined;
+  /** Filled in with this check's own way out, for the navigation bar's Cancel button. */
+  cancelRef?: CancelHandle | undefined;
 }) {
   const [state, setState] = useState<FlowState>({ phase: 'intro', busy: false, ready: false, preview: 0 });
   const [controller, setController] = useState<CaptureFlowController>();
   const [width, setWidth] = useState(0);
   const handoffStarted = useRef(false);
   const [finishing, setFinishing] = useState(false);
+  const insets = useSafeAreaInsets();
   useEffect(() => {
     const active = new CaptureFlowController(
       IdentityCaptureSession.create,
@@ -50,22 +57,48 @@ export function IdentityCaptureFlow({
       active.dispose().catch(active.fail);
     };
   }, [configuration, completed, resume]);
+  const finish = async () => {
+    if (!controller || handoffStarted.current) return;
+    handoffStarted.current = true;
+    setFinishing(true);
+    try {
+      onComplete(await controller.handoff());
+    } catch (error) {
+      handoffStarted.current = false;
+      setFinishing(false);
+      controller.fail(error);
+    }
+  };
+  /** Completed evidence is handed off; anything earlier is released. */
+  const leave = async () => {
+    if (state.passport) await finish();
+    else if (controller) {
+      await controller.dispose();
+      onExit();
+    }
+  };
+  useCancel(cancelRef, leave, (error) => controller?.fail(error));
+  useConfirmation(
+    controller && state.sheet?.kind === 'restart'
+      ? {
+          key: 'restart',
+          title: t('passport.sheet.restartTitle'),
+          message: state.sheet.message,
+          confirm: t('common.startOver'),
+          keep: t('passport.sheet.keepCheck'),
+          onConfirm: () => {
+            controller.restart().catch(controller.fail);
+          },
+          onKeep: () => {
+            controller.recover().catch(controller.fail);
+          },
+        }
+      : undefined,
+  );
   if (!controller) return <View style={styles.root} />;
   const activeController = controller;
   const { phase, sheet } = state;
   const camera = phase === 'scanning' || phase === 'selfie';
-  const finish = async () => {
-    if (handoffStarted.current) return;
-    handoffStarted.current = true;
-    setFinishing(true);
-    try {
-      onComplete(await activeController.handoff());
-    } catch (error) {
-      handoffStarted.current = false;
-      setFinishing(false);
-      activeController.fail(error);
-    }
-  };
   const title = phaseTitles[phase];
   const action = (label: string, press: () => unknown, disabled = false, id?: string, secondary = false) => (
     <Action
@@ -85,20 +118,6 @@ export function IdentityCaptureFlow({
           comparison: state.comparison,
         }
       : undefined;
-  const close = (
-    <Action
-      label={state.passport ? t('common.backToIdentity') : t('passport.closeCheck')}
-      secondary
-      disabled={finishing || (!!state.passport && state.busy)}
-      onPress={async () => {
-        if (state.passport) await finish();
-        else {
-          await activeController.dispose();
-          onExit();
-        }
-      }}
-    />
-  );
   function renderCaptureStage() {
     if (camera) {
       return renderCamera();
@@ -109,7 +128,6 @@ export function IdentityCaptureFlow({
         importantForAccessibility={sheet ? 'no-hide-descendants' : 'auto'}
         contentContainerStyle={styles.content}
       >
-        <Text style={styles.eyebrow}>{t('common.eyebrow')}</Text>
         <Text accessibilityRole="header" style={styles.title}>
           {title}
         </Text>
@@ -198,24 +216,19 @@ export function IdentityCaptureFlow({
             testID="restart-check"
           />
         )}
-        {close}
       </ScrollView>
     );
   }
   function renderRecovery() {
-    if (!sheet) return null;
+    if (sheet?.kind !== 'recovery') return null;
     return (
-      <View style={styles.scrim}>
-        <View accessibilityViewIsModal style={styles.sheet} testID="capture-bottom-sheet">
-          <ScrollView contentContainerStyle={styles.sheetContent}>
-            <Text accessibilityRole="header" style={styles.sheetTitle}>
-              {sheet.kind === 'restart' ? t('passport.sheet.restartTitle') : t('common.letsTryAgain')}
-            </Text>
-            <Text style={styles.body}>{sheet.message}</Text>
-            {renderRecoveryActions()}
-          </ScrollView>
-        </View>
-      </View>
+      <NativeSheet testID="capture-bottom-sheet">
+        <Text accessibilityRole="header" style={styles.sheetTitle}>
+          {t('common.letsTryAgain')}
+        </Text>
+        <Text style={styles.body}>{sheet.message}</Text>
+        {renderRecoveryActions()}
+      </NativeSheet>
     );
   }
   function renderCamera() {
@@ -255,23 +268,11 @@ export function IdentityCaptureFlow({
             {phase === 'scanning' ? t('passport.camera.scanHint') : state.hint}
           </Text>
         </View>
-        <View style={styles.cameraBottom}>
-          {scanHint()}
-          {close}
-        </View>
+        <View style={[styles.cameraBottom, { paddingBottom: insets.bottom + spacing.lg }]}>{scanHint()}</View>
       </View>
     );
   }
   function renderRecoveryActions() {
-    if (!sheet) return null;
-    if (sheet.kind === 'restart') {
-      return (
-        <>
-          {action(t('common.startOver'), activeController.restart, false, 'confirm-restart')}
-          {action(t('passport.sheet.keepCheck'), activeController.recover, false, undefined, true)}
-        </>
-      );
-    }
     return (
       <>
         {renderRecoveryChoice()}
@@ -308,7 +309,7 @@ export function IdentityCaptureFlow({
     return t('common.backToIdentity');
   }
   function renderRecoveryChoice() {
-    if (!sheet) return null;
+    if (sheet?.kind !== 'recovery') return null;
     if (sheet.recovery === 'details') {
       return action(
         backToDetailsLabel(),
@@ -636,12 +637,16 @@ export function Action({
   disabled = false,
   testID,
   secondary = false,
+  destructive = false,
 }: {
   label: string;
   onPress: () => unknown;
   disabled?: boolean | undefined;
   testID?: string | undefined;
+  /** A plain tinted button, as iOS draws every action but the one prominent one. */
   secondary?: boolean | undefined;
+  /** A plain red button: an action that deletes or discards. */
+  destructive?: boolean | undefined;
 }) {
   const [failure, setFailure] = useState(false);
   const press = () => {
@@ -660,9 +665,16 @@ export function Action({
         disabled={disabled}
         testID={testID}
         onPress={press}
-        style={[styles.action, secondary && styles.secondary, disabled && styles.disabled]}
+        style={[secondary || destructive ? styles.plain : styles.action, disabled && styles.disabled]}
       >
-        <Text style={[styles.actionText, secondary && styles.secondaryText]}>{label}</Text>
+        <Text
+          style={[
+            secondary || destructive ? styles.plainText : styles.actionText,
+            destructive && styles.destructiveText,
+          ]}
+        >
+          {label}
+        </Text>
       </Pressable>
       {failure && (
         <Text accessibilityRole="alert" style={styles.body}>
@@ -674,13 +686,18 @@ export function Action({
 }
 export const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.background },
-  content: { padding: spacing.xl, gap: spacing.lg, paddingBottom: spacing.xxxxl },
+  content: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xxxxl,
+    gap: spacing.lg,
+  },
   eyebrow: { ...text.eyebrow, color: color.secondaryText },
   title: { ...text.screenTitle, color: color.text },
   body: { ...text.body, color: color.text },
   label: { ...text.label, color: color.secondaryText },
   detail: { gap: spacing.xxs },
-  card: { padding: spacing.lg, gap: spacing.md, backgroundColor: color.card, borderRadius: radius.card },
+  card: { padding: spacing.md, gap: spacing.sm, backgroundColor: color.card, borderRadius: radius.group },
   portraits: { flexDirection: 'row', gap: spacing.sm },
   portrait: { flex: 1, gap: spacing.xs },
   image: { aspectRatio: size.portraitAspectRatio, width: '100%' },
@@ -700,38 +717,30 @@ export const styles = StyleSheet.create({
   oval: { borderWidth: border.guide, borderColor: color.onCamera, borderRadius: radius.full },
   action: {
     backgroundColor: color.tint,
-    padding: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     minHeight: size.actionMinHeight,
-    borderRadius: radius.control,
+    borderRadius: radius.full,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   actionText: { ...text.action, color: color.onTint, textAlign: 'center' },
+  plain: {
+    minHeight: size.touchTarget,
+    paddingVertical: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  plainText: { ...text.plainAction, color: color.tint, textAlign: 'center' },
+  destructiveText: { color: color.destructive },
   disabled: { opacity: opacity.disabled },
-  secondary: { backgroundColor: color.secondaryFill },
-  secondaryText: { color: color.tint },
-  scrim: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: color.scrim,
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: color.sheet,
-    borderTopLeftRadius: radius.sheet,
-    borderTopRightRadius: radius.sheet,
-    maxHeight: size.sheetMaxHeight,
-  },
-  sheetContent: { padding: spacing.xxl, paddingBottom: spacing.xxxl, gap: spacing.xl },
   sheetTitle: { ...text.sectionTitle, color: color.text },
   entry: { ...text.entry, color: color.text },
   list: { gap: spacing.md },
   group: { gap: spacing.sm },
   documentPreview: { height: size.documentPreviewHeight },
   documentImage: { height: size.documentImageHeight },
-  developerContent: { padding: spacing.xl, gap: spacing.md },
+  developerContent: { padding: spacing.md, gap: spacing.md },
   developerTitle: { ...text.developerTitle, color: color.text },
   developerPreview: { height: size.developerPreviewHeight },
 });

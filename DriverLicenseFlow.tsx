@@ -6,6 +6,7 @@ import {
 } from '@kenshiki/identity-capture';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DocumentCheckPanel } from './DocumentCheckPanel';
 import {
   DocumentFlowController,
@@ -14,6 +15,9 @@ import {
 } from './DocumentFlowController';
 import { Action, styles } from './IdentityCaptureFlow';
 import { t } from './locales/i18n';
+import { type CancelHandle, useCancel } from './ui/ModalCancel';
+import { NativeSheet } from './ui/NativeSheet';
+import { spacing } from './ui/tokens.generated';
 
 export function DriverLicenseFlow({
   configuration,
@@ -21,12 +25,15 @@ export function DriverLicenseFlow({
   resume,
   onComplete,
   onExit,
+  cancelRef,
 }: {
   configuration: Configuration;
   saved?: SavedDocumentCapture | undefined;
   resume?: ('front' | 'back') | undefined;
   onComplete: (result: SavedDocumentCapture) => void;
   onExit: () => void;
+  /** Filled in with this check's own way out, for the navigation bar's Cancel button. */
+  cancelRef?: CancelHandle | undefined;
 }) {
   const [controller, setController] = useState<DocumentFlowController>();
   const [state, setState] = useState<DocumentFlowState>({
@@ -39,6 +46,7 @@ export function DriverLicenseFlow({
   });
   const [finishing, setFinishing] = useState(false);
   const finishingRef = useRef(false);
+  const insets = useSafeAreaInsets();
   useEffect(() => {
     const active = new DocumentFlowController(IdentityCaptureSession.create, configuration, setState, saved);
     setController(active);
@@ -54,35 +62,36 @@ export function DriverLicenseFlow({
       active.dispose().catch(active.fail);
     };
   }, [configuration, saved, resume]);
-  if (!controller) return <View style={styles.root} />;
-  const activeController = controller;
-  const camera = state.phase === 'front' || state.phase === 'back';
   const finish = async () => {
-    if (finishingRef.current) return;
+    if (!controller || finishingRef.current) return;
     finishingRef.current = true;
     setFinishing(true);
     try {
-      const result = await activeController.handoff();
+      const result = await controller.handoff();
       if (result) onComplete(result);
       else onExit();
     } catch (error) {
       // Ownership stays here; the failed settlement is shown in this screen's bottom sheet.
       finishingRef.current = false;
       setFinishing(false);
-      if (!activeController.state.sheet) activeController.fail(error);
+      if (!controller.state.sheet) controller.fail(error);
     }
   };
   const exit = async () => {
-    if (finishingRef.current) return;
+    if (!controller || finishingRef.current) return;
     if (state.completed || state.draft?.front) {
       await finish();
       return;
     }
     finishingRef.current = true;
     setFinishing(true);
-    await activeController.dispose();
+    await controller.dispose();
     onExit();
   };
+  useCancel(cancelRef, exit, (error) => controller?.fail(error));
+  if (!controller) return <View style={styles.root} />;
+  const activeController = controller;
+  const camera = state.phase === 'front' || state.phase === 'back';
   const action = (label: string, press: () => unknown, id?: string, secondary = false, disabled = false) => (
     <Action
       label={label}
@@ -138,7 +147,7 @@ export function DriverLicenseFlow({
             </Text>
             <Text style={[styles.body, styles.white]}>{t('license.cameraHint')}</Text>
           </View>
-          <View style={styles.cameraBottom}>
+          <View style={[styles.cameraBottom, { paddingBottom: insets.bottom + spacing.lg }]}>
             <Text style={[styles.body, styles.white]} accessibilityLiveRegion="polite">
               {documentHint(state)}
             </Text>
@@ -149,7 +158,6 @@ export function DriverLicenseFlow({
               false,
               !state.ready || state.capturing,
             )}
-            {close}
           </View>
         </View>
       );
@@ -160,7 +168,6 @@ export function DriverLicenseFlow({
         accessibilityElementsHidden={!!state.sheet}
         importantForAccessibility={state.sheet ? 'no-hide-descendants' : 'auto'}
       >
-        <Text style={styles.eyebrow}>{t('common.eyebrow')}</Text>
         <Text accessibilityRole="header" style={styles.title}>
           {title}
         </Text>
@@ -214,37 +221,32 @@ export function DriverLicenseFlow({
             {t('common.pleaseWait')}
           </Text>
         )}
-        {close}
       </ScrollView>
     );
   }
   function renderRecovery() {
     if (!state.sheet) return null;
     return (
-      <View style={styles.scrim}>
-        <View style={styles.sheet} accessibilityViewIsModal testID="document-bottom-sheet">
-          <ScrollView contentContainerStyle={styles.sheetContent}>
-            <Text accessibilityRole="header" style={styles.sheetTitle}>
-              {state.sheet.title}
-            </Text>
-            <Text style={styles.body}>{state.sheet.message}</Text>
-            {state.sheet.recovery === 'details' ? (
-              close
-            ) : (
-              <>
-                {state.sheet.recovery === 'settings' &&
-                  action(t('common.openSettings'), () => Linking.openSettings(), 'document-open-settings')}
-                {action(
-                  state.sheet.recovery === 'settings' ? t('common.tryCameraAgain') : t('common.tryAgain'),
-                  activeController.retry,
-                  'retry-document',
-                )}
-                {close}
-              </>
+      <NativeSheet testID="document-bottom-sheet">
+        <Text accessibilityRole="header" style={styles.sheetTitle}>
+          {state.sheet.title}
+        </Text>
+        <Text style={styles.body}>{state.sheet.message}</Text>
+        {state.sheet.recovery === 'details' ? (
+          close
+        ) : (
+          <>
+            {state.sheet.recovery === 'settings' &&
+              action(t('common.openSettings'), () => Linking.openSettings(), 'document-open-settings')}
+            {action(
+              state.sheet.recovery === 'settings' ? t('common.tryCameraAgain') : t('common.tryAgain'),
+              activeController.retry,
+              'retry-document',
             )}
-          </ScrollView>
-        </View>
-      </View>
+            {close}
+          </>
+        )}
+      </NativeSheet>
     );
   }
   function renderSavedDocuments() {

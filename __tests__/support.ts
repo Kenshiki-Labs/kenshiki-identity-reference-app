@@ -1,6 +1,21 @@
 import type { CaptureSession } from '@kenshiki/identity-capture';
+import { ActionSheetIOS } from 'react-native';
 import type { ReactTestInstance } from 'react-test-renderer';
 import { t } from '../locales/i18n';
+/** Replaces the iOS action sheet: records every question asked and lets the test choose. */
+export function actionSheets() {
+  const asked: { title: string | undefined; options: string[]; choose: (index: number) => void }[] = [];
+  const spy = jest
+    .spyOn(ActionSheetIOS, 'showActionSheetWithOptions')
+    .mockImplementation((options, callback) => {
+      asked.push({ title: options.title ?? undefined, options: [...options.options], choose: callback });
+    });
+  return { asked, spy, last: () => required(asked.at(-1)) };
+}
+/** Lets promise chains a callback started, but did not await, run to completion. */
+export async function settle() {
+  for (let n = 0; n < 24; n += 1) await Promise.resolve();
+}
 /** Unconfigured operations fail loudly instead of simulating successful native work. */
 export function mockSession<T extends Partial<CaptureSession>>(overrides: T) {
   const unexpected = (): never => {

@@ -1,22 +1,40 @@
 import type { Configuration } from '@kenshiki/identity-capture';
 import { IdentityCaptureSession } from '@kenshiki/identity-capture';
+import { createNativeBottomTabNavigator } from '@react-navigation/bottom-tabs/unstable';
+import {
+  DarkTheme,
+  DefaultTheme,
+  NavigationContainer,
+  type NavigationState,
+  StackActions,
+  useNavigationContainerRef,
+} from '@react-navigation/native';
+import {
+  createNativeStackNavigator,
+  type NativeStackNavigationOptions,
+  type NativeStackNavigationProp,
+} from '@react-navigation/native-stack';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, useColorScheme } from 'react-native';
 import { CaptureFlowController, type CompletedCapture } from './CaptureFlowController';
 import { DocumentCheckPanel } from './DocumentCheckPanel';
 import { isCompleteDocument, type SavedDocumentCapture } from './DocumentFlowController';
 import { DocumentResultDetails, DriverLicenseFlow, documentName } from './DriverLicenseFlow';
 import { type ErrorText, errorCode, errorText } from './HolderText';
 import { Action, CaptureResultDetails, IdentityCaptureFlow, styles } from './IdentityCaptureFlow';
-import { IdentitySheetHost } from './IdentitySheetHost';
 import { IntegrationChecks } from './IntegrationChecks';
 import { t } from './locales/i18n';
 import { PhoneFlow } from './PhoneFlow';
 import type { SavedPhoneCheck } from './PhoneFlowController';
 import { phoneCheckStopped } from './PhonePolicy';
-import { SensorScreen } from './SensorScreen';
+import { copy, type SensorPage, title } from './SensorPresentation';
+import { SensorBoardScreen, SensorDetailScreen, SensorSession, SensorSettingsScreen } from './SensorScreen';
 import { SSNFlow, ssnSummary } from './SSNFlow';
 import type { SavedSSNCheck } from './SSNFlowController';
+import { BarButton, ListRow, ListSection } from './ui/List';
+import type { CancelHandle } from './ui/ModalCancel';
+import { NativeSheet, useConfirmation } from './ui/NativeSheet';
+import { color, symbol } from './ui/tokens.generated';
 
 const clearErrors: ErrorText = {
   busy: t('hub.clearError.busy'),
@@ -31,6 +49,43 @@ const restoreErrors: ErrorText = {
   busy: t('hub.restoreError.busy'),
 };
 
+/** The root: the tabs, and the checks presented over them as full-screen modals. A journey that
+ * must run before the tabs, such as enrollment, becomes this stack's first route and replaces
+ * itself with Tabs when it finishes. */
+type RootRoutes = {
+  Tabs: undefined;
+  PassportCapture: undefined;
+  LicenseCapture: undefined;
+  SSNCheck: undefined;
+  PhoneCheck: undefined;
+};
+/** Three tabs in a native UITabBar, each its own native stack with a large title. */
+type TabRoutes = { IdentityTab: undefined; SensorsTab: undefined; SettingsTab: undefined };
+type IdentityRoutes = { IdentityHome: undefined; PassportResult: undefined; LicenseResult: undefined };
+type SensorRoutes = { SensorBoard: undefined; SensorDetail: { page: SensorPage } };
+type SettingsRoutes = { SettingsHome: undefined; DeveloperChecks: undefined };
+const Root = createNativeStackNavigator<RootRoutes>();
+const Tabs = createNativeBottomTabNavigator<TabRoutes>();
+const IdentityStack = createNativeStackNavigator<IdentityRoutes>();
+const SensorStack = createNativeStackNavigator<SensorRoutes>();
+const SettingsStack = createNativeStackNavigator<SettingsRoutes>();
+type IdentityNavigation = NativeStackNavigationProp<IdentityRoutes>;
+type ClearTarget = 'passport' | 'document';
+const pushed: NativeStackNavigationOptions = {
+  headerTransparent: true,
+  headerBlurEffect: 'systemChromeMaterial',
+  contentStyle: { backgroundColor: color.background },
+};
+const large: NativeStackNavigationOptions = { headerLargeTitle: true, headerLargeTitleShadowVisible: false };
+
+/** The sensor session runs while the Sensors or the Settings tab is in front. */
+function sensorTabFocused(state: NavigationState | undefined): boolean {
+  const tabs = state?.routes.find((route) => route.name === 'Tabs')?.state;
+  if (!tabs || typeof tabs.index !== 'number') return false;
+  const focused = tabs.routes[tabs.index]?.name;
+  return focused === 'SensorsTab' || focused === 'SettingsTab';
+}
+
 const emptyConfiguration: Configuration = {};
 /** `developerChecks` is passed only by the simulator Debug AppDelegate. `configurationIssue` names
  * a native configuration step that failed before React mounted. */
@@ -43,17 +98,12 @@ export default function App({
   developerChecks?: boolean | undefined;
   configurationIssue?: 'holderScopeUnreadable' | undefined;
 }) {
-  const [screen, setScreen] = useState<
-    | 'identity'
-    | 'result'
-    | 'capture'
-    | 'checks'
-    | 'documentCapture'
-    | 'documentResult'
-    | 'ssn'
-    | 'phone'
-    | 'sensors'
-  >('identity');
+  const navigation = useNavigationContainerRef<RootRoutes>();
+  const identityNavigation = useRef<IdentityNavigation | undefined>(undefined);
+  const scheme = useColorScheme();
+  const cancel = useRef<(() => void) | undefined>(undefined);
+  const cancelHandle: CancelHandle = cancel;
+  const [sensorsOpen, setSensorsOpen] = useState(false);
   const [result, setResult] = useState<CompletedCapture>();
   const [focus, setFocus] = useState<'passport' | 'face'>('passport');
   const owned = useRef<CompletedCapture | undefined>(undefined);
@@ -73,8 +123,8 @@ export default function App({
   const [phone, setPhone] = useState<SavedPhoneCheck>();
   const ownedPhone = useRef<SavedPhoneCheck | undefined>(undefined);
   const [phoneInput, setPhoneInput] = useState<SavedPhoneCheck>();
-  const [clearSheet, setClearSheet] = useState<'passport' | 'document'>();
-  const [clearError, setClearError] = useState<string>();
+  const [confirmingClear, setConfirmingClear] = useState<ClearTarget>();
+  const [clearFailure, setClearFailure] = useState<{ target: ClearTarget; message: string }>();
   const [clearing, setClearing] = useState(false);
   const [openingResults, setOpeningResults] = useState(!!configuration.results);
   const [savedCount, setSavedCount] = useState(0);
@@ -82,8 +132,15 @@ export default function App({
   const [restoreAttempt, setRestoreAttempt] = useState(0);
   const latestRestoreAttempt = useRef(0);
   const releasing = useRef<Promise<unknown>>(Promise.resolve());
+  /** Back to the Identity list: closes a presented check and pops the Identity tab's pushed screens. */
+  function home() {
+    if (navigation.isReady() && navigation.canGoBack()) navigation.dispatch(StackActions.popToTop());
+    const identity = identityNavigation.current;
+    if (identity && identity.getState().routes.length > 1) identity.popToTop();
+  }
   // One configuration is one holder's custody. Before the next holder's saved results open,
-  // release every session the previous holder's screens own and clear their personal state.
+  // release every session the previous holder's screens own, clear their personal state and
+  // return to the Identity list.
   useEffect(() => {
     const previous = [
       owned.current?.session,
@@ -103,15 +160,17 @@ export default function App({
     setDocumentInput({});
     setSSNInput(undefined);
     setPhoneInput(undefined);
-    setClearSheet(undefined);
-    setClearError(undefined);
+    setConfirmingClear(undefined);
+    setClearFailure(undefined);
     setSavedCount(0);
     setRestoreFailure(undefined);
-    setScreen('identity');
+    if (navigation.isReady() && navigation.canGoBack()) navigation.dispatch(StackActions.popToTop());
+    const identity = identityNavigation.current;
+    if (identity && identity.getState().routes.length > 1) identity.popToTop();
     setOpeningResults(!!configuration.results);
     releasing.current = Promise.all(previous.flatMap((session) => (session ? [session.release()] : [])));
     releasing.current.catch(() => setRestoreFailure(t('hub.closeFailed.previous')));
-  }, [configuration]);
+  }, [configuration, navigation]);
   useEffect(() => {
     if (!configuration.results) {
       setOpeningResults(false);
@@ -178,14 +237,14 @@ export default function App({
     owned.current = completed;
     setResult(completed);
     setInput({});
-    setScreen('identity');
+    home();
   }
   function start(resume?: 'read' | 'selfie') {
     const completed = result;
     owned.current = undefined;
     setResult(undefined);
     setInput({ completed, resume });
-    setScreen('capture');
+    navigation.navigate('PassportCapture');
   }
   async function openSavedResults() {
     if (openingResults) return;
@@ -195,7 +254,7 @@ export default function App({
       owned.current = undefined;
       setResult(undefined);
       setInput({});
-      setScreen('capture');
+      navigation.navigate('PassportCapture');
     } finally {
       setOpeningResults(false);
     }
@@ -204,48 +263,49 @@ export default function App({
     ownedDocument.current = saved;
     setDocument(saved);
     setDocumentInput({});
-    setScreen('identity');
+    home();
   }
   function startDocument(resume?: 'front' | 'back') {
     const saved = document;
     ownedDocument.current = undefined;
     setDocument(undefined);
     setDocumentInput({ saved, resume });
-    setScreen('documentCapture');
+    navigation.navigate('LicenseCapture');
   }
   function openSSN() {
     ownedSSN.current = undefined;
     setSSNInput(ssn);
     setSSN(undefined);
-    setScreen('ssn');
+    navigation.navigate('SSNCheck');
   }
   function acceptSSN(value: SavedSSNCheck) {
     ownedSSN.current = value;
     setSSN(value);
     setSSNInput(undefined);
-    setScreen('identity');
+    home();
   }
   function openPhone() {
     ownedPhone.current = undefined;
     setPhoneInput(phone);
     setPhone(undefined);
-    setScreen('phone');
+    navigation.navigate('PhoneCheck');
   }
   function acceptPhone(value: SavedPhoneCheck) {
     ownedPhone.current = value;
     setPhone(value);
     setPhoneInput(undefined);
-    setScreen('identity');
+    home();
   }
-  function requestClear(target: 'passport' | 'document') {
-    setClearError(undefined);
-    setClearSheet(target);
+  /** Deleting saved evidence is a destructive choice: it is asked with the iOS action sheet. */
+  function requestClear(target: ClearTarget) {
+    setClearFailure(undefined);
+    setConfirmingClear(target);
   }
-  async function clear() {
+  async function clear(target: ClearTarget) {
     if (clearing) return;
     setClearing(true);
     try {
-      if (clearSheet === 'document') {
+      if (target === 'document') {
         await ownedDocument.current?.session.eraseDocuments();
         await ownedDocument.current?.session.release();
         ownedDocument.current = undefined;
@@ -266,14 +326,34 @@ export default function App({
         setSavedCount(0);
         setRestoreFailure(undefined);
       }
-      setClearSheet(undefined);
-      setScreen('identity');
+      setClearFailure(undefined);
+      home();
     } catch (error) {
-      setClearError(errorText(errorCode(error), clearErrors, t('hub.clearError.other')));
+      reportClearFailure(target, error);
     } finally {
       setClearing(false);
     }
   }
+  function reportClearFailure(target: ClearTarget, error: unknown) {
+    setClearFailure({ target, message: errorText(errorCode(error), clearErrors, t('hub.clearError.other')) });
+  }
+  useConfirmation(
+    confirmingClear
+      ? {
+          key: confirmingClear,
+          title: confirmingClear === 'document' ? t('hub.clear.licenseTitle') : t('hub.clear.passportTitle'),
+          message: confirmingClear === 'document' ? t('hub.clear.licenseBody') : t('hub.clear.passportBody'),
+          confirm:
+            confirmingClear === 'document' ? t('hub.clear.deleteLicenseScans') : t('hub.action.clearResults'),
+          keep: t('hub.clear.keep'),
+          onConfirm: () => {
+            setConfirmingClear(undefined);
+            clear(confirmingClear).catch((error: unknown) => reportClearFailure(confirmingClear, error));
+          },
+          onKeep: () => setConfirmingClear(undefined),
+        }
+      : undefined,
+  );
   const passportReady = !!configuration.trustAnchorsURL;
   const faceReady = !!configuration.embedderURL && !!configuration.detectorURL;
   const blocked = openingResults || !!restoreFailure;
@@ -281,340 +361,201 @@ export default function App({
   const faceDisabled =
     blocked ||
     !(result?.comparison || (faceReady && result?.passport.portraitAvailable) || (!result && savedCount > 0));
-  const covered = !!clearSheet || !!restoreFailure;
-  function renderScreen() {
-    if (screen === 'sensors')
-      return <SensorScreen configuration={configuration} onExit={() => setScreen('identity')} />;
-    if (screen === 'capture') {
-      return (
-        <IdentityCaptureFlow
-          configuration={configuration}
-          {...input}
-          onComplete={accept}
-          onExit={() => {
-            setInput({});
-            setScreen('identity');
-          }}
-        />
-      );
-    }
-    if (screen === 'documentCapture') {
-      return (
-        <DriverLicenseFlow
-          configuration={configuration}
-          {...documentInput}
-          onComplete={acceptDocument}
-          onExit={() => {
-            setDocumentInput({});
-            setScreen('identity');
-          }}
-        />
-      );
-    }
-    if (screen === 'ssn') {
-      return (
-        <SSNFlow
-          configuration={configuration}
-          saved={ssnInput}
-          onComplete={acceptSSN}
-          onExit={() => {
-            setSSNInput(undefined);
-            setScreen('identity');
-          }}
-        />
-      );
-    }
-    if (screen === 'phone') {
-      return (
-        <PhoneFlow
-          configuration={configuration}
-          saved={phoneInput}
-          onComplete={acceptPhone}
-          onExit={() => {
-            setPhoneInput(undefined);
-            setScreen('identity');
-          }}
-        />
-      );
-    }
-    if (screen === 'checks' && developerChecks && __DEV__) {
-      return (
-        <View style={{ flex: 1 }}>
-          <Action label={t('common.backToIdentity')} onPress={() => setScreen('identity')} />
-          <IntegrationChecks configuration={configuration} />
-        </View>
-      );
-    }
+  const covered = !!clearFailure || !!restoreFailure;
+  const modal = (heading: string): NativeStackNavigationOptions => ({
+    presentation: 'fullScreenModal',
+    gestureEnabled: false,
+    headerShown: true,
+    title: heading,
+    contentStyle: { backgroundColor: color.background },
+    headerLeft: () => (
+      <BarButton label={t('common.cancel')} testID="modal-cancel" onPress={() => cancel.current?.()} />
+    ),
+  });
+  /** Why a dimmed check cannot open, for the section footer. Nothing while results are opening. */
+  function unavailableReasons() {
+    if (blocked) return undefined;
+    const reasons = [
+      passportDisabled ? t('hub.passport.notSetUp') : undefined,
+      faceDisabled ? (faceReady ? t('hub.face.needsPassport') : t('hub.face.notSetUp')) : undefined,
+    ].filter((reason): reason is string => !!reason);
+    return reasons.length ? reasons.join(' ') : undefined;
+  }
+  function renderIdentity({ navigation: identity }: { navigation: IdentityNavigation }) {
+    identityNavigation.current = identity;
+    const saved = !!configuration.results && !!result;
     return (
       <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.content}
         testID="identity-hub"
         accessibilityElementsHidden={covered}
         importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}
       >
-        <Text accessibilityRole="header" style={styles.title}>
-          {screen === 'result'
-            ? t('hub.resultsTitle')
-            : screen === 'documentResult'
-              ? t('hub.licenseTitle')
-              : t('hub.title')}
-        </Text>
-        {renderIdentityContent()}
+        {configurationIssue === 'holderScopeUnreadable' && (
+          <Text style={styles.label} testID="configuration-issue">
+            {t('hub.configurationIssue')}
+          </Text>
+        )}
+        <ListSection header={t('hub.section.checks')} footer={unavailableReasons()} icons>
+          <ListRow
+            rowID="open-driver-license"
+            label={t('hub.license.title')}
+            status={licenseSummary()}
+            icon={{ name: symbol.license, background: color.swiftBlue }}
+            onPress={() =>
+              document && isCompleteDocument(document.document)
+                ? identity.navigate('LicenseResult')
+                : startDocument()
+            }
+          />
+          <ListRow
+            rowID="open-capture-flow"
+            label={t('hub.passport.title')}
+            status={passportDisabled && !blocked ? t('hub.notAvailable') : passportSummary()}
+            icon={{ name: symbol.passport, background: color.swiftIndigo }}
+            disabled={passportDisabled}
+            onPress={() => {
+              setFocus('passport');
+              if (result) identity.navigate('PassportResult');
+              else start();
+            }}
+          />
+          <ListRow
+            rowID="face-match-card"
+            label={t('hub.face.title')}
+            status={faceDisabled && !blocked ? t('hub.notAvailable') : faceSummary()}
+            icon={{ name: symbol.face, background: color.swiftGreen }}
+            disabled={faceDisabled}
+            onPress={() => {
+              setFocus('face');
+              if (result?.comparison) identity.navigate('PassportResult');
+              else start(result ? 'selfie' : undefined);
+            }}
+          />
+          <ListRow
+            rowID="open-ssn"
+            label={t('common.socialSecurityNumber')}
+            status={ssnStatus()}
+            icon={{ name: symbol.ssn, background: color.swiftOrange }}
+            onPress={openSSN}
+          />
+          <ListRow
+            rowID="open-phone"
+            label={t('hub.phone.title')}
+            status={phoneStatus()}
+            icon={{ name: symbol.phone, background: color.swiftTeal }}
+            onPress={openPhone}
+          />
+        </ListSection>
+        {saved && (
+          <ListSection header={t('hub.section.saved')} footer={t('hub.action.savedNotice')} icons>
+            <ListRow
+              label={t('hub.action.openSavedPassportChecks')}
+              icon={{ name: symbol.savedChecks, background: color.swiftGray }}
+              disabled={openingResults}
+              onPress={() => {
+                openSavedResults().catch(() => setRestoreFailure(t('hub.closeFailed.check')));
+              }}
+            />
+          </ListSection>
+        )}
       </ScrollView>
     );
   }
-  function renderRestoreFailure() {
-    if (!(restoreFailure && !clearSheet)) return null;
+  function renderSettings({
+    navigation: settings,
+  }: {
+    navigation: NativeStackNavigationProp<SettingsRoutes>;
+  }) {
+    const erasable = !!result || !!document;
     return (
-      <View style={styles.scrim}>
-        <View style={styles.sheet} accessibilityViewIsModal testID="restore-bottom-sheet">
-          <View style={styles.sheetContent}>
-            <Text accessibilityRole="header" style={styles.sheetTitle}>
-              {t('hub.restore.title')}
-            </Text>
-            <Text style={styles.body}>{t('hub.restore.body', { reason: restoreFailure })}</Text>
-            <Action
-              label={t('hub.restore.reopen')}
-              disabled={openingResults}
-              onPress={() => setRestoreAttempt((value) => value + 1)}
-            />
-            {configuration.results && (
-              <Action
-                label={t('hub.restore.erase')}
-                secondary
-                disabled={openingResults}
-                testID="erase-unreadable-results"
-                onPress={() => requestClear('passport')}
-              />
-            )}
-          </View>
-        </View>
-      </View>
-    );
-  }
-  function renderEraseConfirmation() {
-    if (!clearSheet) return null;
-    return (
-      <View style={styles.scrim}>
-        <View style={styles.sheet} accessibilityViewIsModal>
-          <View style={styles.sheetContent}>
-            <Text accessibilityRole="header" style={styles.sheetTitle}>
-              {clearError
-                ? t('hub.clear.failedTitle')
-                : clearSheet === 'document'
-                  ? t('hub.clear.licenseTitle')
-                  : t('hub.clear.passportTitle')}
-            </Text>
-            <Text style={styles.body}>
-              {clearError ??
-                (clearSheet === 'document' ? t('hub.clear.licenseBody') : t('hub.clear.passportBody'))}
-            </Text>
-            <Action
-              label={
-                clearError
-                  ? t('common.tryAgain')
-                  : clearSheet === 'document'
-                    ? t('hub.clear.deleteLicenseScans')
-                    : t('hub.action.clearResults')
-              }
-              onPress={clear}
-              disabled={clearing}
-            />
-            <Action
-              label={t('hub.clear.keep')}
-              secondary
-              onPress={() => setClearSheet(undefined)}
-              disabled={clearing}
-            />
-          </View>
-        </View>
-      </View>
-    );
-  }
-  function renderIdentityContent() {
-    if (screen === 'identity') {
-      return (
-        <>
-          <Text style={styles.body}>{t('hub.intro')}</Text>
-          {configurationIssue === 'holderScopeUnreadable' && (
-            <Text style={styles.body} testID="configuration-issue">
-              {t('hub.configurationIssue')}
-            </Text>
-          )}
-          {renderLicenseCard()}
-          {renderPassportCard()}
-          {renderFaceCard()}
-          {renderSSNCard()}
-          {renderPhoneCard()}
-          <Action label={t('hub.action.phoneSensors')} secondary onPress={() => setScreen('sensors')} />
-          {configuration.results && result && (
-            <Action
-              label={t('hub.action.openSavedPassportChecks')}
-              secondary
-              disabled={openingResults}
-              onPress={openSavedResults}
-            />
-          )}
-          {configuration.results && result && <Text style={styles.label}>{t('hub.action.savedNotice')}</Text>}
+      <SensorSettingsScreen>
+        <ListSection header={t('settings.identityData')} footer={t('hub.action.savedNotice')} icons>
           {result && (
-            <Action label={t('hub.action.eraseAll')} secondary onPress={() => requestClear('passport')} />
+            <ListRow
+              label={t('hub.action.eraseAll')}
+              destructive
+              chevron={false}
+              icon={{ name: symbol.erase, background: color.swiftRed }}
+              onPress={() => requestClear('passport')}
+            />
           )}
           {document && (
-            <Action
+            <ListRow
               label={t('hub.action.deleteLicenseScans')}
-              secondary
+              destructive
+              chevron={false}
+              icon={{ name: symbol.erase, background: color.swiftRed }}
               onPress={() => requestClear('document')}
             />
           )}
-          {developerChecks && __DEV__ && (
-            <Action
+        </ListSection>
+        {!erasable && <Text style={styles.label}>{t('settings.nothingSaved')}</Text>}
+        {developerChecks && __DEV__ && (
+          <ListSection header={t('settings.developer')} icons>
+            <ListRow
+              rowID="open-sdk-checks"
               label={t('hub.action.developerChecks')}
-              secondary
-              onPress={() => setScreen('checks')}
-              testID="open-sdk-checks"
+              icon={{ name: symbol.developer, background: color.swiftGray }}
+              onPress={() => settings.navigate('DeveloperChecks')}
             />
-          )}
-        </>
-      );
-    }
-    if (screen === 'documentResult' && document) {
-      return (
-        <>
-          <DocumentResultDetails result={document} />
-          <DocumentCheckPanel
-            key={document.document.front?.captureID}
-            session={document.session}
-            configured={!!configuration.document?.check}
-          />
-          <Action
-            label={t('common.backToIdentity')}
-            testID="document-result-back"
-            onPress={() => setScreen('identity')}
-          />
-          <Action
-            label={t('license.retake')}
-            secondary
-            testID="retake-saved-document"
-            onPress={() => startDocument('front')}
-          />
-          <Action
-            label={t('hub.action.deleteLicenseScans')}
-            secondary
-            onPress={() => requestClear('document')}
-          />
-        </>
-      );
-    }
+          </ListSection>
+        )}
+      </SensorSettingsScreen>
+    );
+  }
+  function renderLicenseResult() {
+    if (!document) return null;
+    return (
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
+        <DocumentResultDetails result={document} />
+        <DocumentCheckPanel
+          key={document.document.front?.captureID}
+          session={document.session}
+          configured={!!configuration.document?.check}
+        />
+        <Action
+          label={t('license.retake')}
+          secondary
+          testID="retake-saved-document"
+          onPress={() => startDocument('front')}
+        />
+        <Action
+          label={t('hub.action.deleteLicenseScans')}
+          destructive
+          onPress={() => requestClear('document')}
+        />
+      </ScrollView>
+    );
+  }
+  function renderPassportResult() {
     if (!result) return null;
     return (
-      <>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
         <CaptureResultDetails result={result} focus={focus} />
-        <Action label={t('common.backToIdentity')} onPress={() => setScreen('identity')} />
         <Action
           label={result.comparison ? t('passport.action.retakeSelfie') : t('passport.action.compareSelfie')}
           secondary
           disabled={!result.passport.portraitAvailable || !faceReady}
           onPress={() => start('selfie')}
         />
-        {!faceReady && <Text style={styles.body}>{t('hub.face.notSetUp')}</Text>}
+        {!faceReady && <Text style={styles.label}>{t('hub.face.notSetUp')}</Text>}
         <Action
           label={t('passport.action.readChipAgain')}
           secondary
           disabled={!passportReady}
           onPress={() => start('read')}
         />
-        <Action label={t('hub.action.clearResults')} secondary onPress={() => requestClear('passport')} />
-      </>
+        <Action label={t('hub.action.clearResults')} destructive onPress={() => requestClear('passport')} />
+      </ScrollView>
     );
   }
-  function renderLicenseCard() {
-    return (
-      <Pressable
-        accessibilityRole="button"
-        style={styles.card}
-        testID="open-driver-license"
-        onPress={() =>
-          document && isCompleteDocument(document.document) ? setScreen('documentResult') : startDocument()
-        }
-      >
-        <Text style={styles.sheetTitle}>{t('hub.license.title')}</Text>
-        <Text style={styles.body}>
-          {document
-            ? isCompleteDocument(document.document)
-              ? t('hub.license.viewResults', { name: documentName(document.document) })
-              : t('hub.license.continueBack')
-            : t('hub.license.start')}
-        </Text>
-      </Pressable>
-    );
-  }
-  function renderPassportCard() {
-    return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ disabled: passportDisabled }}
-        disabled={passportDisabled}
-        style={[styles.card, passportDisabled && styles.disabled]}
-        testID="open-capture-flow"
-        onPress={() => {
-          setFocus('passport');
-          if (result) setScreen('result');
-          else start();
-        }}
-      >
-        <Text style={styles.sheetTitle}>{t('hub.passport.title')}</Text>
-        <Text style={styles.body}>{passportSummary()}</Text>
-      </Pressable>
-    );
-  }
-  function renderFaceCard() {
-    return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ disabled: faceDisabled }}
-        disabled={faceDisabled}
-        style={[styles.card, faceDisabled && styles.disabled]}
-        testID="face-match-card"
-        onPress={() => {
-          setFocus('face');
-          if (result?.comparison) setScreen('result');
-          else start(result ? 'selfie' : undefined);
-        }}
-      >
-        <Text style={styles.sheetTitle}>{t('hub.face.title')}</Text>
-        <Text style={styles.body}>{faceSummary()}</Text>
-      </Pressable>
-    );
-  }
-  function renderSSNCard() {
-    return (
-      <Pressable accessibilityRole="button" style={styles.card} testID="open-ssn" onPress={openSSN}>
-        <Text style={styles.sheetTitle}>{t('common.socialSecurityNumber')}</Text>
-        <Text style={styles.body}>
-          {ssn?.snapshot.recoveryNeeded
-            ? t('hub.ssn.needsAttention')
-            : ssn?.snapshot.receipt
-              ? t('hub.ssn.viewResult', { summary: ssnSummary(ssn.snapshot.receipt) })
-              : t('hub.ssn.start')}
-        </Text>
-      </Pressable>
-    );
-  }
-  function renderPhoneCard() {
-    return (
-      <Pressable accessibilityRole="button" style={styles.card} testID="open-phone" onPress={openPhone}>
-        <Text style={styles.sheetTitle}>{t('hub.phone.title')}</Text>
-        <Text style={styles.body}>
-          {phone?.snapshot.pending
-            ? t('hub.phone.resume')
-            : phone?.snapshot.receipt
-              ? phoneCheckStopped(phone.snapshot.receipt)
-                ? t('hub.phone.stopped')
-                : t('hub.phone.viewResult')
-              : t('hub.phone.start')}
-        </Text>
-      </Pressable>
-    );
+  function licenseSummary() {
+    if (!document) return t('hub.license.start');
+    return isCompleteDocument(document.document)
+      ? t('hub.license.viewResults', { name: documentName(document.document) })
+      : t('hub.license.continueBack');
   }
   function passportSummary() {
     if (result) {
@@ -629,10 +570,7 @@ export default function App({
     if (savedCount) {
       return t('hub.passport.openSaved');
     }
-    if (passportReady) {
-      return t('hub.passport.start');
-    }
-    return t('hub.passport.notSetUp');
+    return t('hub.passport.start');
   }
   function faceSummary() {
     if (result?.comparison) {
@@ -641,21 +579,202 @@ export default function App({
     if (!result && savedCount) {
       return t('hub.face.chooseSaved');
     }
-    if (!faceReady) {
-      return t('hub.face.notSetUp');
-    }
-    if (result) {
-      return t('hub.face.start');
-    }
-    return t('hub.face.needsPassport');
+    return t('hub.face.start');
+  }
+  function ssnStatus() {
+    if (ssn?.snapshot.recoveryNeeded) return t('hub.ssn.needsAttention');
+    if (ssn?.snapshot.receipt) return t('hub.ssn.viewResult', { summary: ssnSummary(ssn.snapshot.receipt) });
+    return t('hub.ssn.start');
+  }
+  function phoneStatus() {
+    if (phone?.snapshot.pending) return t('hub.phone.resume');
+    if (!phone?.snapshot.receipt) return t('hub.phone.start');
+    return phoneCheckStopped(phone.snapshot.receipt) ? t('hub.phone.stopped') : t('hub.phone.viewResult');
+  }
+  function renderIdentityTab() {
+    return (
+      <IdentityStack.Navigator screenOptions={pushed}>
+        <IdentityStack.Screen name="IdentityHome" options={{ ...large, title: t('hub.title') }}>
+          {renderIdentity}
+        </IdentityStack.Screen>
+        <IdentityStack.Screen name="PassportResult" options={{ title: t('hub.resultsTitle') }}>
+          {renderPassportResult}
+        </IdentityStack.Screen>
+        <IdentityStack.Screen name="LicenseResult" options={{ title: t('hub.licenseTitle') }}>
+          {renderLicenseResult}
+        </IdentityStack.Screen>
+      </IdentityStack.Navigator>
+    );
+  }
+  function renderSensorsTab() {
+    return (
+      <SensorStack.Navigator screenOptions={pushed}>
+        <SensorStack.Screen name="SensorBoard" options={{ ...large, title: copy('tab.sensors.title') }}>
+          {({ navigation: sensors }: { navigation: NativeStackNavigationProp<SensorRoutes> }) => (
+            <SensorBoardScreen onOpenPage={(page) => sensors.navigate('SensorDetail', { page })} />
+          )}
+        </SensorStack.Screen>
+        <SensorStack.Screen
+          name="SensorDetail"
+          options={({ route }) => ({ title: title(route.params.page) })}
+        >
+          {({ route }) => <SensorDetailScreen page={route.params.page} />}
+        </SensorStack.Screen>
+      </SensorStack.Navigator>
+    );
+  }
+  function renderSettingsTab() {
+    return (
+      <SettingsStack.Navigator screenOptions={pushed}>
+        <SettingsStack.Screen name="SettingsHome" options={{ ...large, title: copy('tab.settings.title') }}>
+          {renderSettings}
+        </SettingsStack.Screen>
+        {developerChecks && __DEV__ && (
+          <SettingsStack.Screen name="DeveloperChecks" options={{ title: t('hub.action.developerChecks') }}>
+            {() => <IntegrationChecks configuration={configuration} />}
+          </SettingsStack.Screen>
+        )}
+      </SettingsStack.Navigator>
+    );
+  }
+  function renderTabs() {
+    return (
+      <Tabs.Navigator screenOptions={{ headerShown: false }}>
+        <Tabs.Screen
+          name="IdentityTab"
+          options={{ title: t('hub.title'), tabBarIcon: { type: 'sfSymbol', name: symbol.identityTab } }}
+        >
+          {renderIdentityTab}
+        </Tabs.Screen>
+        <Tabs.Screen
+          name="SensorsTab"
+          options={{
+            title: copy('tab.sensors.title'),
+            tabBarIcon: { type: 'sfSymbol', name: symbol.sensorsTab },
+          }}
+        >
+          {renderSensorsTab}
+        </Tabs.Screen>
+        <Tabs.Screen
+          name="SettingsTab"
+          options={{
+            title: copy('tab.settings.title'),
+            tabBarIcon: { type: 'sfSymbol', name: symbol.settingsTab },
+          }}
+        >
+          {renderSettingsTab}
+        </Tabs.Screen>
+      </Tabs.Navigator>
+    );
   }
   return (
-    <IdentitySheetHost>
-      <SafeAreaView style={styles.root}>
-        {renderScreen()}
-        {renderRestoreFailure()}
-        {renderEraseConfirmation()}
-      </SafeAreaView>
-    </IdentitySheetHost>
+    <SensorSession configuration={configuration} open={sensorsOpen}>
+      <NavigationContainer
+        ref={navigation}
+        theme={scheme === 'dark' ? DarkTheme : DefaultTheme}
+        onStateChange={(state) => setSensorsOpen(sensorTabFocused(state))}
+      >
+        <Root.Navigator screenOptions={{ headerShown: false }}>
+          <Root.Screen name="Tabs">{renderTabs}</Root.Screen>
+          <Root.Screen name="PassportCapture" options={modal(t('hub.passport.title'))}>
+            {() => (
+              <IdentityCaptureFlow
+                configuration={configuration}
+                {...input}
+                cancelRef={cancelHandle}
+                onComplete={accept}
+                onExit={() => {
+                  setInput({});
+                  home();
+                }}
+              />
+            )}
+          </Root.Screen>
+          <Root.Screen name="LicenseCapture" options={modal(t('hub.license.title'))}>
+            {() => (
+              <DriverLicenseFlow
+                configuration={configuration}
+                {...documentInput}
+                cancelRef={cancelHandle}
+                onComplete={acceptDocument}
+                onExit={() => {
+                  setDocumentInput({});
+                  home();
+                }}
+              />
+            )}
+          </Root.Screen>
+          <Root.Screen name="SSNCheck" options={modal(t('common.socialSecurityNumber'))}>
+            {() => (
+              <SSNFlow
+                configuration={configuration}
+                saved={ssnInput}
+                cancelRef={cancelHandle}
+                onComplete={acceptSSN}
+                onExit={() => {
+                  setSSNInput(undefined);
+                  home();
+                }}
+              />
+            )}
+          </Root.Screen>
+          <Root.Screen name="PhoneCheck" options={modal(t('hub.phone.title'))}>
+            {() => (
+              <PhoneFlow
+                configuration={configuration}
+                saved={phoneInput}
+                cancelRef={cancelHandle}
+                onComplete={acceptPhone}
+                onExit={() => {
+                  setPhoneInput(undefined);
+                  home();
+                }}
+              />
+            )}
+          </Root.Screen>
+        </Root.Navigator>
+      </NavigationContainer>
+      {restoreFailure && !clearFailure && (
+        <NativeSheet testID="restore-bottom-sheet">
+          <Text accessibilityRole="header" style={styles.sheetTitle}>
+            {t('hub.restore.title')}
+          </Text>
+          <Text style={styles.body}>{t('hub.restore.body', { reason: restoreFailure })}</Text>
+          <Action
+            label={t('hub.restore.reopen')}
+            disabled={openingResults}
+            onPress={() => setRestoreAttempt((value) => value + 1)}
+          />
+          {configuration.results && (
+            <Action
+              label={t('hub.restore.erase')}
+              destructive
+              disabled={openingResults}
+              testID="erase-unreadable-results"
+              onPress={() => requestClear('passport')}
+            />
+          )}
+        </NativeSheet>
+      )}
+      {clearFailure && (
+        <NativeSheet testID="clear-bottom-sheet">
+          <Text accessibilityRole="header" style={styles.sheetTitle}>
+            {t('hub.clear.failedTitle')}
+          </Text>
+          <Text style={styles.body}>{clearFailure.message}</Text>
+          <Action
+            label={t('common.tryAgain')}
+            onPress={() => clear(clearFailure.target)}
+            disabled={clearing}
+          />
+          <Action
+            label={t('hub.clear.keep')}
+            secondary
+            onPress={() => setClearFailure(undefined)}
+            disabled={clearing}
+          />
+        </NativeSheet>
+      )}
+    </SensorSession>
   );
 }

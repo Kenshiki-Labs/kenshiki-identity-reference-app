@@ -8,17 +8,22 @@ import { t } from './locales/i18n';
 import { PhoneFlowController, type PhoneFlowState, type SavedPhoneCheck } from './PhoneFlowController';
 import { phoneCheckStopped } from './PhonePolicy';
 import { SubscriberResultDetails } from './SubscriberResultDetails';
+import { type CancelHandle, useCancel } from './ui/ModalCancel';
+import { NativeSheet, useConfirmation } from './ui/NativeSheet';
 
 export function PhoneFlow({
   configuration,
   saved,
   onComplete,
   onExit,
+  cancelRef,
 }: {
   configuration: Configuration;
   saved?: SavedPhoneCheck | undefined;
   onComplete: (value: SavedPhoneCheck) => void;
   onExit: () => void;
+  /** Filled in with this check's own way out, for the navigation bar's Cancel button. */
+  cancelRef?: CancelHandle | undefined;
 }) {
   const [controller, setController] = useState<PhoneFlowController>();
   const [state, setState] = useState<PhoneFlowState>({ busy: false, paused: false });
@@ -44,23 +49,40 @@ export function PhoneFlow({
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, [state.snapshot?.sendAgainAt]);
-  if (!controller) return <View style={styles.root} />;
-  const activeController = controller;
   const finish = async () => {
-    if (leavingRef.current) return;
+    if (!controller || leavingRef.current) return;
     leavingRef.current = true;
     setLeaving(true);
     try {
-      const result = await activeController.handoff();
+      const result = await controller.handoff();
       if (result) onComplete(result);
       else onExit();
     } catch (error) {
       // Ownership stays here; the failure is shown in this screen's sheet.
       leavingRef.current = false;
       setLeaving(false);
-      if (!activeController.state.sheet) activeController.fail(error);
+      if (!controller.state.sheet) controller.fail(error);
     }
   };
+  useCancel(cancelRef, finish, (error) => controller?.fail(error));
+  const choice = state.sheet?.kind === 'error' ? undefined : state.sheet?.kind;
+  useConfirmation(
+    controller && choice
+      ? {
+          key: choice,
+          title: choice === 'erase' ? t('phone.sheet.eraseTitle') : t('phone.sheet.restartTitle'),
+          message: choice === 'erase' ? t('phone.sheet.eraseBody') : t('phone.sheet.restartBody'),
+          confirm: choice === 'erase' ? t('common.eraseChecks') : t('phone.sheet.startNew'),
+          keep: t('phone.sheet.keepCurrent'),
+          onConfirm: () => {
+            controller.confirm().catch(controller.fail);
+          },
+          onKeep: controller.dismiss,
+        }
+      : undefined,
+  );
+  if (!controller) return <View style={styles.root} />;
+  const activeController = controller;
   const snapshot = state.snapshot;
   const busy = state.busy || leaving;
   const waiting = snapshot?.stage === 'waiting';
@@ -175,51 +197,27 @@ export function PhoneFlow({
     );
   }
   function renderPhoneSheet() {
-    if (!state.sheet) return null;
+    if (state.sheet?.kind !== 'error') return null;
     return (
-      <View style={styles.scrim}>
-        <View style={styles.sheet} accessibilityViewIsModal testID="phone-bottom-sheet">
-          <ScrollView contentContainerStyle={styles.sheetContent}>
-            <Text accessibilityRole="header" style={styles.sheetTitle}>
-              {state.sheet.kind === 'error'
-                ? t('common.checkNeedsAttention')
-                : state.sheet.kind === 'erase'
-                  ? t('phone.sheet.eraseTitle')
-                  : t('phone.sheet.restartTitle')}
-            </Text>
-            <Text style={styles.body}>
-              {state.sheet.kind === 'error'
-                ? state.sheet.message
-                : state.sheet.kind === 'erase'
-                  ? t('phone.sheet.eraseBody')
-                  : t('phone.sheet.restartBody')}
-            </Text>
-            {state.sheet.kind !== 'error' && (
-              <Action
-                label={state.sheet.kind === 'erase' ? t('common.eraseChecks') : t('phone.sheet.startNew')}
-                onPress={activeController.confirm}
-                disabled={busy}
-                testID="phone-confirm"
-              />
-            )}
-            <Action
-              label={
-                state.sheet.kind === 'error' ? t('phone.sheet.backToCheck') : t('phone.sheet.keepCurrent')
-              }
-              secondary
-              onPress={activeController.dismiss}
-              disabled={busy}
-            />
-            <Action
-              label={t('common.backToIdentity')}
-              secondary
-              onPress={finish}
-              disabled={leaving}
-              testID="phone-sheet-back"
-            />
-          </ScrollView>
-        </View>
-      </View>
+      <NativeSheet testID="phone-bottom-sheet">
+        <Text accessibilityRole="header" style={styles.sheetTitle}>
+          {t('common.checkNeedsAttention')}
+        </Text>
+        <Text style={styles.body}>{state.sheet.message}</Text>
+        <Action
+          label={t('phone.sheet.backToCheck')}
+          secondary
+          onPress={activeController.dismiss}
+          disabled={busy}
+        />
+        <Action
+          label={t('common.backToIdentity')}
+          secondary
+          onPress={finish}
+          disabled={leaving}
+          testID="phone-sheet-back"
+        />
+      </NativeSheet>
     );
   }
   return (
@@ -229,10 +227,6 @@ export function PhoneFlow({
         accessibilityElementsHidden={!!state.sheet}
         importantForAccessibility={state.sheet ? 'no-hide-descendants' : 'auto'}
       >
-        <Text style={styles.eyebrow}>{t('common.eyebrow')}</Text>
-        <Text accessibilityRole="header" style={styles.title}>
-          {t('phone.title')}
-        </Text>
         {renderPhoneStage()}
         {busy && (
           <Text accessibilityLiveRegion="polite" style={styles.body}>
@@ -247,17 +241,10 @@ export function PhoneFlow({
           />
         )}
         {renderReceipt()}
-        <Action
-          label={t('common.backToIdentity')}
-          secondary
-          onPress={finish}
-          disabled={leaving}
-          testID="phone-back"
-        />
         {snapshot && (
           <Action
             label={t('phone.erase')}
-            secondary
+            destructive
             onPress={() => activeController.ask('erase')}
             disabled={busy}
             testID="phone-erase"

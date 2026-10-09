@@ -1,6 +1,6 @@
 import type { CaptureEvent, Configuration, PassportObservation } from '@kenshiki/identity-capture';
 import renderer, { act } from 'react-test-renderer';
-import { invoke, required } from './__tests__/support';
+import { actionSheets, invoke, required, settle } from './__tests__/support';
 import App from './App';
 
 let mockEvent: (event: CaptureEvent) => void;
@@ -70,6 +70,7 @@ jest.mock('@kenshiki/identity-capture', () => ({
   IdentityCaptureSession: { create: jest.fn(async () => mockSession) },
   IdentityCapturePreview: 'MockCapturePreview',
   IdentityCaptureImage: 'MockCaptureImage',
+  IdentitySymbol: 'MockSymbol',
 }));
 
 beforeEach(() => jest.clearAllMocks());
@@ -115,6 +116,7 @@ const durable: Configuration = {
 };
 
 test('app startup restores the saved passport and erasure removes custody before releasing review', async () => {
+  const sheets = actionSheets();
   let view!: renderer.ReactTestRenderer;
   await act(async () => {
     view = renderer.create(<App configuration={durable} />);
@@ -131,8 +133,11 @@ test('app startup restores the saved passport and erasure removes custody before
   await act(async () => {
     invoke(view.root.findByProps({ label: 'Clear results' }), 'onPress');
   });
+  expect(sheets.last().options[0]).toBe('Clear results');
+  expect(mockSession.eraseResults).not.toHaveBeenCalled();
   await act(async () => {
-    await invoke(required(view.root.findAllByProps({ label: 'Clear results' }).at(-1)), 'onPress');
+    sheets.last().choose(0);
+    await settle();
   });
   expect(mockSession.eraseResults).toHaveBeenCalledTimes(1);
   expect(mockSession.release).toHaveBeenCalledTimes(1);

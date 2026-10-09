@@ -1,7 +1,7 @@
 import type { CaptureErrorCode, CaptureSession, Configuration } from '@kenshiki/identity-capture';
 import { IdentityCapturePreview, IdentityCaptureSession } from '@kenshiki/identity-capture';
 import { useEffect, useState } from 'react';
-import { Button, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Button, ScrollView, Text, View } from 'react-native';
 import { errorCode } from './HolderText';
 import { styles } from './IdentityCaptureFlow';
 import { t } from './locales/i18n';
@@ -149,8 +149,8 @@ export function IntegrationChecks({ configuration }: { configuration: Configurat
     }
   }
   return (
-    <SafeAreaView style={styles.root}>
-      <ScrollView contentContainerStyle={styles.developerContent}>
+    <View style={styles.root}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.developerContent}>
         <Text style={styles.developerTitle}>{t('developer.title')}</Text>
         <Text style={styles.body}>{t('developer.environment')}</Text>
         <Button title={t('developer.run')} onPress={run} disabled={busy} testID="run-sdk-checks" />
@@ -167,6 +167,6 @@ export function IntegrationChecks({ configuration }: { configuration: Configurat
           {session && <IdentityCapturePreview session={session} kind="mrz" style={{ flex: 1 }} />}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

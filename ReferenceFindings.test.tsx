@@ -13,14 +13,13 @@ import type {
 import type React from 'react';
 import { AppState, StyleSheet } from 'react-native';
 import renderer, { act, type ReactTestInstance } from 'react-test-renderer';
-import { invoke, mockSession as makeSession, required, without } from './__tests__/support';
+import { actionSheets, invoke, mockSession as makeSession, settle, without } from './__tests__/support';
 import App from './App';
 import { CaptureFlowController } from './CaptureFlowController';
 import { DocumentCheckPanel } from './DocumentCheckPanel';
 import { DocumentFlowController } from './DocumentFlowController';
 import { DocumentResultDetails } from './DriverLicenseFlow';
 import { CaptureResultDetails, styles } from './IdentityCaptureFlow';
-import { IdentitySheetHost } from './IdentitySheetHost';
 import { PhoneResultDetails } from './PhoneFlow';
 import { SSNResultDetails } from './SSNFlow';
 import { SubscriberResultDetails } from './SubscriberResultDetails';
@@ -35,6 +34,7 @@ jest.mock('@kenshiki/identity-capture', () => ({
   IdentityCaptureSession: { create: jest.fn(async () => mockSession) },
   IdentityCapturePreview: 'MockCapturePreview',
   IdentityCaptureImage: 'MockCaptureImage',
+  IdentitySymbol: 'MockSymbol',
 }));
 
 const passport: PassportObservation = {
@@ -274,14 +274,19 @@ describe('2 contradicted carrier verdict stops', () => {
     ['subscriber comparison not satisfied', { ...phoneReceipt, subscriberComparison: subscriber }],
   ])('%s stops with a retry instead of confirming possession and offering Done', async (_name, receipt) => {
     phoneSnapshot = { ...phoneReady, stage: 'completed', receipt };
+    const sheets = actionSheets();
     const f = await render(<App />);
     await f.tap('open-phone');
     expect(f.text()).not.toContain('Phone possession confirmed');
     expect(f.view.root.findAllByProps({ testID: 'phone-done' })).toHaveLength(0);
     expect(f.view.root.findAllByProps({ testID: 'phone-stopped' }).length).toBeGreaterThan(0);
     await f.tap('phone-retry');
-    expect(f.view.root.findAllByProps({ testID: 'phone-bottom-sheet' }).length).toBeGreaterThan(0);
-    await f.tap('phone-confirm');
+    expect(sheets.last().title).toBe('Start a new phone check?');
+    expect(mockSession.phoneStartOver).not.toHaveBeenCalled();
+    await act(async () => {
+      sheets.last().choose(0);
+      await settle();
+    });
     expect(mockSession.phoneStartOver).toHaveBeenCalledWith(true);
     await act(async () => {
       f.view.unmount();
@@ -302,7 +307,7 @@ describe('2 contradicted carrier verdict stops', () => {
     };
     const f = await render(<App />);
     await f.tap('open-phone');
-    await f.tap('phone-back');
+    await f.tap('modal-cancel');
     expect(f.text()).toContain('Check stopped');
     expect(f.text()).not.toContain('Result available');
     await act(async () => {
@@ -360,11 +365,14 @@ describe('4 typed error handling', () => {
       },
     ]);
     mockSession.eraseResults.mockRejectedValueOnce({ code: 'busy' });
+    const sheets = actionSheets();
     const f = await render(<App configuration={durable} />);
     await f.tap('open-capture-flow');
     await f.press('Clear results');
+    expect(sheets.last().options[0]).toBe('Clear results');
     await act(async () => {
-      await invoke(required(f.view.root.findAllByProps({ label: 'Clear results' }).at(-1)), 'onPress');
+      sheets.last().choose(0);
+      await settle();
     });
     expect(f.text()).toContain('Another check is still finishing');
     await act(async () => {
@@ -387,29 +395,23 @@ describe('4 typed error handling', () => {
       }),
       cancel: jest.fn(async () => {}),
     });
-    const f = await render(
-      <IdentitySheetHost>
-        <DocumentCheckPanel session={session} configured />
-      </IdentitySheetHost>,
-    );
+    const f = await render(<DocumentCheckPanel session={session} configured />);
     expect(f.text()).toContain('The checking service did not answer');
     await act(async () => {
       f.view.update(
-        <IdentitySheetHost>
-          <DocumentCheckPanel
-            session={makeSession({
-              ...session,
-              documentCheckRestore: jest.fn(
-                async (): Promise<DocumentCheckSnapshot> => ({
-                  ...unavailable,
-                  state: 'notStarted',
-                  failure: null,
-                }),
-              ),
-            })}
-            configured
-          />
-        </IdentitySheetHost>,
+        <DocumentCheckPanel
+          session={makeSession({
+            ...session,
+            documentCheckRestore: jest.fn(
+              async (): Promise<DocumentCheckSnapshot> => ({
+                ...unavailable,
+                state: 'notStarted',
+                failure: null,
+              }),
+            ),
+          })}
+          configured
+        />,
       );
     });
     await f.press('Check license record');
@@ -552,11 +554,7 @@ describe('5 what the holder sees', () => {
       documentCheckRestore: jest.fn(async () => checked),
       cancel: jest.fn(async () => {}),
     });
-    const f = await render(
-      <IdentitySheetHost>
-        <DocumentCheckPanel session={session} configured />
-      </IdentitySheetHost>,
-    );
+    const f = await render(<DocumentCheckPanel session={session} configured />);
     await f.press('Review requested corrections');
     for (const raw of [
       'raw_check_name',

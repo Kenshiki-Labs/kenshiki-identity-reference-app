@@ -21,8 +21,6 @@
 
   // Words several screens share, with the same meaning everywhere.
   "common": {
-    // Small uppercase line above every check screen's title; the name of the hub screen.
-    "eyebrow": "IDENTITY",
     // Button that leaves a check and returns to the hub screen named "Identity".
     "backToIdentity": "Back to Identity",
     "backToResults": "Back to results",
@@ -78,7 +76,6 @@
     "title": "Identity",
     "resultsTitle": "Your results",
     "licenseTitle": "Your driver’s license",
-    "intro": "Your identity checks, together in one place.",
     "configurationIssue": "Saved checks are unavailable because this app’s local holder record could not be read. New checks are not saved.",
     "license": {
       "title": "Driver’s license",
@@ -109,6 +106,13 @@
       "viewResult": "{summary} · View result",
       "start": "Check whether your number was issued"
     },
+    // The status line of a check this app cannot run; the section's footer says why.
+    "notAvailable": "Not available",
+    // Section headers of the Identity list.
+    "section": {
+      "checks": "Checks",
+      "saved": "Saved results"
+    },
     "phone": {
       "title": "Phone",
       "resume": "Check in progress · Resume",
@@ -123,9 +127,7 @@
       "deleteLicenseScans": "Delete saved license scans",
       // Opens the simulator-only developer checks screen.
       "developerChecks": "Developer checks",
-      "clearResults": "Clear results",
-      // Opens the phone sensor board.
-      "phoneSensors": "Phone sensors"
+      "clearResults": "Clear results"
     },
     // Shown in the saved-results sheet when a check's native session could not be released.
     "closeFailed": {
@@ -178,7 +180,6 @@
       "comparing": "Comparing your photos",
       "selfie": "Take a selfie"
     },
-    "closeCheck": "Close check",
     "action": {
       "retakeSelfie": "Retake selfie",
       "compareSelfie": "Compare with a selfie",
@@ -916,6 +917,14 @@
     }
   },
 
+  // The Settings tab: the sensor board's settings, then this app's own saved data.
+  "settings": {
+    "identityData": "Saved identity data",
+    // Shown under the saved identity data section when nothing has been saved yet.
+    "nothingSaved": "No passport, face or license results are saved on this phone.",
+    "developer": "Developer"
+  },
+
   // The phone sensor board. Most of its words are SensorHost's, generated into
   // sensor-presentation/copy.json and read through copy() in SensorPresentation.ts; these are the
   // words this app adds around them.
@@ -923,7 +932,6 @@
     "opening": "Opening sensors…",
     "pause": "Pause sensors",
     "resume": "Resume sensors",
-    "allSensors": "All sensors",
     // Re-enables collection after erase or a failed request.
     "resumeCollection": "Resume collection",
     // {title} is a sensor section's name, such as Motion.

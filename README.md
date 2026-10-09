@@ -100,11 +100,12 @@ set Build Configuration to **Release**, then Run. Release bundles JavaScript and
 server. For Debug instead, run `npm start` from the host root in a second terminal before Run.
 Open the `.xcworkspace`, not the `.xcodeproj`.
 
-The Identity screen should offer Driver's license, Passport, Face match, Social Security number
-and Phone cards. No provider or personal data is required to open it. The simulator host has no
-trust anchors or face models, so the Passport card is disabled and says passport chip checking is
-not set up; Face match is disabled without both models, and otherwise until a passport portrait
-exists. A card for saved results stays available to open them. Simulator camera/NFC/TrueDepth and text messaging are unavailable:
+The app opens on a native tab bar: Identity, Sensors and Settings, each its own navigation stack
+with a large title. The Identity tab lists Driver's license, Passport, Face match, Social Security
+number and Phone as inset grouped rows. No provider or personal data is required to open it. The
+simulator host has no trust anchors or face models, so the Passport row is dimmed and the section
+footer says passport chip checking is not set up; Face match is dimmed without both models, and
+otherwise until a passport portrait exists. A row for saved results stays available to open them. Simulator camera/NFC/TrueDepth and text messaging are unavailable:
 those workflows must show recovery, not a successful hardware check. Without a registered native
 provider, SSN, phone and document checking remain explicitly unavailable. This is expected.
 
@@ -180,16 +181,20 @@ Supplier non-retention requires independent qualification.
 
 | File | Responsibility |
 | --- | --- |
-| `App.tsx`, `AppDelegate.swift` | Identity hub, startup recovery, host-owned resource/custody configuration |
+| `App.tsx`, `AppDelegate.swift` | Native tabs and stacks, the Identity list, startup recovery, host-owned resource/custody configuration |
 | `IdentityCaptureFlow.tsx`, `CaptureFlowController.ts` | MRZ → review → NFC → passport result → optional paired TrueDepth selfie/comparison |
 | `DriverLicenseFlow.tsx`, `DocumentFlowController.ts` | Front/back capture, encrypted document recovery and image review |
 | `DocumentCheckPanel.tsx` | Explicit document-check consent, actual returned findings, local reply restore, requested corrections and reconciliation |
 | `SSNFlow.tsx`, `PhoneFlow.tsx` and their controllers | Independent service journeys, native session ownership and interruption handling |
-| `IdentitySheetHost.tsx` | Screen-level bottom-sheet host; wrap panels above scroll/navigation content |
+| `SensorScreen.tsx` and `SensorBoard*.tsx` | The Sensors tab's board and detail pages, and the Settings tab's sensor settings, sharing one sensor session while either tab is in front |
+| `ui/List.tsx`, `ui/NativeSheet.tsx`, `ui/ModalCancel.ts` | Inset grouped rows with SF Symbol tiles, UIKit page sheets and action sheets, and the navigation bar's Cancel for a full-screen check |
 | `ui/tokens.jsonc`, `locales/en.jsonc`, `generate-ui-resources.py` | Design tokens (iOS system colors, Dynamic Type styles, spacing, radii) and every UI string, compiled into `ui/tokens.generated.ts` and `locales/strings.generated.ts`; screens read text through `t()` in `locales/i18n.ts`. Edit the JSONC and rerun the generator; `--check` fails when the modules are stale |
 
-All app recovery/confirmation prompts use bottom sheets. Apple's permission, NFC and message
-composer interfaces remain system-owned. Active work cancels and drains on backgrounding; the user
+Results and sensor detail pages are pushed screens with the native back button and edge swipe.
+Each capture or check is a full-screen modal whose navigation bar Cancel leaves it the way the
+check's own exit does. Recovery prompts are UIKit page sheets, never alerts; destructive choices
+are iOS action sheets. Apple's permission, NFC and message composer interfaces remain
+system-owned. Active work cancels and drains on backgrounding; the user
 explicitly resumes. No remote check is purchased by opening saved results.
 
 `IdentityCaptureFlow.onComplete(result)` transfers the live session to its recipient. The recipient

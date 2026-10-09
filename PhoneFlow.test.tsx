@@ -7,7 +7,7 @@ import type {
 import type { AppStateStatus } from 'react-native';
 import { AppState } from 'react-native';
 import renderer, { act } from 'react-test-renderer';
-import { invoke, required, without } from './__tests__/support';
+import { actionSheets, invoke, required, settle, without } from './__tests__/support';
 import App from './App';
 import { PhoneResultDetails } from './PhoneFlow';
 
@@ -80,6 +80,7 @@ jest.mock('@kenshiki/identity-capture', () => ({
   IdentityCaptureSession: { create: jest.fn(async () => mockSession) },
   IdentityCapturePreview: 'MockCapturePreview',
   IdentityCaptureImage: 'MockCaptureImage',
+  IdentitySymbol: 'MockSymbol',
 }));
 beforeEach(() => {
   jest.clearAllMocks();
@@ -144,14 +145,18 @@ test('Phone opens from Identity, sending waits for receipt, Done and reopen keep
   });
   expect(mockSession.release).toHaveBeenCalledTimes(1);
 });
-test('a new check requires a bottom-sheet confirmation', async () => {
+test('a new check requires an action-sheet confirmation', async () => {
   mockSnapshot = { ...mockReady, stage: 'completed', receipt: mockReceipt };
+  const sheets = actionSheets();
   const { view, tap } = await renderApp();
   await tap('open-phone');
   await tap('phone-new');
-  expect(view.root.findByProps({ testID: 'phone-bottom-sheet' })).toBeDefined();
+  expect(sheets.last().options).toEqual(['Start new check', 'Keep current check']);
   expect(mockSession.phoneStartOver).not.toHaveBeenCalled();
-  await tap('phone-confirm');
+  await act(async () => {
+    sheets.last().choose(0);
+    await settle();
+  });
   expect(mockSession.phoneStartOver).toHaveBeenCalledWith(true);
   await act(async () => {
     view.unmount();

@@ -6,7 +6,7 @@ import type {
 } from '@kenshiki/identity-capture';
 import { AppState } from 'react-native';
 import renderer, { act } from 'react-test-renderer';
-import { invoke, mockSession as makeSession, required } from './__tests__/support';
+import { actionSheets, invoke, mockSession as makeSession, required, settle } from './__tests__/support';
 import App from './App';
 import { DocumentFlowController } from './DocumentFlowController';
 
@@ -109,6 +109,7 @@ jest.mock('@kenshiki/identity-capture', () => ({
   },
   IdentityCapturePreview: 'MockCapturePreview',
   IdentityCaptureImage: 'MockCaptureImage',
+  IdentitySymbol: 'MockSymbol',
 }));
 const holderConfig = (holder: Holder): Configuration => {
   const scope = holder === 'A' ? 'holder-a' : 'holder-b';
@@ -175,15 +176,18 @@ test('J1 a holder switch clears the previous holder from the screen and releases
 
 test('J3 an unreadable saved store offers erase as well as reopen, behind a confirmation', async () => {
   mockSessions.A.listResults.mockRejectedValue({ code: 'resultIntegrityFailure' });
+  const sheets = actionSheets();
   let view!: renderer.ReactTestRenderer;
   await act(async () => {
     view = renderer.create(<App configuration={holderConfig('A')} />);
   });
   expect(text(view)).toContain('Saved results could not be opened');
   await press(view, 'erase-unreadable-results');
+  expect(sheets.last().options[0]).toBe('Clear results');
   expect(mockSessions.A.eraseResults).not.toHaveBeenCalled();
   await act(async () => {
-    await invoke(required(view.root.findAllByProps({ label: 'Clear results' }).at(-1)), 'onPress');
+    sheets.last().choose(0);
+    await settle();
   });
   expect(mockSessions.A.eraseResults).toHaveBeenCalledTimes(1);
   expect(text(view)).not.toContain('Saved results could not be opened');
@@ -197,10 +201,15 @@ test('J4 the SSN screen offers erase through ssnErase after a confirmation', asy
   await act(async () => {
     view = renderer.create(<App configuration={holderConfig('A')} />);
   });
+  const sheets = actionSheets();
   await press(view, 'open-ssn');
   await press(view, 'ssn-erase');
+  expect(sheets.last().options[0]).toBe('Erase checks');
   expect(mockSessions.A.ssnErase).not.toHaveBeenCalled();
-  await press(view, 'ssn-confirm-erase');
+  await act(async () => {
+    sheets.last().choose(0);
+    await settle();
+  });
   expect(mockSessions.A.ssnErase).toHaveBeenCalledTimes(1);
   expect(text(view)).not.toContain('Reported as issued');
   await act(async () => {

@@ -6,46 +6,42 @@
 // After editing, run `python3 generate-ui-resources.py` beside this app's sources. Its `--check`
 // mode fails when the generated module is stale.
 //
-// Each token names the value it replaced in the hand-written stylesheet that preceded this file.
+// The app is drawn the way iOS draws Settings and Health: inset grouped lists on the grouped
+// background, system colors, Dynamic Type text styles, SF Symbols. Each token says what it is for
+// and, where it replaced a hand-written value, which one.
 {
   // Color roles. Every adaptive role names an iOS system color, resolved through React Native's
   // `PlatformColor`, so light, dark and increased-contrast appearances all come from this one set.
   // The names are the ones React Native 0.87 resolves (`RCTSemanticColorsMap` in RCTConvert.mm);
   // the generator refuses any other name.
   //
-  // Three surfaces are non-adaptive on iOS by design: the camera (dark in both appearances, as in
-  // the Camera app), text on a filled tint button, and the dimming behind a sheet. They name the
-  // UIKit fixed color they stand for (`UIColor.white`, `UIColor.black`) under "fixed". React
-  // Native 0.87's `PlatformColor` cannot resolve either one, and a system role nested inside
-  // `DynamicColorIOS` is flattened to the current appearance when the style is parsed, so the
-  // generator writes these few as fixed values.
+  // Two surfaces are non-adaptive on iOS by design: the camera (dark in both appearances, as in the
+  // Camera app) and text on a filled tint button. They name the UIKit fixed color they stand for
+  // (`UIColor.white`, `UIColor.black`) under "fixed"; React Native 0.87's `PlatformColor` cannot
+  // resolve either one, so the generator writes these few as fixed values.
   "color": {
-    // Screen background. iOS grouped-list background. Replaces #f4f5f8.
+    // Screen background: the grouped-list background. Replaces #f4f5f8.
     "background": {"ios": "systemGroupedBackground"},
-    // Card surface on the screen background. Replaces #fff.
+    // A grouped list's cells and the cards that hold a result. Replaces #fff.
     "card": {"ios": "secondarySystemGroupedBackground"},
-    // Bottom-sheet surface. White in light; in dark, the same raised gray UIKit gives a presented
-    // sheet's systemBackground. Replaces #fff.
-    "sheet": {"ios": "secondarySystemGroupedBackground"},
-    // Primary text: titles, body, sheet titles and the SSN entry. Replaces #122b54 (titles),
-    // #252c39 (body) and #112f59 (SSN entry).
+    // A page sheet's background, as UIKit gives a grouped form presented as a sheet.
+    "sheet": {"ios": "systemGroupedBackground"},
+    // Primary text. Replaces #122b54 (titles), #252c39 (body) and #112f59 (SSN entry).
     "text": {"ios": "label"},
-    // Secondary text: field labels and the small uppercase eyebrow. Replaces #4d576a (labels)
-    // and #233c69 (eyebrow).
+    // Secondary text: field labels, section notes and row status lines. Replaces #4d576a and
+    // #233c69.
     "secondaryText": {"ios": "secondaryLabel"},
-    // Filled action background and secondary action text. UIKit's default tint is systemBlue;
+    // The tint: prominent buttons, plain buttons and links. UIKit's default tint is systemBlue;
     // React Native 0.87 does not resolve `tintColor`. Replaces #173965.
     "tint": {"ios": "systemBlue"},
-    // Secondary action background, as UIKit's gray button. Replaces #e5eaf3.
-    "secondaryFill": {"ios": "tertiarySystemFill"},
     // Text on a filled tint button. Replaces #fff.
     "onTint": {"fixed": "white"},
     // Camera screen background, behind the live preview. Replaces #152032.
     "cameraBackground": {"fixed": "black"},
     // Text and the selfie guide drawn over the camera preview. Replaces #fff.
     "onCamera": {"fixed": "white"},
-    // Dimming layer behind a bottom sheet; its opacity is elevation.sheetDimming. Replaces #0008.
-    "scrim": {"fixed": "black", "opacity": "sheetDimming"},
+    // A destructive action's title, as UIKit's destructive style.
+    "destructive": {"ios": "systemRed"},
 
     // Sensor board. Warnings and unmet location terms, as SensorHost's `colors.warning` (SwiftUI
     // orange) in sensor-presentation/config.json. Replaces #994700.
@@ -57,10 +53,16 @@
     // The slider thumb's outline. Replaces #ddd.
     "sliderThumbBorder": {"ios": "opaqueSeparator"},
 
-    // SwiftUI's standard colors. sensor-presentation/config.json, generated from SensorHost, names
-    // each section icon's tile color with one of these SwiftUI names; SensorPresentation.ts resolves
-    // a name to the iOS system color SwiftUI uses for it. React Native would otherwise read "teal"
-    // or "gray" as a CSS color.
+    // Inset grouped lists, as UITableView draws them. The line between two rows.
+    "separator": {"ios": "separator"},
+    // A row while it is pressed.
+    "rowPressed": {"ios": "systemGray4"},
+
+    // SwiftUI's standard colors: the tiles behind list-row icons. sensor-presentation/config.json,
+    // generated from SensorHost, names each sensor section's tile with one of these SwiftUI names;
+    // SensorPresentation.ts resolves the name to the iOS system color SwiftUI uses for it, and the
+    // identity rows use the same set so the two parts of the app look like one. React Native would
+    // otherwise read "teal" or "gray" as a CSS color.
     "swiftBlue": {"ios": "systemBlue"},
     "swiftGray": {"ios": "systemGray"},
     "swiftGreen": {"ios": "systemGreen"},
@@ -89,56 +91,65 @@
     "caption2": {"fontSize": 11, "lineHeight": 13}
   },
 
-  // Text styles. Each names the nearest iOS text style and keeps the weight the app already used.
+  // Text styles, each on an iOS text style.
   "text": {
-    // Screen titles. Replaces fontSize 32, weight 700.
-    "screenTitle": {"style": "largeTitle", "fontWeight": "700"},
-    // Card and sheet titles. Replaces fontSize 26, weight 700.
-    "sectionTitle": {"style": "title1", "fontWeight": "700"},
+    // The heading of a step inside a check, under the navigation bar's own title. Replaces
+    // fontSize 32, weight 700.
+    "screenTitle": {"style": "title1", "fontWeight": "700"},
+    // The title of a card or a sheet. Replaces fontSize 26, weight 700.
+    "sectionTitle": {"style": "title3", "fontWeight": "600"},
     // Body text. Replaces fontSize 18, lineHeight 26.
     "body": {"style": "body", "fontWeight": "400"},
-    // Field labels above a value. Replaces fontSize 14, weight 700.
-    "label": {"style": "subheadline", "fontWeight": "700"},
-    // The small uppercase line above a screen title. Replaces the default size 14, weight 700,
-    // letterSpacing 2.
-    "eyebrow": {"style": "footnote", "fontWeight": "700", "letterSpacing": 2},
-    // Button labels. iOS buttons use the headline style. Replaces fontSize 18, weight 600.
+    // A field's label above its value. Replaces fontSize 14, weight 700.
+    "label": {"style": "subheadline", "fontWeight": "600"},
+    // A short line above a group, such as "Step 1 of 2" or "Previous check", as a grouped list's
+    // section header. Replaces the uppercase 14-point eyebrow with letterSpacing 2.
+    "eyebrow": {"style": "footnote", "fontWeight": "600"},
+    // A prominent button's label, as UIKit's prominent button. Replaces fontSize 18, weight 600.
     "action": {"style": "headline", "fontWeight": "600"},
+    // A plain button's label, as a tinted UIKit plain button.
+    "plainAction": {"style": "body", "fontWeight": "400"},
     // The SSN digits while they are entered. Replaces fontSize 28.
     "entry": {"style": "title1", "fontWeight": "400"},
     // The developer checks screen title. Replaces fontSize 24, weight bold.
     "developerTitle": {"style": "title2", "fontWeight": "700"},
     // Sensor board section titles. Replaces fontSize 20, weight 600.
-    "groupTitle": {"style": "title3", "fontWeight": "600"},
+    "groupTitle": {"style": "headline", "fontWeight": "600"},
     // Sensor board group headings ("Freely readable"). Replaces fontSize 23, weight 600.
-    "groupHeader": {"style": "title2", "fontWeight": "600"},
+    "groupHeader": {"style": "title3", "fontWeight": "600"},
     // Sensor board row labels and values. Replaces fontSize 16.
-    "row": {"style": "callout", "fontWeight": "400"},
+    "row": {"style": "body", "fontWeight": "400"},
     // Sensor board explanations under a row. Replaces fontSize 13, lineHeight 19.
     "note": {"style": "footnote", "fontWeight": "400"},
     // Sensor board warnings. Replaces fontSize 14, which joins the subheadline step.
     "warning": {"style": "subheadline", "fontWeight": "400"},
     // The value printed under the capture-window slider. Replaces fontSize 10, which joins the
     // smallest step of the ramp.
-    "caption": {"style": "caption2", "fontWeight": "400"}
+    "caption": {"style": "caption2", "fontWeight": "400"},
+    // A list row's title, as a UITableView cell's text label.
+    "rowTitle": {"style": "body", "fontWeight": "400"},
+    // A list row's second line: the check's status.
+    "rowStatus": {"style": "subheadline", "fontWeight": "400"},
+    // A grouped list's section header and footer.
+    "listFooter": {"style": "footnote", "fontWeight": "400"}
   },
 
   // Spacing, in points. One scale for padding, margins and gaps.
   "spacing": {
-    // Between a field label and its value. Replaces 4.
+    // Between a field label and its value, and a row's title and status. Replaces 4.
     "xxs": 4,
-    // Between a portrait and its caption. Replaces 8.
+    // Between a portrait and its caption, and a section and its note. Replaces 8.
     "xs": 8,
-    // Camera overlay gaps, the portrait row and the phone retry group. Replaces 12.
+    // Camera overlay gaps, the portrait row, a row's vertical padding and the gap from an icon to
+    // its title. Replaces 12.
     "sm": 12,
-    // Card gap, action padding, the saved-scan list and the developer list. Replaces 16.
+    // The inset grouped margin, a card's padding and a row's horizontal padding. Replaces 16.
     "md": 16,
-    // Screen section gap, card padding and the camera's bottom inset. Replaces 20.
+    // Between two sections of a screen, and the camera's bottom inset. Replaces 20.
     "lg": 20,
-    // Screen and camera insets, and the gap between sheet sections. Replaces 24, and 22 for the
-    // sheet gap, which joins this step of the scale.
+    // Camera insets and a sheet's gap between its parts. Replaces 24, and 22 for the sheet gap.
     "xl": 24,
-    // Sheet padding. Replaces 28.
+    // A sheet's padding. Replaces 28.
     "xxl": 28,
     // Below a sheet's last action. Replaces 40.
     "xxxl": 40,
@@ -148,47 +159,48 @@
 
   // Corner radii, in points.
   "radius": {
-    // Cards. Replaces 20.
-    "card": 20,
-    // Buttons. Replaces 14.
-    "control": 14,
-    // A bottom sheet's top corners. Replaces 28.
-    "sheet": 28,
-    // Fully rounded: the selfie oval and the slider thumb. Replaces 1000, and 12 for the 24-point
-    // slider thumb.
+    // Fully rounded: prominent buttons, the selfie oval and the slider thumb. Replaces 1000, and
+    // 12 for the 24-point slider thumb.
     "full": 1000,
-    // Sensor board sections. Replaces 12.
+    // Inset grouped sections, result cards and sensor board sections. Replaces 20 (cards) and 12.
     "group": 12,
+    // The rounded square behind a list row's icon: SensorHost's `sectionIcon.cornerRadius`.
+    "iconTile": 7,
     // The capture-window slider's track. Replaces 2.
     "sliderTrack": 2
   },
 
-  // Fixed sizes and proportions.
+  // Fixed sizes and proportions. Rows have none: text sets their height, so Dynamic Type reflows.
   "size": {
-    // Minimum button height; above the 44-point iOS minimum touch target. Replaces 52.
-    "actionMinHeight": 52,
+    // A prominent button's minimum height. Replaces 52.
+    "actionMinHeight": 50,
     // The captured front shown while the back is still needed. Replaces 220.
     "documentPreviewHeight": 220,
     // Each side of a saved license on its results card. Replaces 200.
     "documentImageHeight": 200,
     // The native preview on the developer checks screen. Replaces 180.
     "developerPreviewHeight": 180,
-    // The tallest a bottom sheet grows, as a share of the screen. Replaces 85%.
-    "sheetMaxHeight": "85%",
     // Passport portrait, width over height. Replaces 3 / 4.
     "portraitAspectRatio": 0.75,
     // Selfie guide width, as a share of the camera width. Replaces .68.
     "selfieGuideWidth": 0.68,
     // Selfie guide height over its width. Replaces 1.3.
     "selfieGuideAspect": 1.3,
-    // The 44-point iOS minimum touch target: the capture-window slider's height. Replaces 44.
+    // The 44-point iOS minimum touch target: a row's minimum height and the capture-window
+    // slider's height. Replaces 44.
     "touchTarget": 44,
     // The capture-window slider's track thickness. Replaces 4.
     "sliderTrack": 4,
     // The capture-window slider's thumb diameter. Replaces 24.
     "sliderThumb": 24,
     // How far below the slider's top its printed value sits. Replaces 30.
-    "sliderValueOffset": 30
+    "sliderValueOffset": 30,
+    // A list row's icon tile and the glyph inside it: SensorHost's `sectionIcon` size and
+    // glyph size.
+    "iconTile": 28,
+    "iconGlyph": 15,
+    // A row's trailing disclosure chevron.
+    "chevron": 13
   },
 
   // Border widths, in points.
@@ -201,15 +213,31 @@
 
   // Opacities.
   "opacity": {
-    // A disabled button. Replaces .45.
+    // A disabled row or button. Replaces .45.
     "disabled": 0.45
   },
 
-  // Elevation. No layer in this app draws a shadow: a raised layer is told apart by its surface
-  // color (color.card, color.sheet) and a modal sheet also by dimming the screen behind it.
-  "elevation": {
-    // Opacity of the dimming layer behind a bottom sheet. Replaces the alpha of #0008
-    // (0x88 / 0xff).
-    "sheetDimming": 0.53
+  // SF Symbols, by role. The tab bar types each name against the SF Symbols iOS ships.
+  "symbol": {
+    "identityTab": "person.text.rectangle",
+    "sensorsTab": "sensor",
+    "settingsTab": "gearshape",
+    "license": "person.text.rectangle.fill",
+    "passport": "book.closed.fill",
+    "face": "faceid",
+    "ssn": "number",
+    "phone": "message.fill",
+    "savedChecks": "clock.arrow.circlepath",
+    "erase": "trash.fill",
+    "developer": "hammer.fill",
+    "chevron": "chevron.right"
+  },
+
+  // The system color each kind of symbol is drawn in, from the set the SDK's IdentitySymbol draws.
+  "symbolTint": {
+    // The glyph on a row's colored tile, as in Settings.
+    "tile": "white",
+    // A row's disclosure chevron.
+    "chevron": "tertiaryLabel"
   }
 }

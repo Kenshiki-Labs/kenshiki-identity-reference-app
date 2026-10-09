@@ -6,19 +6,20 @@ import {PlatformColor} from 'react-native';
 export const color = {
   background: PlatformColor("systemGroupedBackground"),
   card: PlatformColor("secondarySystemGroupedBackground"),
-  sheet: PlatformColor("secondarySystemGroupedBackground"),
+  sheet: PlatformColor("systemGroupedBackground"),
   text: PlatformColor("label"),
   secondaryText: PlatformColor("secondaryLabel"),
   tint: PlatformColor("systemBlue"),
-  secondaryFill: PlatformColor("tertiarySystemFill"),
   onTint: "#FFFFFF",
   cameraBackground: "#000000",
   onCamera: "#FFFFFF",
-  scrim: "rgba(0, 0, 0, 0.53)",
+  destructive: PlatformColor("systemRed"),
   warning: PlatformColor("systemOrange"),
   sliderTrack: PlatformColor("systemGray4"),
   sliderThumb: "#FFFFFF",
   sliderThumbBorder: PlatformColor("opaqueSeparator"),
+  separator: PlatformColor("separator"),
+  rowPressed: PlatformColor("systemGray4"),
   swiftBlue: PlatformColor("systemBlue"),
   swiftGray: PlatformColor("systemGray"),
   swiftGreen: PlatformColor("systemGreen"),
@@ -32,20 +33,24 @@ export const color = {
 
 /** Text styles, each on a step of the iOS Dynamic Type ramp. */
 export const text = {
-  screenTitle: {fontSize: 34, lineHeight: 41, fontWeight: "700"},
-  sectionTitle: {fontSize: 28, lineHeight: 34, fontWeight: "700"},
+  screenTitle: {fontSize: 28, lineHeight: 34, fontWeight: "700"},
+  sectionTitle: {fontSize: 20, lineHeight: 25, fontWeight: "600"},
   body: {fontSize: 17, lineHeight: 22, fontWeight: "400"},
-  label: {fontSize: 15, lineHeight: 20, fontWeight: "700"},
-  eyebrow: {fontSize: 13, lineHeight: 18, fontWeight: "700", letterSpacing: 2},
+  label: {fontSize: 15, lineHeight: 20, fontWeight: "600"},
+  eyebrow: {fontSize: 13, lineHeight: 18, fontWeight: "600"},
   action: {fontSize: 17, lineHeight: 22, fontWeight: "600"},
+  plainAction: {fontSize: 17, lineHeight: 22, fontWeight: "400"},
   entry: {fontSize: 28, lineHeight: 34, fontWeight: "400"},
   developerTitle: {fontSize: 22, lineHeight: 28, fontWeight: "700"},
-  groupTitle: {fontSize: 20, lineHeight: 25, fontWeight: "600"},
-  groupHeader: {fontSize: 22, lineHeight: 28, fontWeight: "600"},
-  row: {fontSize: 16, lineHeight: 21, fontWeight: "400"},
+  groupTitle: {fontSize: 17, lineHeight: 22, fontWeight: "600"},
+  groupHeader: {fontSize: 20, lineHeight: 25, fontWeight: "600"},
+  row: {fontSize: 17, lineHeight: 22, fontWeight: "400"},
   note: {fontSize: 13, lineHeight: 18, fontWeight: "400"},
   warning: {fontSize: 15, lineHeight: 20, fontWeight: "400"},
   caption: {fontSize: 11, lineHeight: 13, fontWeight: "400"},
+  rowTitle: {fontSize: 17, lineHeight: 22, fontWeight: "400"},
+  rowStatus: {fontSize: 15, lineHeight: 20, fontWeight: "400"},
+  listFooter: {fontSize: 13, lineHeight: 18, fontWeight: "400"},
 } as const;
 
 export const spacing = {
@@ -61,11 +66,9 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  card: 20,
-  control: 14,
-  sheet: 28,
   full: 1000,
   group: 12,
+  iconTile: 7,
   sliderTrack: 2,
 } as const;
 
@@ -78,16 +81,11 @@ export const opacity = {
   disabled: 0.45,
 } as const;
 
-export const elevation = {
-  sheetDimming: 0.53,
-} as const;
-
 export const size = {
-  actionMinHeight: 52,
+  actionMinHeight: 50,
   documentPreviewHeight: 220,
   documentImageHeight: 200,
   developerPreviewHeight: 180,
-  sheetMaxHeight: "85%",
   portraitAspectRatio: 0.75,
   selfieGuideWidth: 0.68,
   selfieGuideAspect: 1.3,
@@ -95,4 +93,29 @@ export const size = {
   sliderTrack: 4,
   sliderThumb: 24,
   sliderValueOffset: 30,
+  iconTile: 28,
+  iconGlyph: 15,
+  chevron: 13,
+} as const;
+
+/** SF Symbol names: tab bar items and the icons of list rows. */
+export const symbol = {
+  identityTab: "person.text.rectangle",
+  sensorsTab: "sensor",
+  settingsTab: "gearshape",
+  license: "person.text.rectangle.fill",
+  passport: "book.closed.fill",
+  face: "faceid",
+  ssn: "number",
+  phone: "message.fill",
+  savedChecks: "clock.arrow.circlepath",
+  erase: "trash.fill",
+  developer: "hammer.fill",
+  chevron: "chevron.right",
+} as const;
+
+/** The system color each kind of symbol is drawn in. */
+export const symbolTint = {
+  tile: "white",
+  chevron: "tertiaryLabel",
 } as const;

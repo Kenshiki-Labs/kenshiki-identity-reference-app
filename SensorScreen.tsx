@@ -1,5 +1,5 @@
 import type { Configuration } from '@kenshiki/identity-capture';
-import { useEffect, useState } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import { Alert, AppState, ScrollView, Text, View } from 'react-native';
 import { Action, styles } from './IdentityCaptureFlow';
 import { t } from './locales/i18n';
@@ -9,29 +9,44 @@ import { type BoardActions, LocationRows, WeatherRows } from './SensorBoardLocat
 import { boardStyles, Note, Row, Section, SensorIconContext, SignalRows } from './SensorBoardRows';
 import { SensorSettings } from './SensorBoardSettings';
 import { copy, moment, pages, permissioned, prefix, type SensorPage, title } from './SensorPresentation';
-export function SensorScreen({
+
+type SensorSessionValue = {
+  state: SensorBoardPresentation;
+  failure: string | null;
+  setFailure: (message: string | null) => void;
+  perform: BoardActions['perform'];
+};
+const closed: SensorBoardPresentation = { board: null, busy: false, failure: null, sessionId: null };
+const SensorSessionContext = createContext<SensorSessionValue>({
+  state: closed,
+  failure: null,
+  setFailure: () => {},
+  perform: () => {},
+});
+
+/** Owns the one sensor board session while any sensor screen is open. The board, its detail pages
+ * and its settings are separate pushed screens that share it; leaving the last of them releases it,
+ * and opening the board again starts a new session. */
+export function SensorSession({
   configuration,
-  onExit,
+  open,
+  children,
 }: {
   configuration: Configuration;
-  onExit: () => void;
+  open: boolean;
+  children: ReactNode;
 }) {
   const [controller, setController] = useState<SensorBoardController>();
-  const [state, setState] = useState<SensorBoardPresentation>({
-    board: null,
-    busy: false,
-    failure: null,
-    sessionId: null,
-  });
+  const [state, setState] = useState<SensorBoardPresentation>(closed);
   const [failure, setFailure] = useState<string | null>(null);
-  const [tab, setTab] = useState<'sensors' | 'settings'>('sensors');
-  const [page, setPage] = useState<SensorPage | null>(null);
   useEffect(() => {
+    if (!open) return;
     let live = true;
     const active = new SensorBoardController(configuration, (next) => {
       if (live) setState(next);
     });
     setController(active);
+    setFailure(null);
     active.open().catch(() => {
       if (live) setFailure(t('sensors.failure.open'));
     });
@@ -44,116 +59,143 @@ export function SensorScreen({
     return () => {
       live = false;
       subscription.remove();
+      setController(undefined);
+      setState(closed);
       active.dispose().catch(() => {
         Alert.alert(t('sensors.failure.closeTitle'), t('sensors.failure.closeBody'));
       });
     };
-  }, [configuration]);
+  }, [configuration, open]);
   const perform: BoardActions['perform'] = (request) => {
     setFailure(null);
     controller?.perform(request).catch(() => setFailure(t('sensors.failure.request')));
   };
+  return (
+    <SensorSessionContext.Provider value={{ state, failure, setFailure, perform }}>
+      {children}
+    </SensorSessionContext.Provider>
+  );
+}
+
+/** The board: every sensor section, grouped by whether iOS asks permission first. */
+export function SensorBoardScreen({ onOpenPage }: { onOpenPage: (page: SensorPage) => void }) {
+  const { state, perform } = useContext(SensorSessionContext);
   const board = state.board;
   return (
-    <SensorIconContext.Provider value={{ sessionId: state.sessionId, enabled: page === null }}>
-      <ScrollView style={styles.root} contentContainerStyle={styles.content} testID="sensor-screen">
-        <Action label={t('common.backToIdentity')} secondary onPress={onExit} />
-        <View style={boardStyles.tabs}>
-          <Action
-            label={copy('tab.sensors.title')}
-            secondary
-            onPress={() => {
-              setTab('sensors');
-              setPage(null);
-            }}
-          />
-          <Action
-            label={copy('tab.settings.title')}
-            secondary
-            onPress={() => {
-              setTab('settings');
-              setPage(null);
-            }}
-          />
-        </View>
-        <Text accessibilityRole="header" style={styles.title}>
-          {page ? title(page) : copy(tab === 'sensors' ? 'tab.sensors.title' : 'tab.settings.title')}
-        </Text>
-        {(failure || state.failure) && (
+    <SensorScroll enabledIcons testID="sensor-screen">
+      {board && (
+        <>
+          {board.reading?.deviceSurface.simulator && <Note text={t('sensors.notice.simulator')} />}
+          {board.permissions.motion !== 'given' && <Note text={t('sensors.notice.motion')} />}
+          {[false, true].map((requiresPermission) => (
+            <View key={String(requiresPermission)}>
+              <Text accessibilityRole="header" style={boardStyles.group}>
+                {requiresPermission ? t('sensors.group.permissioned') : t('sensors.group.free')}
+              </Text>
+              {pages
+                .filter((page) => permissioned(page) === requiresPermission)
+                .map((page) => (
+                  <View key={page}>
+                    <SensorSection
+                      board={board}
+                      busy={state.busy}
+                      perform={perform}
+                      page={page}
+                      sessionId={state.sessionId}
+                    />
+                    <Action
+                      secondary
+                      label={t('sensors.about', { title: title(page) })}
+                      onPress={() => onOpenPage(page)}
+                    />
+                  </View>
+                ))}
+            </View>
+          ))}
+        </>
+      )}
+    </SensorScroll>
+  );
+}
+
+/** One section with Apple's documentation for it and, where one exists, its algorithm. */
+export function SensorDetailScreen({ page }: { page: SensorPage }) {
+  const { state, perform, setFailure } = useContext(SensorSessionContext);
+  const board = state.board;
+  return (
+    <SensorScroll enabledIcons={false} testID="sensor-detail">
+      {board && (
+        <SensorSection
+          board={board}
+          busy={state.busy}
+          perform={perform}
+          page={page}
+          sessionId={state.sessionId}
+        />
+      )}
+      <SensorDocuments page={page} onFailure={setFailure} />
+    </SensorScroll>
+  );
+}
+
+/** Export, units, permissions, reading windows, erase, stores, environment and limits, followed by
+ * whatever settings of its own the app adds. */
+export function SensorSettingsScreen({ children }: { children?: ReactNode }) {
+  const { state, perform, setFailure } = useContext(SensorSessionContext);
+  const board = state.board;
+  return (
+    <SensorScroll enabledIcons collectionControl={false} testID="sensor-settings">
+      {board && <SensorSettings board={board} busy={state.busy} perform={perform} onFailure={setFailure} />}
+      {children}
+    </SensorScroll>
+  );
+}
+
+/** What every sensor screen shows above its own content: failures, the opening state and, on the
+ * board, the control that pauses or resumes collection. */
+function SensorScroll({
+  enabledIcons,
+  collectionControl = true,
+  testID,
+  children,
+}: {
+  enabledIcons: boolean;
+  collectionControl?: boolean;
+  testID: string;
+  children: ReactNode;
+}) {
+  const { state, failure, perform } = useContext(SensorSessionContext);
+  const board = state.board;
+  const shown = failure || state.failure;
+  return (
+    <SensorIconContext.Provider value={{ sessionId: state.sessionId, enabled: enabledIcons }}>
+      <ScrollView
+        style={styles.root}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.content}
+        testID={testID}
+      >
+        {shown && (
           <Text accessibilityRole="alert" style={boardStyles.warning}>
-            {failure || state.failure}
+            {shown}
           </Text>
         )}
         {!board && <Note text={t('sensors.opening')} />}
-        {board && (
-          <>
-            <Action
-              label={board.collection.paused ? t('sensors.resume') : t('sensors.pause')}
-              disabled={state.busy}
-              onPress={() =>
-                perform(board.collection.paused ? { action: 'resume', consent: true } : { action: 'pause' })
-              }
-            />
-            {tab === 'settings' ? (
-              <SensorSettings board={board} busy={state.busy} perform={perform} onFailure={setFailure} />
-            ) : (
-              <SensorContents
-                board={board}
-                busy={state.busy}
-                perform={perform}
-                page={page}
-                setPage={setPage}
-                sessionId={state.sessionId}
-                onFailure={setFailure}
-              />
-            )}
-          </>
+        {board && collectionControl && (
+          <Action
+            label={board.collection.paused ? t('sensors.resume') : t('sensors.pause')}
+            disabled={state.busy}
+            onPress={() =>
+              perform(board.collection.paused ? { action: 'resume', consent: true } : { action: 'pause' })
+            }
+          />
         )}
+        {children}
       </ScrollView>
     </SensorIconContext.Provider>
   );
 }
-type ContentsProps = BoardActions & {
-  page: SensorPage | null;
-  setPage: (page: SensorPage | null) => void;
-  sessionId: string | null;
-  onFailure: (message: string) => void;
-};
-function SensorContents(props: ContentsProps) {
-  if (props.page)
-    return (
-      <>
-        <Action secondary label={t('sensors.allSensors')} onPress={() => props.setPage(null)} />
-        <SensorSection {...props} page={props.page} />
-        <SensorDocuments page={props.page} onFailure={props.onFailure} />
-      </>
-    );
-  return (
-    <>
-      {props.board.reading?.deviceSurface.simulator && <Note text={t('sensors.notice.simulator')} />}
-      {props.board.permissions.motion !== 'given' && <Note text={t('sensors.notice.motion')} />}
-      {[false, true].map((requiresPermission) => (
-        <View key={String(requiresPermission)}>
-          <Text style={boardStyles.group}>
-            {requiresPermission ? t('sensors.group.permissioned') : t('sensors.group.free')}
-          </Text>
-          {pages
-            .filter((page) => permissioned(page) === requiresPermission)
-            .map((page) => (
-              <View key={page}>
-                <SensorSection {...props} page={page} />
-                <Action
-                  secondary
-                  label={t('sensors.about', { title: title(page) })}
-                  onPress={() => props.setPage(page)}
-                />
-              </View>
-            ))}
-        </View>
-      ))}
-    </>
-  );
-}
+
 function SensorSection({
   board,
   busy,

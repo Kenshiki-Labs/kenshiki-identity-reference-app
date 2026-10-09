@@ -3,7 +3,6 @@ import { TextInput } from 'react-native';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { invoke, mockSession as makeSession, required } from './__tests__/support';
 import { DocumentCheckPanel } from './DocumentCheckPanel';
-import { IdentitySheetHost } from './IdentitySheetHost';
 
 jest.mock('@kenshiki/identity-capture', () => ({
   isCaptureErrorCode: jest.requireActual<typeof import('../../ReactNative/identity-capture/src/codes')>(
@@ -67,11 +66,7 @@ async function setup() {
   };
   let view!: ReactTestRenderer;
   await act(async () => {
-    view = create(
-      <IdentitySheetHost>
-        <DocumentCheckPanel session={makeSession(native)} configured />
-      </IdentitySheetHost>,
-    );
+    view = create(<DocumentCheckPanel session={makeSession(native)} configured />);
   });
   const press = async (label: string) =>
     act(async () => {

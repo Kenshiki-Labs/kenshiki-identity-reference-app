@@ -40,7 +40,6 @@ export const boardStyles = StyleSheet.create({
   note: { ...text.note, color: color.secondaryText },
   warning: { ...text.warning, color: color.warning },
   group: { ...text.groupHeader, marginTop: spacing.lg, color: color.text },
-  tabs: { flexDirection: 'row', gap: spacing.md },
   documents: { padding: spacing.xl },
 });
 export const SensorIconContext = createContext<{ sessionId: string | null; enabled: boolean }>({

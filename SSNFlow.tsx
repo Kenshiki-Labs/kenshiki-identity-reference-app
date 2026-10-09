@@ -6,17 +6,22 @@ import { formatCalendarDate, formatMoment } from './HolderText';
 import { Action, styles } from './IdentityCaptureFlow';
 import { t } from './locales/i18n';
 import { type SavedSSNCheck, SSNFlowController, type SSNFlowState } from './SSNFlowController';
+import { type CancelHandle, useCancel } from './ui/ModalCancel';
+import { NativeSheet, useConfirmation } from './ui/NativeSheet';
 
 export function SSNFlow({
   configuration,
   saved,
   onComplete,
   onExit,
+  cancelRef,
 }: {
   configuration: Configuration;
   saved?: SavedSSNCheck | undefined;
   onComplete: (value: SavedSSNCheck) => void;
   onExit: () => void;
+  /** Filled in with this check's own way out, for the navigation bar's Cancel button. */
+  cancelRef?: CancelHandle | undefined;
 }) {
   const [controller, setController] = useState<SSNFlowController>();
   const [state, setState] = useState<SSNFlowState>({ digits: '', busy: false, editing: false });
@@ -38,24 +43,40 @@ export function SSNFlow({
       active.dispose().catch(active.fail);
     };
   }, [configuration, saved]);
-  if (!controller) return <View style={styles.root} />;
-  const activeController = controller;
   const finish = async () => {
-    if (finishingRef.current) return;
+    if (!controller || finishingRef.current) return;
     Keyboard.dismiss();
     finishingRef.current = true;
     setFinishing(true);
     try {
-      const result = await activeController.handoff();
+      const result = await controller.handoff();
       if (result) onComplete(result);
       else onExit();
     } catch (error) {
       // Ownership stays here; the failure is shown in this screen's sheet.
       finishingRef.current = false;
       setFinishing(false);
-      if (!activeController.state.sheet) activeController.fail(error);
+      if (!controller.state.sheet) controller.fail(error);
     }
   };
+  useCancel(cancelRef, finish, (error) => controller?.fail(error));
+  useConfirmation(
+    controller && state.sheet?.kind === 'erase'
+      ? {
+          key: 'erase',
+          title: t('ssn.eraseSheet.title'),
+          message: t('ssn.eraseSheet.body'),
+          confirm: t('common.eraseChecks'),
+          keep: t('ssn.eraseSheet.keep'),
+          onConfirm: () => {
+            controller.erase().catch(controller.fail);
+          },
+          onKeep: controller.dismiss,
+        }
+      : undefined,
+  );
+  if (!controller) return <View style={styles.root} />;
+  const activeController = controller;
   const busy = state.busy || finishing;
   const snapshot = state.snapshot;
   const receipt = snapshot?.receipt;
@@ -154,16 +175,12 @@ export function SSNFlow({
     return null;
   }
   function renderSSNSheet() {
-    if (!state.sheet) return null;
+    if (!state.sheet || state.sheet.kind === 'erase') return null;
     return (
-      <View style={styles.scrim}>
-        <View style={styles.sheet} accessibilityViewIsModal testID="ssn-bottom-sheet">
-          <ScrollView contentContainerStyle={styles.sheetContent}>
-            {renderSheetActions()}
-            {close}
-          </ScrollView>
-        </View>
-      </View>
+      <NativeSheet testID="ssn-bottom-sheet">
+        {renderSheetActions()}
+        {close}
+      </NativeSheet>
     );
   }
   function renderSheetActions() {
@@ -194,28 +211,6 @@ export function SSNFlow({
             testID="ssn-edit"
             secondary
             onPress={activeController.edit}
-            disabled={busy}
-          />
-        </>
-      );
-    }
-    if (state.sheet.kind === 'erase') {
-      return (
-        <>
-          <Text accessibilityRole="header" style={styles.sheetTitle}>
-            {t('ssn.eraseSheet.title')}
-          </Text>
-          <Text style={styles.body}>{t('ssn.eraseSheet.body')}</Text>
-          <Action
-            label={t('common.eraseChecks')}
-            testID="ssn-confirm-erase"
-            onPress={activeController.erase}
-            disabled={busy}
-          />
-          <Action
-            label={t('ssn.eraseSheet.keep')}
-            secondary
-            onPress={activeController.dismiss}
             disabled={busy}
           />
         </>
@@ -259,10 +254,6 @@ export function SSNFlow({
         accessibilityElementsHidden={!!state.sheet}
         importantForAccessibility={state.sheet ? 'no-hide-descendants' : 'auto'}
       >
-        <Text style={styles.eyebrow}>{t('common.eyebrow')}</Text>
-        <Text accessibilityRole="header" style={styles.title}>
-          {t('common.socialSecurityNumber')}
-        </Text>
         <Text style={styles.body}>{t('ssn.intro')}</Text>
         {renderSSNStage()}
         {receipt && (
@@ -286,13 +277,12 @@ export function SSNFlow({
         {snapshot && (
           <Action
             label={t('ssn.erase')}
-            secondary
+            destructive
             testID="ssn-erase"
             onPress={activeController.askErase}
             disabled={busy}
           />
         )}
-        {close}
       </ScrollView>
       {renderSSNSheet()}
     </View>

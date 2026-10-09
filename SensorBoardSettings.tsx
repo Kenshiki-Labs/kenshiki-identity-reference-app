@@ -42,7 +42,7 @@ export function SensorSettings(props: SettingsProps) {
           />
         )}
         <Action
-          secondary
+          destructive
           label={t('sensors.export.tamper')}
           disabled={busy || board.evidence.count === 0}
           onPress={() =>
@@ -55,7 +55,7 @@ export function SensorSettings(props: SettingsProps) {
           }
         />
         <Action
-          secondary
+          destructive
           label={t('sensors.export.forget')}
           disabled={busy}
           onPress={() =>
@@ -84,6 +84,7 @@ export function SensorSettings(props: SettingsProps) {
       <WindowSettings {...props} />
       <Section title={copy('erase.header')}>
         <Action
+          destructive
           label={t('sensors.erase.action')}
           disabled={busy}
           onPress={() =>

@@ -7,7 +7,6 @@ export type Part = string | readonly ['#'] | readonly ['arg', string]
 
 /** Every message key, with the values its message needs (undefined: none). */
 export type MessageValues = {
-  readonly "common.eyebrow": undefined;
   readonly "common.backToIdentity": undefined;
   readonly "common.backToResults": undefined;
   readonly "common.done": undefined;
@@ -42,7 +41,6 @@ export type MessageValues = {
   readonly "hub.title": undefined;
   readonly "hub.resultsTitle": undefined;
   readonly "hub.licenseTitle": undefined;
-  readonly "hub.intro": undefined;
   readonly "hub.configurationIssue": undefined;
   readonly "hub.license.title": undefined;
   readonly "hub.license.viewResults": {readonly name: string | number};
@@ -62,6 +60,9 @@ export type MessageValues = {
   readonly "hub.ssn.needsAttention": undefined;
   readonly "hub.ssn.viewResult": {readonly summary: string | number};
   readonly "hub.ssn.start": undefined;
+  readonly "hub.notAvailable": undefined;
+  readonly "hub.section.checks": undefined;
+  readonly "hub.section.saved": undefined;
   readonly "hub.phone.title": undefined;
   readonly "hub.phone.resume": undefined;
   readonly "hub.phone.stopped": undefined;
@@ -73,7 +74,6 @@ export type MessageValues = {
   readonly "hub.action.deleteLicenseScans": undefined;
   readonly "hub.action.developerChecks": undefined;
   readonly "hub.action.clearResults": undefined;
-  readonly "hub.action.phoneSensors": undefined;
   readonly "hub.closeFailed.previous": undefined;
   readonly "hub.closeFailed.check": undefined;
   readonly "hub.restore.title": undefined;
@@ -106,7 +106,6 @@ export type MessageValues = {
   readonly "passport.title.results": undefined;
   readonly "passport.title.comparing": undefined;
   readonly "passport.title.selfie": undefined;
-  readonly "passport.closeCheck": undefined;
   readonly "passport.action.retakeSelfie": undefined;
   readonly "passport.action.compareSelfie": undefined;
   readonly "passport.action.readChipAgain": undefined;
@@ -670,10 +669,12 @@ export type MessageValues = {
   readonly "subscriber.label.mixed": undefined;
   readonly "subscriber.label.unknown": undefined;
   readonly "subscriber.label.other": undefined;
+  readonly "settings.identityData": undefined;
+  readonly "settings.nothingSaved": undefined;
+  readonly "settings.developer": undefined;
   readonly "sensors.opening": undefined;
   readonly "sensors.pause": undefined;
   readonly "sensors.resume": undefined;
-  readonly "sensors.allSensors": undefined;
   readonly "sensors.resumeCollection": undefined;
   readonly "sensors.about": {readonly title: string | number};
   readonly "sensors.waitingForReading": undefined;
@@ -807,7 +808,6 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
     formatLocale: "en-US",
     plural: (count) => (count === 1 ? 'one' : 'other'),
     messages: {
-      "common.eyebrow": "IDENTITY",
       "common.backToIdentity": "Back to Identity",
       "common.backToResults": "Back to results",
       "common.done": "Done",
@@ -842,7 +842,6 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "hub.title": "Identity",
       "hub.resultsTitle": "Your results",
       "hub.licenseTitle": "Your driver’s license",
-      "hub.intro": "Your identity checks, together in one place.",
       "hub.configurationIssue": "Saved checks are unavailable because this app’s local holder record could not be read. New checks are not saved.",
       "hub.license.title": "Driver’s license",
       "hub.license.viewResults": [["arg", "name"], " · View results"],
@@ -862,6 +861,9 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "hub.ssn.needsAttention": "Check needs attention · Open",
       "hub.ssn.viewResult": [["arg", "summary"], " · View result"],
       "hub.ssn.start": "Check whether your number was issued",
+      "hub.notAvailable": "Not available",
+      "hub.section.checks": "Checks",
+      "hub.section.saved": "Saved results",
       "hub.phone.title": "Phone",
       "hub.phone.resume": "Check in progress · Resume",
       "hub.phone.stopped": "Check stopped · Subscriber details differ from your ID",
@@ -873,7 +875,6 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "hub.action.deleteLicenseScans": "Delete saved license scans",
       "hub.action.developerChecks": "Developer checks",
       "hub.action.clearResults": "Clear results",
-      "hub.action.phoneSensors": "Phone sensors",
       "hub.closeFailed.previous": "The previous checks could not be closed. Reopen this screen.",
       "hub.closeFailed.check": "A check could not be closed. Reopen this screen.",
       "hub.restore.title": "Saved results could not be opened",
@@ -906,7 +907,6 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "passport.title.results": "Your results",
       "passport.title.comparing": "Comparing your photos",
       "passport.title.selfie": "Take a selfie",
-      "passport.closeCheck": "Close check",
       "passport.action.retakeSelfie": "Retake selfie",
       "passport.action.compareSelfie": "Compare with a selfie",
       "passport.action.readChipAgain": "Read chip again",
@@ -1470,10 +1470,12 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "subscriber.label.mixed": "Mixed",
       "subscriber.label.unknown": "Unknown",
       "subscriber.label.other": "Unrecognized value",
+      "settings.identityData": "Saved identity data",
+      "settings.nothingSaved": "No passport, face or license results are saved on this phone.",
+      "settings.developer": "Developer",
       "sensors.opening": "Opening sensors…",
       "sensors.pause": "Pause sensors",
       "sensors.resume": "Resume sensors",
-      "sensors.allSensors": "All sensors",
       "sensors.resumeCollection": "Resume collection",
       "sensors.about": ["About ", ["arg", "title"]],
       "sensors.waitingForReading": "Waiting for a reading.",

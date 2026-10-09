@@ -1,6 +1,6 @@
 import type { CaptureErrorCode, DocumentCheckFailureCode } from '@kenshiki/identity-capture';
 import { useEffect, useState } from 'react';
-import { AppState, ScrollView, Text, TextInput, View } from 'react-native';
+import { AppState, Text, TextInput, View } from 'react-native';
 import {
   DocumentCheckController,
   type DocumentCheckPort,
@@ -8,8 +8,8 @@ import {
 } from './DocumentCheckController';
 import { type ErrorText, errorCode, errorText, formatMoment } from './HolderText';
 import { Action, styles } from './IdentityCaptureFlow';
-import { IdentitySheet } from './IdentitySheetHost';
 import { t } from './locales/i18n';
+import { NativeSheet } from './ui/NativeSheet';
 
 const labels = {
   recordMatched: t('documentCheck.outcome.recordMatched'),
@@ -185,63 +185,57 @@ function DocumentCheckView({ session, configured }: { session: DocumentCheckPort
       </>
     );
   }
+  const closeSheet = () => {
+    setEdits({});
+    setSheet(undefined);
+  };
   function renderCheckSheet() {
     if (sheet) {
       return (
-        <View testID="document-check-bottom-sheet">
-          <ScrollView contentContainerStyle={styles.sheetContent}>
-            <Text style={styles.sheetTitle}>
-              {sheet === 'correction'
-                ? t('documentCheck.sheet.correctionTitle')
-                : t('common.checkNeedsAttention')}
-            </Text>
-            {sheet === 'correction' ? (
-              <>
-                {result?.correctable.map(({ field, code }) => (
-                  <View key={field}>
-                    <Text style={styles.label}>{fieldLabel(field)}</Text>
-                    <Text style={styles.body}>
-                      {correctionText[code] ?? t('documentCheck.correction.other')}
-                    </Text>
-                    <TextInput
-                      accessibilityLabel={fieldLabel(field)}
-                      value={edits[field] ?? ''}
-                      autoCorrect={false}
-                      onChangeText={(value) => setEdits((previous) => ({ ...previous, [field]: value }))}
-                      style={styles.body}
-                    />
-                  </View>
-                ))}
-                <Action
-                  label={t('documentCheck.action.submitCorrections')}
-                  disabled={busy || !Object.values(edits).some((value) => value.trim())}
-                  onPress={() => controller?.correct(edits)}
-                />
-              </>
-            ) : (
-              <>
-                <Text style={styles.body}>{error}</Text>
-                <Action
-                  label={t('documentCheck.action.reopenSaved')}
-                  disabled={busy}
-                  onPress={() => controller?.restore()}
-                />
-              </>
-            )}
-            <Action
-              label={t('common.backToResults')}
-              secondary
-              disabled={busy}
-              onPress={() => {
-                setEdits({});
-                setSheet(undefined);
-              }}
-            />
-          </ScrollView>
-        </View>
+        <NativeSheet testID="document-check-bottom-sheet" onDismiss={busy ? undefined : closeSheet}>
+          <Text style={styles.sheetTitle}>
+            {sheet === 'correction'
+              ? t('documentCheck.sheet.correctionTitle')
+              : t('common.checkNeedsAttention')}
+          </Text>
+          {sheet === 'correction' ? (
+            <>
+              {result?.correctable.map(({ field, code }) => (
+                <View key={field}>
+                  <Text style={styles.label}>{fieldLabel(field)}</Text>
+                  <Text style={styles.body}>
+                    {correctionText[code] ?? t('documentCheck.correction.other')}
+                  </Text>
+                  <TextInput
+                    accessibilityLabel={fieldLabel(field)}
+                    value={edits[field] ?? ''}
+                    autoCorrect={false}
+                    onChangeText={(value) => setEdits((previous) => ({ ...previous, [field]: value }))}
+                    style={styles.body}
+                  />
+                </View>
+              ))}
+              <Action
+                label={t('documentCheck.action.submitCorrections')}
+                disabled={busy || !Object.values(edits).some((value) => value.trim())}
+                onPress={() => controller?.correct(edits)}
+              />
+            </>
+          ) : (
+            <>
+              <Text style={styles.body}>{error}</Text>
+              <Action
+                label={t('documentCheck.action.reopenSaved')}
+                disabled={busy}
+                onPress={() => controller?.restore()}
+              />
+            </>
+          )}
+          <Action label={t('common.backToResults')} secondary disabled={busy} onPress={closeSheet} />
+        </NativeSheet>
       );
     }
-    return undefined;
+    return null;
   }
   function renderReturnedCheck() {
     if (!result) return null;
@@ -299,7 +293,7 @@ function DocumentCheckView({ session, configured }: { session: DocumentCheckPort
         {t('documentCheck.title')}
       </Text>
       {renderCheckStatus()}
-      <IdentitySheet>{renderCheckSheet()}</IdentitySheet>
+      {renderCheckSheet()}
     </View>
   );
 }
