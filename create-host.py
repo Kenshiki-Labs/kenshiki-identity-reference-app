@@ -63,6 +63,9 @@ try:
         binary_commit = json.load(package.extractfile('package/build-manifest.json')).get('sdkCommit')
     # Identity, not just name: the tarball must be the exact artifact this delivery recorded.
     delivery = json.loads(args.integration_manifest.read_text())
+    artifact_name = delivery.get('sdkArtifact')
+    if not isinstance(artifact_name, str) or not artifact_name or Path(artifact_name).name != artifact_name or artifact_name in {'.', '..'} or '\\' in artifact_name:
+        raise ValueError('Manifest sdkArtifact must be a filename')
     if hashlib.sha256(artifact.read_bytes()).hexdigest() != delivery.get('sdkArtifactSHA256'):
         raise ValueError('SHA-256 differs from sdkArtifactSHA256 in ' + str(args.integration_manifest))
     if binary_commit != delivery.get('sdkBinarySourceCommit'):
@@ -107,6 +110,8 @@ if len(icons) != 1 or not (brand / 'LaunchScreen.storyboard').is_file():
     raise SystemExit('brand/ must hold exactly one Icon Composer .icon and a LaunchScreen.storyboard: ' + str(brand))
 subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'IdentitySDKHost',
                 '--version', '0.87.1', '--directory', str(host), '--skip-install', '--skip-git-init'], check=True)
+with (host / '.gitignore').open('a') as ignored:
+    ignored.write('\n# Local Fastlane output and signing credentials\n/fastlane/report.xml\n/fastlane/README.md.generated\n/fastlane/Preview.html\n*.p8\n*.p12\n*.mobileprovision\n.env\n.env.*\n')
 for filename in ['FusionScreen.tsx', 'FusionPresentation.tsx', 'FusionExplanations.tsx',
                  'AirCheckScreen.tsx', 'AirCheckDiagram.tsx', 'ContinuityScreen.tsx', 'FusionScreen.test.tsx',
                  'App.tsx', 'FirstRunPermissions.tsx', 'FirstRunPermissions.test.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
@@ -155,7 +160,7 @@ for source, filename in [(args.trust_anchors, 'masterList.pem'), (args.embedder,
             shutil.copyfile(source.resolve(), resources / filename)
 vendor = host / 'vendor'
 vendor.mkdir()
-shutil.copyfile(artifact, vendor / artifact.name)
+shutil.copyfile(artifact, vendor / artifact_name)
 # Adopters retain the delivered binary provenance independently of their app's Git history.
 shutil.copyfile(args.integration_manifest, vendor / 'integration-manifest.json')
 podfile = host / 'ios/Podfile'
@@ -164,7 +169,7 @@ if template_platform not in podfile.read_text():
     raise SystemExit('The generated Podfile has no "' + template_platform + '" line to set to 18.0; '
                      'set the platform to 18.0 by hand in ' + str(podfile))
 podfile.write_text(podfile.read_text().replace(template_platform, "platform :ios, '18.0'"))
-subprocess.run(['npm', 'install', './vendor/' + artifact.name], cwd=host, check=True)
+subprocess.run(['npm', 'install', './vendor/' + artifact_name], cwd=host, check=True)
 # Native navigation, pinned to the versions the SDK checkout typechecks and tests against: native
 # stacks, and bottom-tabs' native UITabBar navigator (its `unstable` entry). react-native-screens
 # 4.28.0 is built against React Native 0.87.0-rc.3 and supports Fabric on 0.84+.
