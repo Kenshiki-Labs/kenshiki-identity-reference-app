@@ -1,0 +1,88 @@
+require 'json'
+require 'fileutils'
+require 'digest'
+
+# This Fastfile belongs to the adopter's generated host, not the SDK publisher checkout.
+def adopter_root
+  File.expand_path('..', __dir__)
+end
+
+def adopter_verify(out, output)
+  sh('python3', File.join(__dir__, 'verify_export.py'), '--archive', File.join(out, 'App.xcarchive'),
+    '--ipa', File.join(out, 'export/App.ipa'), '--preflight', File.join(out, 'preflight.json'),
+    '--inputs', File.join(out, 'inputs.json'), '--output', File.join(out, output))
+end
+
+def adopter_tool(*args)
+  sh('python3', File.join(__dir__, 'adopter_release.py'), *args)
+end
+
+def adopter_key
+  app_store_connect_api_key(key_id: ENV.fetch('ASC_KEY_ID'), issuer_id: ENV.fetch('ASC_ISSUER_ID'),
+    key_filepath: File.expand_path(ENV.fetch('ASC_KEY_PATH')), duration: 1200)
+end
+
+default_platform(:ios)
+platform :ios do
+  desc 'Build and verify a local App Store candidate; never upload'
+  lane :candidate do
+    source = adopter_root
+    out = File.expand_path(ENV.fetch('APP_RELEASE_OUTPUT'))
+    UI.user_error!('Use a new output directory outside the app checkout') if File.exist?(out) || out.start_with?(source + '/') || out == source
+    revision = ENV.fetch('APP_REVISION')
+    version = ENV.fetch('APP_VERSION')
+    number = ENV.fetch('APP_BUILD_NUMBER')
+    UI.user_error!('Use a numeric version and positive build number') unless version.match?(/\A\d+\.\d+(?:\.\d+)?\z/) && number.match?(/\A[1-9]\d*\z/)
+    UI.user_error!('Commit app changes before building') unless sh('git', '-C', source, 'status', '--porcelain', log: false).strip.empty?
+    UI.user_error!('APP_REVISION must match app HEAD') unless revision.match?(/\A[0-9a-f]{40}\z/) && sh('git', '-C', source, 'rev-parse', 'HEAD', log: false).strip == revision
+    FileUtils.mkdir_p(out)
+    host = File.join(out, 'host')
+    sh('git', 'clone', '--no-hardlinks', '--local', source, host)
+    sh('git', '-C', host, 'checkout', '--detach', revision)
+    Dir.chdir(host) { sh('npm', 'ci') }
+    Dir.chdir(File.join(host, 'ios')) { sh('pod', 'install', '--deployment') }
+    adopter_tool('prepare', '--source', source, '--host', host, '--out', out, '--revision', revision,
+      '--profile', File.expand_path(ENV.fetch('APP_STORE_PROFILE')), '--team', ENV.fetch('APPLE_TEAM_ID'),
+      '--bundle', ENV.fetch('APP_IDENTIFIER'), '--version', version, '--build', number)
+    report = JSON.parse(File.read(File.join(out, 'preflight.json')))
+    inputs = JSON.parse(File.read(File.join(out, 'inputs.json')))
+    sh('ruby', File.join(__dir__, 'configure_release.rb'), host, File.join(out, 'preflight.json'),
+      revision, inputs.fetch('sdkArtifactSHA256'), inputs.fetch('referenceManifestSHA256'), version, number, inputs.fetch('sdkBinarySourceCommit'))
+    adopter_tool('freeze', '--out', out)
+    selected = report.fetch('selected_profile')
+    build_app(workspace: File.join(host, 'ios/IdentitySDKHost.xcworkspace'), scheme: 'IdentitySDKHost',
+      configuration: 'Release', destination: 'generic/platform=iOS',
+      derived_data_path: File.join(out, 'DerivedData'), archive_path: File.join(out, 'App.xcarchive'),
+      output_directory: File.join(out, 'export'), output_name: 'App.ipa',
+      buildlog_path: File.join(out, 'logs'), export_method: 'app-store', xcodebuild_formatter: '',
+      export_options: {method: 'app-store-connect', manageAppVersionAndBuildNumber: false,
+        signingStyle: 'manual', signingCertificate: selected.fetch('certificate_sha1'), teamID: report.fetch('team'),
+        provisioningProfiles: {report.fetch('bundle_id') => selected.fetch('uuid')}})
+    adopter_tool('source', '--out', out)
+    adopter_verify(out, 'export-verification.json')
+  end
+
+  desc 'Explicitly upload this exact verified candidate to the adopter App Store Connect account'
+  lane :upload do
+    out = File.expand_path(ENV.fetch('APP_RELEASE_OUTPUT'))
+    candidate = JSON.parse(File.read(File.join(out, 'export-verification.json')))
+    UI.user_error!('Candidate was not verified') unless candidate['status'] == 'verified'
+    UI.user_error!('Candidate IPA changed') unless Digest::SHA256.file(File.join(out, 'export/App.ipa')).hexdigest == candidate.fetch('ipaSHA256')
+    adopter_tool('source', '--out', out)
+    adopter_verify(out, 'upload-verification.json')
+    verified = JSON.parse(File.read(File.join(out, 'upload-verification.json')))
+    %w[sourceRevision sdkArtifactSHA256 bundleIdentifier version buildNumber ipaSHA256 jsBundleSHA256].each do |field|
+      UI.user_error!("Candidate changed: #{field}") unless verified.fetch(field) == candidate.fetch(field)
+    end
+    key = adopter_key
+    app = Spaceship::ConnectAPI::App.find(verified.fetch('bundleIdentifier'))
+    UI.user_error!('Create an App Store Connect app for this bundle first') unless app
+    UI.user_error!('Wrong App Store Connect app record') unless app.id == ENV.fetch('ASC_APP_ID')
+    latest = latest_testflight_build_number(api_key: key, app_identifier: verified.fetch('bundleIdentifier'),
+      version: verified.fetch('version'), initial_build_number: 0)
+    UI.user_error!('Build number already used; create a new candidate') unless Integer(verified.fetch('buildNumber')) > latest
+    upload_to_testflight(api_key: key, app_identifier: verified.fetch('bundleIdentifier'), apple_id: app.id,
+      ipa: File.join(out, 'export/App.ipa'), skip_submission: true, distribute_external: false,
+      notify_external_testers: false, skip_waiting_for_build_processing: false)
+  end
+end

@@ -136,8 +136,9 @@ for name in ['config.json', 'copy.json', 'pages.json']:
     shutil.copyfile(Path(__file__).parent / 'sensor-presentation' / name, host / 'sensor-presentation' / name)
 # Design tokens and UI text: the JSONC sources, their generated modules, the t() runtime and its
 # test, and the generator, so the new host can change its look and words and regenerate.
-for folder in ['ui', 'locales']:
-    shutil.copytree(Path(__file__).with_name(folder), host / folder)
+for folder in ['ui', 'locales', 'fastlane']:
+    shutil.copytree(Path(__file__).with_name(folder), host / folder,
+                    ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
 # The brand's icon, launch screen and launch assets. configure-host.rb installs them in the iOS app.
 shutil.copytree(brand, host / 'brand')
 shutil.copyfile(generator, host / generator.name)
@@ -155,6 +156,8 @@ for source, filename in [(args.trust_anchors, 'masterList.pem'), (args.embedder,
 vendor = host / 'vendor'
 vendor.mkdir()
 shutil.copyfile(artifact, vendor / artifact.name)
+# Adopters retain the delivered binary provenance independently of their app's Git history.
+shutil.copyfile(args.integration_manifest, vendor / 'integration-manifest.json')
 podfile = host / 'ios/Podfile'
 template_platform = 'platform :ios, min_ios_version_supported'
 if template_platform not in podfile.read_text():
