@@ -279,6 +279,24 @@ test('fast SSN entry keeps every digit in order and never writes stale text back
   await act(async () => view.unmount());
 });
 
+test('renders between keystrokes never update the native default text seed', async () => {
+  const { view, tap } = await renderApp();
+  await tap('open-ssn');
+  await tap('ssn-begin-entry');
+  const typed = '000001234';
+  for (let length = 1; length <= typed.length; length += 1) {
+    await act(async () => {
+      invoke(view.root.findByProps({ testID: 'ssn-entry' }), 'onChangeText', typed.slice(0, length));
+    });
+    const entry = view.root.findByProps({ testID: 'ssn-entry' });
+    expect(entry.props.value).toBeUndefined();
+    expect(entry.props.defaultValue).toBe('');
+  }
+  await tap('ssn-review-number');
+  expect(mockSession.ssnRequestConfirmation).toHaveBeenCalledWith(typed);
+  await act(async () => view.unmount());
+});
+
 test('pasted text that is not only digits restarts the field from the digits kept', async () => {
   const { view, tap } = await renderApp();
   await tap('open-ssn');

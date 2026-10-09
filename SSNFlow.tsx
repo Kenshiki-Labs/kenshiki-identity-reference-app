@@ -139,29 +139,15 @@ export function SSNFlow({
       return (
         <>
           <Text style={styles.label}>{t('common.socialSecurityNumber')}</Text>
-          {/* Uncontrolled (S-12): the field owns what is typed and JavaScript only reads it. A
-              controlled `value` lets a render that lags fast typing push older text back into the
-              field, which moves the caret: 000001234 became 000123400. Input that is not only
-              digits restarts the field from the digits the controller kept. */}
-          <TextInput
+          <SSNEntry
             key={entryGeneration}
-            testID="ssn-entry"
-            accessibilityLabel={t('common.socialSecurityNumber')}
-            keyboardType="number-pad"
-            autoCorrect={false}
-            autoCapitalize="none"
-            autoComplete="off"
-            importantForAutofill="no"
+            initialDigits={state.digits}
             autoFocus={entryGeneration > 0}
-            maxLength={9}
-            defaultValue={state.digits}
             onChangeText={(typed) => {
               activeController.setDigits(typed);
               if (!/^\d*$/.test(typed)) setEntryGeneration((generation) => generation + 1);
             }}
             editable={!busy}
-            placeholder={t('ssn.placeholder')}
-            style={[styles.card, styles.entry]}
           />
           <Text style={styles.body}>{t('ssn.entryNotice')}</Text>
           <Action
@@ -310,6 +296,41 @@ export function SSNFlow({
       </ScrollView>
       {renderSSNSheet()}
     </View>
+  );
+}
+
+/** React Native forwards defaultValue as native text on every render. Keep the seed fixed
+ * for this mounted entry so delayed JavaScript updates cannot rewrite newer native keystrokes.
+ * A sanitized paste explicitly remounts it; ordinary edits are owned by the native field. */
+function SSNEntry({
+  initialDigits,
+  autoFocus,
+  editable,
+  onChangeText,
+}: {
+  initialDigits: string;
+  autoFocus: boolean;
+  editable: boolean;
+  onChangeText: (text: string) => void;
+}) {
+  const seed = useRef(initialDigits);
+  return (
+    <TextInput
+      testID="ssn-entry"
+      accessibilityLabel={t('common.socialSecurityNumber')}
+      keyboardType="number-pad"
+      autoCorrect={false}
+      autoCapitalize="none"
+      autoComplete="off"
+      importantForAutofill="no"
+      autoFocus={autoFocus}
+      maxLength={9}
+      defaultValue={seed.current}
+      onChangeText={onChangeText}
+      editable={editable}
+      placeholder={t('ssn.placeholder')}
+      style={[styles.card, styles.entry]}
+    />
   );
 }
 
