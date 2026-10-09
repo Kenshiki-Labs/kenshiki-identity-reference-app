@@ -29,7 +29,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     reactNativeDelegate = delegate
     reactNativeFactory = factory
     window = UIWindow(frame: UIScreen.main.bounds)
-    var properties: [String: Any] = [:]
+    var properties: [String: Any] = ["firstRunPermissions": true]
     // The HOST chooses and locates its resources. The shipped SDK never searches Bundle.main.
     var configuration: [String: Any] = [:]
     for (key, name, extensionName) in [

@@ -321,3 +321,15 @@ the reference app does not build them:
 ## Acceptance test plan
 
 Follow [How to test the React Native SDK](../../docs/react-native-testing.md) for the source gates, installed-package tests, opt-in physical-device smoke tests and provider acceptance cases. `DeviceAcceptanceTests.swift` is copied into the generated UI-test target; it does not run device cases without explicit test-scheme opt-in.
+
+### First-run permissions
+
+The generated iOS host enables `firstRunPermissions`. Before mounting the main app, the introduction
+reads permission status through the existing SDK sensor session. Its buttons request Always
+Location, Motion & Fitness, and Bluetooth; they do not start collection. While Using is not shown
+as an Always grant. Reduced accuracy has a link to Settings, and returning from Settings refreshes
+the OS readings. Camera access stays with the capture flow.
+
+Continue releases the setup session before the main sensor session opens. A local UserDefaults
+string records completion of the introduction; authorization is always read from iOS. Users can
+continue without a grant and adjust access later in Settings.

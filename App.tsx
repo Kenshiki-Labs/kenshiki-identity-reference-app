@@ -22,6 +22,7 @@ import { ContinuityScreen } from './ContinuityScreen';
 import { DocumentCheckPanel } from './DocumentCheckPanel';
 import { isCompleteDocument, type SavedDocumentCapture } from './DocumentFlowController';
 import { DocumentResultDetails, DriverLicenseFlow, documentName } from './DriverLicenseFlow';
+import { FirstRunPermissions } from './FirstRunPermissions';
 import { GlossaryScreen, OverTimeScreen, ThreeProofsScreen } from './FusionExplanations';
 import { type FusionDestination, FusionScreen } from './FusionScreen';
 import { type ErrorText, errorCode, errorText } from './HolderText';
@@ -120,15 +121,29 @@ function navigationTheme(appearance: 'light' | 'dark') {
 const emptyConfiguration: Configuration = {};
 /** `developerChecks` is passed only by the simulator Debug AppDelegate. `configurationIssue` names
  * a native configuration step that failed before React mounted. */
-export default function App({
-  configuration = emptyConfiguration,
-  developerChecks = false,
-  configurationIssue,
-}: {
+type AppProps = {
   configuration?: Configuration | undefined;
   developerChecks?: boolean | undefined;
   configurationIssue?: 'holderScopeUnreadable' | undefined;
-}) {
+  firstRunPermissions?: boolean | undefined;
+};
+
+export default function App(props: AppProps) {
+  return (
+    <FirstRunPermissions
+      configuration={props.configuration ?? emptyConfiguration}
+      enabled={props.firstRunPermissions ?? false}
+    >
+      <AppContent {...props} />
+    </FirstRunPermissions>
+  );
+}
+
+function AppContent({
+  configuration = emptyConfiguration,
+  developerChecks = false,
+  configurationIssue,
+}: AppProps) {
   const navigation = useNavigationContainerRef<RootRoutes>();
   const identityNavigation = useRef<IdentityNavigation | undefined>(undefined);
   const scheme = useColorScheme();

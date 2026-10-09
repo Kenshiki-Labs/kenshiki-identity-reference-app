@@ -109,7 +109,7 @@ subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'I
                 '--version', '0.87.1', '--directory', str(host), '--skip-install', '--skip-git-init'], check=True)
 for filename in ['FusionScreen.tsx', 'FusionPresentation.tsx', 'FusionExplanations.tsx',
                  'AirCheckScreen.tsx', 'AirCheckDiagram.tsx', 'ContinuityScreen.tsx', 'FusionScreen.test.tsx',
-                 'App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
+                 'App.tsx', 'FirstRunPermissions.tsx', 'FirstRunPermissions.test.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
                  'DriverLicenseFlow.tsx', 'DocumentFlowController.ts', 'DocumentCheckPanel.tsx',
                  'DocumentCheckPanel.test.tsx',
                  'DriverLicenseFlow.test.tsx', 'DocumentFlowController.test.ts',

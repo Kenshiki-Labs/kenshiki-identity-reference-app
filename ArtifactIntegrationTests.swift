@@ -10,6 +10,33 @@ final class ArtifactIntegrationTests: XCTestCase {
     return app
   }
 
+  @MainActor
+  static func completeIntroductionIfShown(_ app: XCUIApplication) {
+    let proceed = app.buttons["first-run-continue"]
+    if proceed.waitForExistence(timeout: 2) {
+      if !proceed.isHittable { app.swipeUp() }
+      proceed.tap()
+      XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 20))
+    }
+  }
+
+  @MainActor
+  func testFirstRunPermissionsCanBeSkippedAndStayCompleted() {
+    let app = Self.hostApp()
+    app.launchArguments = ["-kenshiki.reference.permissionsIntroduction.v1", "NO"]
+    app.launch()
+    XCTAssertTrue(app.staticTexts["Welcome to Kenshiki Pulse"].waitForExistence(timeout: 20))
+    XCTAssertTrue(app.buttons["first-run-location"].exists)
+    XCTAssertFalse(app.tabBars.firstMatch.exists)
+    XCTAssertFalse(XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.firstMatch.exists)
+    Self.completeIntroductionIfShown(app)
+    app.terminate()
+    app.launchArguments = []
+    app.launch()
+    XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 20))
+    XCTAssertFalse(app.buttons["first-run-continue"].exists)
+  }
+
   /// Identity workflows explicitly choose their tab; Fusion is now the initial screen.
   @MainActor
   static func openIdentity(_ app: XCUIApplication) {
@@ -30,6 +57,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--reference-holder=" + UUID().uuidString]
     app.launch()
+    Self.completeIntroductionIfShown(app)
     Self.openIdentity(app)
 
     func reveal(_ element: XCUIElement, upward: Bool = true) {
@@ -123,6 +151,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--reference-holder=" + UUID().uuidString]
     app.launch()
+    Self.completeIntroductionIfShown(app)
     let tabs = app.tabBars.firstMatch
     XCTAssertTrue(tabs.waitForExistence(timeout: 30))
     XCTAssertEqual(tabs.buttons.allElementsBoundByIndex.map(\.label), ["Fusion", "Sensors", "Identity", "Settings"])
@@ -204,6 +233,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--ssn-artifact-fixture", "--reference-holder=" + UUID().uuidString]
     app.launch()
+    Self.completeIntroductionIfShown(app)
     Self.openIdentity(app)
     addTeardownBlock { XCUIDevice.shared.appearance = .light }
 
@@ -291,6 +321,7 @@ final class ArtifactIntegrationTests: XCTestCase {
   func testUnavailablePhoneUsesBottomSheetAndReturnsToIdentity() {
     let app = Self.hostApp()
     app.launch()
+    Self.completeIntroductionIfShown(app)
     Self.openIdentity(app)
     let open = app.buttons["open-phone"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
@@ -310,6 +341,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--phone-artifact-fixture"]
     app.launch()
+    Self.completeIntroductionIfShown(app)
     Self.openIdentity(app)
     let open = app.buttons["open-phone"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
@@ -329,6 +361,7 @@ final class ArtifactIntegrationTests: XCTestCase {
   func testUnavailableSSNProviderHasABottomSheetAndReturnToIdentity() {
     let app = Self.hostApp()
     app.launch()
+    Self.completeIntroductionIfShown(app)
     Self.openIdentity(app)
     let open = app.buttons["open-ssn"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
@@ -352,6 +385,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--ssn-artifact-fixture", "--reference-holder=" + UUID().uuidString]
     app.launch()
+    Self.completeIntroductionIfShown(app)
     Self.openIdentity(app)
     let open = completeSyntheticSSN(app)
     app.buttons["finish-ssn"].tap()
@@ -399,11 +433,13 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--ssn-artifact-fixture", first]
     app.launch()
+    Self.completeIntroductionIfShown(app)
     Self.openIdentity(app)
     _ = completeSyntheticSSN(app)
     app.terminate()
     app.launchArguments = ["--ssn-artifact-fixture", first]
     app.launch()
+    Self.completeIntroductionIfShown(app)
     Self.openIdentity(app)
     let open = app.buttons["open-ssn"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
@@ -414,6 +450,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     app.terminate()
     app.launchArguments = ["--ssn-artifact-fixture", second]
     app.launch()
+    Self.completeIntroductionIfShown(app)
     Self.openIdentity(app)
     XCTAssertTrue(open.waitForExistence(timeout: 30))
     for _ in 0..<3 where !open.isHittable { app.swipeUp() }
@@ -426,6 +463,7 @@ final class ArtifactIntegrationTests: XCTestCase {
   func testBackgroundingCoversPersonalDataAndForegroundRemovesTheCover() {
     let app = Self.hostApp()
     app.launch()
+    Self.completeIntroductionIfShown(app)
     Self.openIdentity(app)
     let open = app.buttons["open-ssn"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
@@ -446,6 +484,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     #endif
     let app = Self.hostApp()
     app.launch()
+    Self.completeIntroductionIfShown(app)
     Self.openIdentity(app)
     let open = app.buttons["open-driver-license"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
@@ -472,6 +511,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--reference-holder=" + UUID().uuidString]
     app.launch()
+    Self.completeIntroductionIfShown(app)
     Self.openIdentity(app)
     let passport = app.buttons["open-capture-flow"]
     XCTAssertTrue(passport.waitForExistence(timeout: 30))
@@ -486,6 +526,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--document-check-artifact-fixture"]
     app.launch()
+    Self.completeIntroductionIfShown(app)
     Self.openIdentity(app)
     let settings = app.tabBars.buttons["Settings"]
     XCTAssertTrue(settings.waitForExistence(timeout: 30))
@@ -507,6 +548,7 @@ final class ArtifactIntegrationTests: XCTestCase {
   func testInstalledPackageAcrossJavaScriptAndNativeBoundaries() throws {
     let app = Self.hostApp()
     app.launch()
+    Self.completeIntroductionIfShown(app)
     Self.openIdentity(app)
     let settings = app.tabBars.buttons["Settings"]
     XCTAssertTrue(settings.waitForExistence(timeout: 30))

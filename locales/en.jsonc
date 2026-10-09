@@ -14,6 +14,32 @@
 // locales/<language>.jsonc with the same keys and placeholders, and add the language's plural
 // rule to the generator.
 {
+  "firstRun": {
+    "title": "Welcome to Kenshiki Pulse",
+    "intro": "Choose which sensors Pulse can use. You can change these permissions later in Settings.",
+    "location": {
+      "title": "Always Location",
+      "body": "Allow Always Location for continuity checks, and keep Precise Location on. iOS may ask in stages; choose Always when offered, or enable it in Settings."
+    },
+    "motion": {
+      "title": "Motion & Fitness",
+      "body": "Allow air-pressure readings for Air Check. Other motion readings have their own availability checks."
+    },
+    "bluetooth": {
+      "title": "Bluetooth",
+      "body": "Read Bluetooth availability and the connected audio route. This app does not scan for nearby devices."
+    },
+    "allow": "Choose access",
+    "allowed": "Allowed",
+    "unavailable": "Not available",
+    "precise": "Review Precise Location",
+    "preciseBody": "Location access is on, but iOS is sharing an approximate position. You can enable Precise Location in Settings.",
+    "settings": "Open Settings",
+    "camera": "Camera access is requested when you start a document scan or face capture.",
+    "later": "You can continue without granting access. Checks that need a missing permission will be limited.",
+    "failure": "A permission could not be checked or updated. Try again, or continue and review access in Settings.",
+    "continue": "Continue to Pulse"
+  },
   "fusionUI": {
     "passCountValue": "Readings so far: {count}",
     "evaluate": "Evaluate this reading",

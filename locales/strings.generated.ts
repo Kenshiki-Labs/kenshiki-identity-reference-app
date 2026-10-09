@@ -7,6 +7,24 @@ export type Part = string | readonly ['#'] | readonly ['arg', string]
 
 /** Every message key, with the values its message needs (undefined: none). */
 export type MessageValues = {
+  readonly "firstRun.title": undefined;
+  readonly "firstRun.intro": undefined;
+  readonly "firstRun.location.title": undefined;
+  readonly "firstRun.location.body": undefined;
+  readonly "firstRun.motion.title": undefined;
+  readonly "firstRun.motion.body": undefined;
+  readonly "firstRun.bluetooth.title": undefined;
+  readonly "firstRun.bluetooth.body": undefined;
+  readonly "firstRun.allow": undefined;
+  readonly "firstRun.allowed": undefined;
+  readonly "firstRun.unavailable": undefined;
+  readonly "firstRun.precise": undefined;
+  readonly "firstRun.preciseBody": undefined;
+  readonly "firstRun.settings": undefined;
+  readonly "firstRun.camera": undefined;
+  readonly "firstRun.later": undefined;
+  readonly "firstRun.failure": undefined;
+  readonly "firstRun.continue": undefined;
   readonly "fusionUI.passCountValue": {readonly count: string | number};
   readonly "fusionUI.evaluate": undefined;
   readonly "fusionUI.evaluating": undefined;
@@ -894,6 +912,24 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
     formatLocale: "en-US",
     plural: (count) => (count === 1 ? 'one' : 'other'),
     messages: {
+      "firstRun.title": "Welcome to Kenshiki Pulse",
+      "firstRun.intro": "Choose which sensors Pulse can use. You can change these permissions later in Settings.",
+      "firstRun.location.title": "Always Location",
+      "firstRun.location.body": "Allow Always Location for continuity checks, and keep Precise Location on. iOS may ask in stages; choose Always when offered, or enable it in Settings.",
+      "firstRun.motion.title": "Motion & Fitness",
+      "firstRun.motion.body": "Allow air-pressure readings for Air Check. Other motion readings have their own availability checks.",
+      "firstRun.bluetooth.title": "Bluetooth",
+      "firstRun.bluetooth.body": "Read Bluetooth availability and the connected audio route. This app does not scan for nearby devices.",
+      "firstRun.allow": "Choose access",
+      "firstRun.allowed": "Allowed",
+      "firstRun.unavailable": "Not available",
+      "firstRun.precise": "Review Precise Location",
+      "firstRun.preciseBody": "Location access is on, but iOS is sharing an approximate position. You can enable Precise Location in Settings.",
+      "firstRun.settings": "Open Settings",
+      "firstRun.camera": "Camera access is requested when you start a document scan or face capture.",
+      "firstRun.later": "You can continue without granting access. Checks that need a missing permission will be limited.",
+      "firstRun.failure": "A permission could not be checked or updated. Try again, or continue and review access in Settings.",
+      "firstRun.continue": "Continue to Pulse",
       "fusionUI.passCountValue": ["Readings so far: ", ["arg", "count"]],
       "fusionUI.evaluate": "Evaluate this reading",
       "fusionUI.evaluating": "Working…",
