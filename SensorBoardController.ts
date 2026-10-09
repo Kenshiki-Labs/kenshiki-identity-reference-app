@@ -24,7 +24,7 @@ export class SensorBoardController {
   private active = true;
   private desiredRunning = true;
   private disposed = false;
-  private refreshing = false;
+  private executing = false;
   private pendingActions = 0;
   private board: SensorBoardState | null = null;
   private failure: string | null = null;
@@ -57,10 +57,10 @@ export class SensorBoardController {
         return;
       }
       this.session = session;
-      this.board = await session.sensorBoard({ action: 'status' });
+      this.board = await this.request(session, { action: 'status' });
       if (this.disposed) return;
       if (this.active && this.desiredRunning)
-        this.board = await session.sensorBoard({ action: 'resume', consent: true });
+        this.board = await this.request(session, { action: 'resume', consent: true });
       if (this.disposed) return;
       this.publish();
       this.schedule();
@@ -78,25 +78,28 @@ export class SensorBoardController {
     this.stopTimer();
     this.pendingActions += 1;
     this.generation += 1;
+    const generation = this.generation;
     this.publish();
     const current = this.session;
-    const cancellation = this.refreshing && current ? current.cancel() : Promise.resolve();
+    const cancellation = this.executing && current ? current.cancel() : Promise.resolve();
     const work = Promise.all([this.queue, cancellation]).then(async () => {
       if (this.disposed || !this.session) return;
       this.failure = null;
-      let answer = await this.session.sensorBoard(request);
+      let answer = await this.request(this.session, request);
       if (
         !this.disposed &&
         this.active &&
+        generation === this.generation &&
         this.desiredRunning &&
         answer.collection.paused &&
         request.action !== 'pause' &&
         request.action !== 'erase'
       )
-        answer = await this.session.sensorBoard({ action: 'resume', consent: true });
-      if (!this.disposed) this.board = answer;
+        answer = await this.request(this.session, { action: 'resume', consent: true });
+      if (!this.disposed && generation === this.generation) this.board = answer;
     });
     this.queue = work.catch(() => {
+      if (this.disposed || generation !== this.generation) return;
       this.desiredRunning = false;
       if (this.board) this.board = { ...this.board, collection: { ...this.board.collection, paused: true } };
       this.fail(t('sensors.failure.requestUnfinished'));
@@ -164,10 +167,9 @@ export class SensorBoardController {
     const session = this.session;
     if (!session || this.disposed || !this.active || this.pendingActions) return;
     const generation = this.generation;
-    this.refreshing = true;
     const work = this.queue.then(async () => {
       if (this.disposed || generation !== this.generation) return;
-      const answer = await session.sensorBoard({ action: 'refresh', consent: true });
+      const answer = await this.request(session, { action: 'refresh', consent: true });
       if (!this.disposed && generation === this.generation && this.active) {
         this.board = answer;
         this.failure = null;
@@ -179,9 +181,17 @@ export class SensorBoardController {
     try {
       await this.queue;
     } finally {
-      this.refreshing = false;
       this.publish();
       this.schedule();
+    }
+  }
+
+  private async request(session: CaptureSession, request: SensorBoardRequest): Promise<SensorBoardState> {
+    this.executing = true;
+    try {
+      return await session.sensorBoard(request);
+    } finally {
+      this.executing = false;
     }
   }
 

@@ -8,7 +8,7 @@ import { type ErrorText, errorCode, errorText } from './HolderText';
 import { t } from './locales/i18n';
 
 export type SavedSSNCheck = { session: CaptureSession; snapshot: SSNSessionSnapshot };
-type Recovery = 'localSave' | 'entry' | 'open' | 'exit' | 'fresh';
+type Recovery = 'localSave' | 'entry' | 'open' | 'exit' | 'fresh' | 'resend';
 export type SSNFlowState = {
   session?: CaptureSession | undefined;
   snapshot?: SSNSessionSnapshot | undefined;
@@ -158,6 +158,7 @@ export class SSNFlowController {
     this.update({ digits: '', snapshot: this.state.snapshot && redact(this.state.snapshot) });
     return this.run((session) => session.ssnConfirm(id));
   };
+  resend = () => this.run((session) => session.ssnResendUnresolved());
   recover = () => this.run((session) => session.ssnRecover());
   edit = async () => {
     if (this.state.busy || this.state.snapshot?.state === 'finishing') return;
@@ -172,6 +173,7 @@ export class SSNFlowController {
     this.update({ sheet: undefined });
     if (sheet?.kind !== 'recovery') return Promise.resolve();
     if (sheet.recovery === 'open') return this.open();
+    if (sheet.recovery === 'resend') return this.resend();
     if (sheet.recovery === 'localSave') return this.recover();
     if (sheet.recovery === 'entry' || sheet.recovery === 'fresh') this.beginEntry();
     return Promise.resolve();
@@ -214,7 +216,7 @@ export class SSNFlowController {
         kind: 'recovery',
         title: t('ssn.notReceivedTitle'),
         message: t('ssn.sheet.unknown'),
-        recovery: 'fresh',
+        recovery: 'resend',
       };
     return {
       kind: 'recovery',

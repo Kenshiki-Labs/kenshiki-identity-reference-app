@@ -34,6 +34,10 @@ const SensorSessionContext = createContext<SensorSessionValue>({
   perform: () => {},
 });
 
+export function useSensorSession() {
+  return useContext(SensorSessionContext);
+}
+
 /** Owns the one sensor board session while any sensor screen is open. The board, its detail pages
  * and its settings are separate screens that share it; leaving the last of them releases it, and
  * opening the board again starts a new session. */

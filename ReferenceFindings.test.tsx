@@ -227,7 +227,7 @@ async function render(element: React.ReactElement) {
         .findAllByProps({ testID: id })
         .filter((node) => typeof node.props.onPress === 'function')
         .at(-1);
-      if (!button) throw new Error('Missing ' + id);
+      if (!button) throw new Error(`Missing ${id}`);
       await invoke(button, 'onPress');
     });
   const press = async (label: string) =>
@@ -235,7 +235,7 @@ async function render(element: React.ReactElement) {
       const button = view.root
         .findAll((node) => node.props.label === label && typeof node.props.onPress === 'function')
         .at(-1);
-      if (!button) throw new Error('Missing ' + label);
+      if (!button) throw new Error(`Missing ${label}`);
       await invoke(button, 'onPress');
     });
   const text = () => JSON.stringify(view.toJSON());

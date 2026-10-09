@@ -2,6 +2,7 @@ import type { SensorBoardState } from '@kenshiki/identity-capture';
 
 export function sensorBoardFixture(): SensorBoardState {
   return {
+    fusion: { airCheck: { state: 'idle' }, continuity: { state: 'idle' }, receipt: null },
     reading: null,
     mediaOutput: null,
     collection: { collectedAt: null, failure: null, paused: false, sequence: 0 },

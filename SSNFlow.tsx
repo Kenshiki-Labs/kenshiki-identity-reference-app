@@ -126,6 +126,7 @@ export function SSNFlow({
             {t('ssn.notReceivedTitle')}
           </Text>
           <Text style={styles.body}>{t('ssn.notReceivedBody')}</Text>
+          <Action label={t('ssn.resend')} testID="ssn-resend-unresolved" onPress={activeController.resend} />
           <Action
             label={t('ssn.enterAgain')}
             testID="ssn-new-attempt"
@@ -244,6 +245,15 @@ export function SSNFlow({
               disabled={busy}
             />
           )}
+          {recovery.recovery === 'resend' && (
+            <Action
+              label={t('ssn.enterAgain')}
+              testID="ssn-new-attempt"
+              secondary
+              onPress={activeController.beginEntry}
+              disabled={busy}
+            />
+          )}
         </>
       );
     }
@@ -251,6 +261,7 @@ export function SSNFlow({
   }
   function recoveryLabel() {
     if (!recovery) return t('common.tryAgain');
+    if (recovery.recovery === 'resend') return t('ssn.resend');
     if (recovery.recovery === 'localSave') {
       return t('common.saveResult');
     }

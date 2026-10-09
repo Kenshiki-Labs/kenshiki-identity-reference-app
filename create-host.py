@@ -107,7 +107,9 @@ if len(icons) != 1 or not (brand / 'LaunchScreen.storyboard').is_file():
     raise SystemExit('brand/ must hold exactly one Icon Composer .icon and a LaunchScreen.storyboard: ' + str(brand))
 subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'IdentitySDKHost',
                 '--version', '0.87.1', '--directory', str(host), '--skip-install', '--skip-git-init'], check=True)
-for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
+for filename in ['FusionScreen.tsx', 'FusionPresentation.tsx', 'FusionExplanations.tsx',
+                 'AirCheckScreen.tsx', 'AirCheckDiagram.tsx', 'ContinuityScreen.tsx', 'FusionScreen.test.tsx',
+                 'App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
                  'DriverLicenseFlow.tsx', 'DocumentFlowController.ts', 'DocumentCheckPanel.tsx',
                  'DocumentCheckPanel.test.tsx',
                  'DriverLicenseFlow.test.tsx', 'DocumentFlowController.test.ts',
@@ -125,6 +127,7 @@ for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts
 (host / 'IdentityCaptureFlow.test.tsx').write_text(Path(__file__).with_name('IdentityCaptureFlow.test.tsx').read_text().replace('../../ReactNative/identity-capture/src/codes', '@kenshiki/identity-capture/src/codes'))
 shutil.copyfile(Path(__file__).parent / '__tests__/support.ts', host / '__tests__/support.ts')
 shutil.copyfile(Path(__file__).parent / '__tests__/SensorBoardFixtures.ts', host / '__tests__/SensorBoardFixtures.ts')
+shutil.copyfile(Path(__file__).parent / '__tests__/FusionFixtures.ts', host / '__tests__/FusionFixtures.ts')
 # The sensor screens read SensorHost's own words, configuration and documentation pages, generated
 # from Hosts/SensorHost by sensor-presentation/generate.py. Only the generated files travel: the
 # generator reads the Swift host's sources, which a delivery does not carry.

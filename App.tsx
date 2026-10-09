@@ -16,10 +16,14 @@ import {
 } from '@react-navigation/native-stack';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, ScrollView, Text, useColorScheme } from 'react-native';
+import { AirCheckScreen } from './AirCheckScreen';
 import { CaptureFlowController, type CompletedCapture } from './CaptureFlowController';
+import { ContinuityScreen } from './ContinuityScreen';
 import { DocumentCheckPanel } from './DocumentCheckPanel';
 import { isCompleteDocument, type SavedDocumentCapture } from './DocumentFlowController';
 import { DocumentResultDetails, DriverLicenseFlow, documentName } from './DriverLicenseFlow';
+import { GlossaryScreen, OverTimeScreen, ThreeProofsScreen } from './FusionExplanations';
+import { type FusionDestination, FusionScreen } from './FusionScreen';
 import { type ErrorText, errorCode, errorText } from './HolderText';
 import { Action, CaptureResultDetails, IdentityCaptureFlow, styles } from './IdentityCaptureFlow';
 import { IntegrationChecks } from './IntegrationChecks';
@@ -67,10 +71,17 @@ type RootRoutes = {
   PhoneCheck: undefined;
 };
 /** Three tabs in a native UITabBar, each its own native stack with a large title. */
-type TabRoutes = { IdentityTab: undefined; SensorsTab: undefined; SettingsTab: undefined };
+type TabRoutes = {
+  FusionTab: undefined;
+  IdentityTab: undefined;
+  SensorsTab: undefined;
+  SettingsTab: undefined;
+};
 type IdentityRoutes = { IdentityHome: undefined; PassportResult: undefined; LicenseResult: undefined };
 type SensorRoutes = { SensorBoard: undefined; SensorDetail: { page: SensorPage } };
 type SettingsRoutes = { SettingsHome: undefined; DeveloperChecks: undefined };
+type FusionRoutes = { FusionHome: undefined } & { [Page in FusionDestination]: undefined };
+const FusionStack = createNativeStackNavigator<FusionRoutes>();
 const Root = createNativeStackNavigator<RootRoutes>();
 const Tabs = createNativeBottomTabNavigator<TabRoutes>();
 const IdentityStack = createNativeStackNavigator<IdentityRoutes>();
@@ -97,7 +108,7 @@ function sensorTabFocused(state: NavigationState | undefined): boolean {
   const tabs = state?.routes.find((route) => route.name === 'Tabs')?.state;
   if (!tabs || typeof tabs.index !== 'number') return false;
   const focused = tabs.routes[tabs.index]?.name;
-  return focused === 'SensorsTab' || focused === 'SettingsTab';
+  return focused === 'FusionTab' || focused === 'SensorsTab' || focused === 'SettingsTab';
 }
 
 /** React Navigation's theme in the brand's tint: the selected tab, the back button and bar buttons. */
@@ -664,14 +675,50 @@ export default function App({
       </SettingsStack.Navigator>
     );
   }
+  function renderFusionTab() {
+    return (
+      <FusionStack.Navigator screenOptions={pushed}>
+        <FusionStack.Screen name="FusionHome" options={{ ...large, title: copy('fusion.navigationTitle') }}>
+          {({ navigation: fusion }: { navigation: NativeStackNavigationProp<FusionRoutes> }) => (
+            <FusionScreen onOpen={(page) => fusion.navigate(page)} />
+          )}
+        </FusionStack.Screen>
+        <FusionStack.Screen
+          name="AirCheck"
+          component={AirCheckScreen}
+          options={{ title: copy('airCheck.navigationTitle') }}
+        />
+        <FusionStack.Screen name="Continuity" options={{ title: copy('continuity.header') }}>
+          {({ navigation: fusion }: { navigation: NativeStackNavigationProp<FusionRoutes> }) => (
+            <ContinuityScreen onOverTime={() => fusion.navigate('OverTime')} />
+          )}
+        </FusionStack.Screen>
+        <FusionStack.Screen
+          name="OverTime"
+          component={OverTimeScreen}
+          options={{ title: copy('overTime.title') }}
+        />
+        <FusionStack.Screen
+          name="ThreeProofs"
+          component={ThreeProofsScreen}
+          options={{ title: copy('threeProofs.title') }}
+        />
+        <FusionStack.Screen
+          name="Glossary"
+          component={GlossaryScreen}
+          options={{ title: copy('glossary.title') }}
+        />
+      </FusionStack.Navigator>
+    );
+  }
   function renderTabs() {
     return (
       <Tabs.Navigator screenOptions={{ headerShown: false }}>
         <Tabs.Screen
-          name="IdentityTab"
-          options={{ title: t('hub.title'), tabBarIcon: { type: 'sfSymbol', name: symbol.identityTab } }}
+          name="FusionTab"
+          options={{ title: copy('fusion.tab'), tabBarIcon: { type: 'sfSymbol', name: symbol.fusionTab } }}
         >
-          {renderIdentityTab}
+          {renderFusionTab}
         </Tabs.Screen>
         <Tabs.Screen
           name="SensorsTab"
@@ -681,6 +728,12 @@ export default function App({
           }}
         >
           {renderSensorsTab}
+        </Tabs.Screen>
+        <Tabs.Screen
+          name="IdentityTab"
+          options={{ title: t('hub.title'), tabBarIcon: { type: 'sfSymbol', name: symbol.identityTab } }}
+        >
+          {renderIdentityTab}
         </Tabs.Screen>
         <Tabs.Screen
           name="SettingsTab"
@@ -699,6 +752,7 @@ export default function App({
       <NavigationContainer
         ref={navigation}
         theme={navigationTheme(scheme === 'dark' ? 'dark' : 'light')}
+        onReady={() => setSensorsOpen(sensorTabFocused(navigation.getRootState()))}
         onStateChange={(state) => setSensorsOpen(sensorTabFocused(state))}
       >
         <Root.Navigator screenOptions={{ headerShown: false }}>

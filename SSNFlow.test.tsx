@@ -50,6 +50,7 @@ const mockSession = {
     };
     return mockSnapshot;
   }),
+  ssnResendUnresolved: jest.fn(async () => mockSnapshot),
   ssnRecover: jest.fn(async () => mockSnapshot),
   ssnCancel: jest.fn(async () => {
     mockSnapshot = { ...mockSnapshot, state: 'ready', entryDigits: '', confirmation: null };
@@ -182,6 +183,9 @@ test('an uncertain prior dispatch gets a fresh-number warning before another con
   };
   const { view, tap, enter } = await renderApp();
   await tap('open-ssn');
+  await tap('ssn-resend-unresolved');
+  expect(mockSession.ssnResendUnresolved).toHaveBeenCalledTimes(1);
+  expect(mockSession.ssnConfirm).not.toHaveBeenCalled();
   await tap('ssn-new-attempt');
   await enter();
   await tap('ssn-review-number');

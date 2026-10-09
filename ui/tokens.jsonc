@@ -196,6 +196,10 @@
   // Fixed sizes and proportions. Rows have none: text sets their height, so Dynamic Type reflows.
   "size": {
     // A prominent button's minimum height. Replaces 52.
+    "fusionDiagram": 200,
+    "fusionRing": 80,
+    "fusionMinimumScale": 0.18,
+    "fusionMaximumScale": 1.65,
     "actionMinHeight": 50,
     // The captured front shown while the back is still needed. Replaces 220.
     "documentPreviewHeight": 220,
@@ -240,6 +244,7 @@
 
   // SF Symbols, by role. The tab bar types each name against the SF Symbols iOS ships.
   "symbol": {
+    "fusionTab": "square.stack.3d.up",
     "identityTab": "person.text.rectangle",
     "sensorsTab": "sensor",
     "settingsTab": "gearshape",

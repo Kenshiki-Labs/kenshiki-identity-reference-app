@@ -185,3 +185,60 @@ test('a settings action queued behind erase cannot restart collection', async ()
   expect(calls.filter((request) => request.action === 'refresh')).toHaveLength(0);
   await controller.dispose();
 });
+
+test('background cancels an in-flight Air Check and rejects its late presentation', async () => {
+  const { controller, session, board, calls, updates } = setup();
+  await controller.open();
+  let finish: (() => void) | undefined;
+  session.sensorBoard.mockImplementation(async (request) => {
+    calls.push(request);
+    if (request.action === 'airCheck') {
+      await new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+      return {
+        ...board,
+        fusion: { ...board.fusion, airCheck: { state: 'noFix', ranAt: '2026-10-09T12:00:00Z' } },
+      };
+    }
+    return { ...board, collection: { ...board.collection, paused: request.action === 'pause' } };
+  });
+  session.cancel.mockImplementation(async () => {
+    finish?.();
+  });
+  const running = controller.perform({ action: 'airCheck', consent: true });
+  await settle();
+  await controller.setActive(false);
+  await running;
+  expect(session.cancel).toHaveBeenCalledTimes(1);
+  expect(calls.at(-1)?.action).toBe('pause');
+  expect(updates.some((value) => value.board?.fusion.airCheck.state === 'noFix')).toBe(false);
+  expect(updates.at(-1)?.board?.collection.paused).toBe(true);
+  await controller.dispose();
+});
+
+test('erase cancels Air Check before clearing the shared state', async () => {
+  const { controller, session, board, calls, updates } = setup();
+  await controller.open();
+  let finish: (() => void) | undefined;
+  session.sensorBoard.mockImplementation(async (request) => {
+    calls.push(request);
+    if (request.action === 'airCheck')
+      await new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+    return { ...board, collection: { ...board.collection, paused: request.action === 'erase' } };
+  });
+  session.cancel.mockImplementation(async () => {
+    finish?.();
+  });
+  const running = controller.perform({ action: 'airCheck', consent: true });
+  await settle();
+  await controller.perform({ action: 'erase', consent: true });
+  await running;
+  expect(session.cancel).toHaveBeenCalledTimes(1);
+  expect(calls.at(-1)?.action).toBe('erase');
+  expect(updates.at(-1)?.board?.fusion.airCheck.state).toBe('idle');
+  expect(updates.at(-1)?.failure).toBeNull();
+  await controller.dispose();
+});

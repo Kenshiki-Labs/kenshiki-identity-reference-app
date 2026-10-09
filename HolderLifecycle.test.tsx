@@ -23,7 +23,7 @@ const passportFor = (surname: string, givenNames: string): PassportObservation =
   issuingState: 'UTO',
   sex: 'F',
   portraitAvailable: true,
-  portraitSHA256: 'portrait-' + surname,
+  portraitSHA256: `portrait-${surname}`,
   personalNumber: null,
   dateOfIssue: null,
   issuingAuthority: null,
@@ -75,7 +75,7 @@ function mockSessionFor(holder: Holder) {
     busy: false,
   };
   return {
-    id: 'session-' + holder,
+    id: `session-${holder}`,
     subscribe: jest.fn((_listener: (event: CaptureEvent) => void) => jest.fn()),
     listResults: jest.fn(async () =>
       saved ? [{ kind: 'passport-read-v1', workflowID: 'workflow-A', artifacts: [] }] : [],
@@ -122,7 +122,7 @@ const holderConfig = (holder: Holder): Configuration => {
     },
     ssn: {
       context: { credentialID: scope },
-      workflowID: '00000000-0000-4000-8000-00000000000' + (holder === 'A' ? '1' : '2'),
+      workflowID: `00000000-0000-4000-8000-00000000000${holder === 'A' ? '1' : '2'}`,
       providerID: 'agency',
       directoryURL: `file:///support/IdentityHolders/${scope}/SSN`,
       keychainService: `app.identity.${scope}.ssn`,

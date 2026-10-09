@@ -7,6 +7,95 @@ export type Part = string | readonly ['#'] | readonly ['arg', string]
 
 /** Every message key, with the values its message needs (undefined: none). */
 export type MessageValues = {
+  readonly "fusionUI.passCountValue": {readonly count: string | number};
+  readonly "fusionUI.evaluate": undefined;
+  readonly "fusionUI.evaluating": undefined;
+  readonly "fusionUI.forget": undefined;
+  readonly "fusionUI.forgetTitle": undefined;
+  readonly "fusionUI.forgetMessage": undefined;
+  readonly "fusionUI.forgetNote": undefined;
+  readonly "fusionUI.receiptLimit": undefined;
+  readonly "fusionUI.wiring": undefined;
+  readonly "fusionUI.cancelled": undefined;
+  readonly "fusionUI.notAvailable": undefined;
+  readonly "fusionUI.noEnvelope": undefined;
+  readonly "fusionUI.invalidReceipt": undefined;
+  readonly "fusionUI.olderEnvelope": undefined;
+  readonly "fusionUI.readFailed": undefined;
+  readonly "fusionUI.saveFailed": undefined;
+  readonly "fusionUI.eraseFailed": undefined;
+  readonly "fusionUI.metric": {readonly unit: string | number; readonly value: string | number};
+  readonly "fusionUI.fraction": {readonly count: string | number; readonly total: string | number};
+  readonly "fusionUI.scenario": {readonly days: string | number; readonly readings: string | number};
+  readonly "fusionUI.scenarioDetail": {readonly confidence: string | number; readonly lower: string | number};
+  readonly "fusionUI.gap": {readonly hours: string | number};
+  readonly "fusionUI.illustrative": undefined;
+  readonly "fusionUI.missingScenario": undefined;
+  readonly "fusionUI.working": undefined;
+  readonly "fusionUI.readingWhen": undefined;
+  readonly "fusionUI.keyLoss": undefined;
+  readonly "fusionUI.pressureUnits": undefined;
+  readonly "fusionUI.locationAt": undefined;
+  readonly "fusionUI.pressureField": undefined;
+  readonly "fusionUI.observationURL": undefined;
+  readonly "fusionUI.maximumAge": undefined;
+  readonly "fusionUI.maximumDistance": undefined;
+  readonly "fusionUI.temperatureQuality": undefined;
+  readonly "fusionUI.source": undefined;
+  readonly "fusionUI.nws": undefined;
+  readonly "fusionUI.stage": undefined;
+  readonly "fusionUI.httpStatus": undefined;
+  readonly "fusionUI.failingField": undefined;
+  readonly "fusionUI.decodingPath": undefined;
+  readonly "fusionUI.receivedAt": undefined;
+  readonly "fusionUI.envelopeID": undefined;
+  readonly "fusionUI.collectedAt": undefined;
+  readonly "fusionUI.firstPassAt": undefined;
+  readonly "fusionUI.previousPassAt": undefined;
+  readonly "fusionUI.lastPassAt": undefined;
+  readonly "fusionUI.stateWeight": undefined;
+  readonly "fusionUI.mathTitle": undefined;
+  readonly "fusionUI.airFormula": undefined;
+  readonly "fusionUI.allowanceFormula": undefined;
+  readonly "fusionUI.residualFormula": undefined;
+  readonly "fusionUI.continuityFormula": undefined;
+  readonly "fusionUI.diagram": {readonly allowance: string | number; readonly residual: string | number};
+  readonly "fusionUI.glossaryKeyTerm": undefined;
+  readonly "fusionUI.glossaryKeyBody": undefined;
+  readonly "fusionMath.temperature": undefined;
+  readonly "fusionMath.meanColumn": undefined;
+  readonly "fusionMath.scaleHeight": undefined;
+  readonly "fusionMath.heightAllowance": undefined;
+  readonly "fusionMath.temperatureAllowance": undefined;
+  readonly "fusionMath.uncertaintyBudget": undefined;
+  readonly "fusionMath.gasConstantOverGravity": undefined;
+  readonly "fusionMath.halfLapse": undefined;
+  readonly "fusionMath.temperatureUncertainty": undefined;
+  readonly "fusionMath.areaUncertainty": undefined;
+  readonly "fusionMath.altitudeSigmas": undefined;
+  readonly "fusionMath.allowanceFloor": undefined;
+  readonly "fusionMath.allowanceCeiling": undefined;
+  readonly "fusionMath.stationInputPressure": undefined;
+  readonly "fusionMath.stationPressure": undefined;
+  readonly "fusionMath.calculatedSeaLevelPressure": undefined;
+  readonly "fusionMath.coverage": undefined;
+  readonly "fusionMath.breadth": undefined;
+  readonly "fusionMath.recency": undefined;
+  readonly "fusionMath.maturity": undefined;
+  readonly "fusionMath.coherence": undefined;
+  readonly "fusionMath.signalAuthenticity": undefined;
+  readonly "fusionMath.posteriorMean": undefined;
+  readonly "fusionMath.lowerCredibleBound": undefined;
+  readonly "fusionMath.confidenceWidth": undefined;
+  readonly "fusionMath.evidenceWeight": undefined;
+  readonly "fusionMath.effectiveCheckIns": undefined;
+  readonly "fusionMath.halfMaturityDays": undefined;
+  readonly "fusionMath.daysSteepness": undefined;
+  readonly "fusionMath.checkInTarget": undefined;
+  readonly "fusionMath.priorEvidence": undefined;
+  readonly "fusionMath.lowerBoundZ": undefined;
+  readonly "fusionMath.networkChangeCoherence": undefined;
+  readonly "fusionMath.contradictionCoherenceWeight": undefined;
   readonly "brand.wordmark": undefined;
   readonly "brand.appName": undefined;
   readonly "common.backToIdentity": undefined;
@@ -456,6 +545,7 @@ export type MessageValues = {
   readonly "ssn.saveBody": undefined;
   readonly "ssn.notReceivedTitle": undefined;
   readonly "ssn.notReceivedBody": undefined;
+  readonly "ssn.resend": undefined;
   readonly "ssn.enterAgain": undefined;
   readonly "ssn.placeholder": undefined;
   readonly "ssn.entryNotice": undefined;
@@ -804,6 +894,95 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
     formatLocale: "en-US",
     plural: (count) => (count === 1 ? 'one' : 'other'),
     messages: {
+      "fusionUI.passCountValue": ["Readings so far: ", ["arg", "count"]],
+      "fusionUI.evaluate": "Evaluate this reading",
+      "fusionUI.evaluating": "Working…",
+      "fusionUI.forget": "Forget continuity history",
+      "fusionUI.forgetTitle": "Forget continuity history?",
+      "fusionUI.forgetMessage": "Removes the saved continuity history. Signing keys and other evidence stay on this phone.",
+      "fusionUI.forgetNote": "History is kept on this phone. Forgetting it does not replace keys or erase sensor evidence.",
+      "fusionUI.receiptLimit": "Local verification checks this reading against the public key inside its receipt. It does not independently prove device identity, server acceptance, or that every sensor value is true.",
+      "fusionUI.wiring": "This reference app exposes identity capture and phone checks alongside sensor evidence. These separate results are not automatically a single verified identity claim. Server acceptance and anchoring are separate.",
+      "fusionUI.cancelled": "The check was cancelled. No comparison was completed.",
+      "fusionUI.notAvailable": "Not available",
+      "fusionUI.noEnvelope": "Collect a reading in Sensors before evaluating continuity.",
+      "fusionUI.invalidReceipt": "The reading’s receipt did not verify. It cannot establish continuity.",
+      "fusionUI.olderEnvelope": "This reading predates the saved continuity history.",
+      "fusionUI.readFailed": "Continuity history could not be read. Existing history has not been replaced.",
+      "fusionUI.saveFailed": "Continuity history could not be saved. This result is not durable progress.",
+      "fusionUI.eraseFailed": "Continuity history could not be removed.",
+      "fusionUI.metric": [["arg", "value"], " ", ["arg", "unit"]],
+      "fusionUI.fraction": [["arg", "count"], " / ", ["arg", "total"]],
+      "fusionUI.scenario": [["arg", "days"], " days · ", ["arg", "readings"], " readings"],
+      "fusionUI.scenarioDetail": ["At least ", ["arg", "lower"], "; confidence ", ["arg", "confidence"]],
+      "fusionUI.gap": [["arg", "hours"], " hours"],
+      "fusionUI.illustrative": "Illustrative projections, not recorded history. Quality and breadth are held at this evaluation’s values; the timeline assumes about two readings per day.",
+      "fusionUI.missingScenario": "A continuity evaluation is required. Missing inputs are not replaced with perfect quality.",
+      "fusionUI.working": "Native SDK calculations from this result; the screen does not recompute the score.",
+      "fusionUI.readingWhen": "Sensors, Fusion and Settings share one sensor session. Each continuity evaluation uses the current signed Sensors reading once. Returning to a tab does not earn another pass.",
+      "fusionUI.keyLoss": "If the custody key is missing, existing history cannot be continued. This screen does not silently replace the key.",
+      "fusionUI.pressureUnits": "Pressure values in the working are kPa; heights are metres and temperatures are kelvin or Celsius as labelled.",
+      "fusionUI.locationAt": "Location measured at",
+      "fusionUI.pressureField": "Source pressure field",
+      "fusionUI.observationURL": "Observation source",
+      "fusionUI.maximumAge": "Maximum observation age",
+      "fusionUI.maximumDistance": "Maximum station distance",
+      "fusionUI.temperatureQuality": "Temperature quality",
+      "fusionUI.source": "Source",
+      "fusionUI.nws": "National Weather Service",
+      "fusionUI.stage": "Failure stage",
+      "fusionUI.httpStatus": "HTTP status",
+      "fusionUI.failingField": "Failing field",
+      "fusionUI.decodingPath": "Decoding path",
+      "fusionUI.receivedAt": "Received at",
+      "fusionUI.envelopeID": "Evaluated reading",
+      "fusionUI.collectedAt": "Reading collected at",
+      "fusionUI.firstPassAt": "History began",
+      "fusionUI.previousPassAt": "Previous pass",
+      "fusionUI.lastPassAt": "Latest pass",
+      "fusionUI.stateWeight": "Host state weight",
+      "fusionUI.mathTitle": "The working",
+      "fusionUI.airFormula": "H = (R/g) × mean column temperature; expected pressure = sea-level pressure × exp(−altitude/H).",
+      "fusionUI.allowanceFormula": "Allowance combines height, temperature and area uncertainty in quadrature, bounded by the SDK floor and ceiling.",
+      "fusionUI.residualFormula": "Residual = |measured − expected|; consistent when residual ≤ allowance.",
+      "fusionUI.continuityFormula": "The SDK combines history maturity with live evidence quality. Breadth and eligible coverage remain separate inputs.",
+      "fusionUI.diagram": ["Residual ", ["arg", "residual"], " kPa; allowance ", ["arg", "allowance"], " kPa. The diagram is clamped; the exact numbers below are authoritative."],
+      "fusionUI.glossaryKeyTerm": "Device signing key",
+      "fusionUI.glossaryKeyBody": "The private signing key stays in native custody. Its public key verifies signatures. Secure hardware status and local verification are reported separately; an embedded public key alone is not independent device attestation.",
+      "fusionMath.temperature": "Temperature used",
+      "fusionMath.meanColumn": "Mean air-column temperature",
+      "fusionMath.scaleHeight": "Scale height",
+      "fusionMath.heightAllowance": "Height uncertainty",
+      "fusionMath.temperatureAllowance": "Temperature uncertainty term",
+      "fusionMath.uncertaintyBudget": "Unclamped uncertainty budget",
+      "fusionMath.gasConstantOverGravity": "Gas constant / gravity",
+      "fusionMath.halfLapse": "Half lapse rate",
+      "fusionMath.temperatureUncertainty": "Temperature uncertainty constant",
+      "fusionMath.areaUncertainty": "Area pressure uncertainty",
+      "fusionMath.altitudeSigmas": "Altitude uncertainty multiplier",
+      "fusionMath.allowanceFloor": "Allowance floor",
+      "fusionMath.allowanceCeiling": "Allowance ceiling",
+      "fusionMath.stationInputPressure": "Station input pressure",
+      "fusionMath.stationPressure": "Pressure at station elevation",
+      "fusionMath.calculatedSeaLevelPressure": "Calculated sea-level pressure",
+      "fusionMath.coverage": "Eligible coverage",
+      "fusionMath.breadth": "Evidence breadth",
+      "fusionMath.recency": "Recency",
+      "fusionMath.maturity": "History maturity",
+      "fusionMath.coherence": "Coherence",
+      "fusionMath.signalAuthenticity": "Live evidence quality",
+      "fusionMath.posteriorMean": "Estimate",
+      "fusionMath.lowerCredibleBound": "Lower bound",
+      "fusionMath.confidenceWidth": "Confidence width",
+      "fusionMath.evidenceWeight": "Evidence weight",
+      "fusionMath.effectiveCheckIns": "Effective readings",
+      "fusionMath.halfMaturityDays": "Half-maturity days",
+      "fusionMath.daysSteepness": "Days steepness",
+      "fusionMath.checkInTarget": "Readings target",
+      "fusionMath.priorEvidence": "Prior evidence",
+      "fusionMath.lowerBoundZ": "Lower-bound z",
+      "fusionMath.networkChangeCoherence": "Network change coherence",
+      "fusionMath.contradictionCoherenceWeight": "Contradiction coherence weight",
       "brand.wordmark": "Kenshiki Pulse",
       "brand.appName": "Kenshiki Pulse",
       "common.backToIdentity": "Back to Identity",
@@ -1252,7 +1431,8 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "ssn.checking": "Checking…",
       "ssn.saveBody": "The answer arrived but could not be saved on this phone. Saving again will not send another check.",
       "ssn.notReceivedTitle": "The result was not received",
-      "ssn.notReceivedBody": "The previous check may have happened. You can leave this check here or review your number for a new request.",
+      "ssn.notReceivedBody": "The previous check may have happened. Check again using the same request before starting a new check. If its result cannot be recovered, you can review your number for a new request.",
+      "ssn.resend": "Check again",
       "ssn.enterAgain": "Enter number again",
       "ssn.placeholder": "000000000",
       "ssn.entryNotice": "You will confirm every digit before the check starts. Your entered number is cleared when you leave this screen.",
@@ -1289,7 +1469,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "ssn.sheet.notConnected": "The verification service is not connected. Your other identity checks remain available.",
       "ssn.sheet.failedTitle": "The check could not finish",
       "ssn.sheet.localSave": "The answer arrived but could not be saved on this phone. Try saving it again; this will not send another check.",
-      "ssn.sheet.unknown": "The previous check may have happened. Starting again sends a new request. You will review and confirm the number first.",
+      "ssn.sheet.unknown": "The previous check may have happened. Check again resends the same request. A new check requires you to review and confirm your number.",
       "ssn.sheet.other": "Enter your number again and confirm every digit before continuing.",
       "ssn.sheet.pausedOpen": "Open this check again when you are ready.",
       "ssn.sheet.pausedEntry": "Enter your number again when you are ready.",

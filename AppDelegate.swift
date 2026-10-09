@@ -43,6 +43,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     if let support = FileManager.default.urls(for: .applicationSupportDirectory,
       in: .userDomainMask).first, let identity = Bundle.main.bundleIdentifier {
       configuration["sensors"] = [
+        "airCheck": [
+          "timeoutSeconds": 30, "maximumObservationAgeSeconds": 5400,
+          "maximumStationDistanceMeters": 50000,
+          "weatherUserAgent": "KenshikiSensorHost/1.0 (https://github.com/Kenshiki-Labs)"
+        ],
         "directoryURL": support.appendingPathComponent("SensorEvidence", isDirectory: true).absoluteString,
         "defaultsSuiteName": identity + ".sensors",
         "applicationIdentifier": identity,

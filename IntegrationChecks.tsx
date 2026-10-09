@@ -68,8 +68,8 @@ export function IntegrationChecks({ configuration }: { configuration: Configurat
     try {
       const isolated = <T extends { directoryURL: string; keychainService: string }>(value: T): T => ({
         ...value,
-        directoryURL: value.directoryURL + '-integration-checks',
-        keychainService: value.keychainService + '.integration-checks',
+        directoryURL: `${value.directoryURL}-integration-checks`,
+        keychainService: `${value.keychainService}.integration-checks`,
       });
       // A configured resource that does not exist is refused when the session is created.
       await rejects(
@@ -102,7 +102,7 @@ export function IntegrationChecks({ configuration }: { configuration: Configurat
         partial.completeness === 'partial' && partial.missingFields.includes('name'),
         t('developer.check.partialRead'),
       );
-      await rejects(() => primary.parseMRZ([[rows[0][0]], [rows[1][0].slice(0, 43) + '9']]), 'incompleteMRZ');
+      await rejects(() => primary.parseMRZ([[rows[0][0]], [`${rows[1][0].slice(0, 43)}9`]]), 'incompleteMRZ');
       await rejects(() => primary.captureMRZ(), 'incompleteMRZ');
       await rejects(() => primary.compareFace(), 'referenceUnavailable');
       await rejects(() => primary.ssnSnapshot(), 'ssnNotConfigured');

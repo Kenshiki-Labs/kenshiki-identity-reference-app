@@ -23,6 +23,23 @@ export function mockSession<T extends Partial<CaptureSession>>(overrides: T) {
   };
   return {
     id: 'test-session',
+    appAttestKey: jest.fn<
+      ReturnType<CaptureSession['appAttestKey']>,
+      Parameters<CaptureSession['appAttestKey']>
+    >(unexpected),
+    appAttestAttestation: jest.fn<
+      ReturnType<CaptureSession['appAttestAttestation']>,
+      Parameters<CaptureSession['appAttestAttestation']>
+    >(unexpected),
+    appAttestAssertion: jest.fn<
+      ReturnType<CaptureSession['appAttestAssertion']>,
+      Parameters<CaptureSession['appAttestAssertion']>
+    >(unexpected),
+    signBiometricProof: jest.fn<
+      ReturnType<CaptureSession['signBiometricProof']>,
+      Parameters<CaptureSession['signBiometricProof']>
+    >(unexpected),
+
     subscribe: jest.fn<ReturnType<CaptureSession['subscribe']>, Parameters<CaptureSession['subscribe']>>(
       unexpected,
     ),
@@ -180,6 +197,12 @@ export function mockSession<T extends Partial<CaptureSession>>(overrides: T) {
     ssnConfirm: jest.fn<ReturnType<CaptureSession['ssnConfirm']>, Parameters<CaptureSession['ssnConfirm']>>(
       unexpected,
     ),
+    ssnResendUnresolved: jest.fn<
+      ReturnType<CaptureSession['ssnResendUnresolved']>,
+      Parameters<CaptureSession['ssnResendUnresolved']>
+    >(async () => {
+      throw new Error('unexpectedSSNResend');
+    }),
     ssnRecover: jest.fn<ReturnType<CaptureSession['ssnRecover']>, Parameters<CaptureSession['ssnRecover']>>(
       unexpected,
     ),

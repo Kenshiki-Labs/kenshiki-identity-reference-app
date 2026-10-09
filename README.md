@@ -100,8 +100,14 @@ set Build Configuration to **Release**, then Run. Release bundles JavaScript and
 server. For Debug instead, run `npm start` from the host root in a second terminal before Run.
 Open the `.xcworkspace`, not the `.xcodeproj`.
 
-The app opens on a native tab bar: Identity, Sensors and Settings, each its own navigation stack
-with a large title. The Identity tab lists Driver's license, Passport, Face match, Social Security
+The app opens on a native tab bar: Fusion, Sensors, Identity and Settings, each its own navigation stack
+with a large title. Fusion presents Air Check, Continuity, their native calculation terms, illustrative
+Over Time projections, Three Proofs and Glossary. Fusion, Sensors and Settings share one session.
+Air Check and continuity evaluation are explicit actions; continuity evaluates the signed Sensors
+reading without recapturing it. Forget continuity history requires confirmation and does not erase
+unrelated evidence or replace keys. Local receipt verification is not server acceptance.
+
+The Identity tab lists Driver's license, Passport, Face match, Social Security
 number and Phone as inset grouped rows. No provider or personal data is required to open it. The
 simulator host has no trust anchors or face models, so the Passport row is dimmed and the section
 footer says passport chip checking is not set up; Face match is dimmed without both models, and
@@ -186,7 +192,7 @@ Supplier non-retention requires independent qualification.
 | `DriverLicenseFlow.tsx`, `DocumentFlowController.ts` | Front/back capture, encrypted document recovery and image review |
 | `DocumentCheckPanel.tsx` | Explicit document-check consent, actual returned findings, local reply restore, requested corrections and reconciliation |
 | `SSNFlow.tsx`, `PhoneFlow.tsx` and their controllers | Independent service journeys, native session ownership and interruption handling |
-| `SensorScreen.tsx` and `SensorBoard*.tsx` | The Sensors tab's board and detail pages, and the Settings tab's sensor settings, sharing one sensor session while either tab is in front |
+| `SensorScreen.tsx` and `SensorBoard*.tsx` | The Sensors tab's board and detail pages, and the Settings tab's sensor settings, sharing one sensor session with Fusion while any of these three tabs is in front |
 | `ui/List.tsx`, `ui/NativeSheet.tsx`, `ui/ModalCancel.ts` | Inset grouped rows with SF Symbol tiles, UIKit page sheets and action sheets, and the navigation bar's Cancel for a full-screen check |
 | `ui/tokens.jsonc`, `locales/en.jsonc`, `generate-ui-resources.py` | Design tokens (iOS system colors, Dynamic Type styles, spacing, radii) and every UI string, compiled into `ui/tokens.generated.ts` and `locales/strings.generated.ts`; screens read text through `t()` in `locales/i18n.ts`. Edit the JSONC and rerun the generator; `--check` fails when the modules are stale |
 | `brand/`, `ui/Wordmark.tsx` | The Kenshiki Pulse brand from pulse-ios: app icon, launch screen and its assets, which `create-host.py` installs in the generated iOS app, and the wordmark above the Identity tab's title |

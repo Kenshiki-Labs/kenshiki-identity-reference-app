@@ -76,6 +76,7 @@ function fixture(initial = ready, configured = true) {
       snapshot = complete;
       return snapshot;
     }),
+    ssnResendUnresolved: jest.fn(async () => snapshot),
     ssnRecover: jest.fn(async () => {
       snapshot = complete;
       return snapshot;
@@ -143,7 +144,7 @@ test('an unknown outcome requires a new explicitly marked review and makes no re
   expect(f.c.state.snapshot?.confirmation?.purpose).toBe('replacementAfterUnknownOutcome');
   expect(f.native.ssnConfirm).not.toHaveBeenCalled();
 });
-test('a response failure reads local uncertainty and offers fresh entry without resubmission', async () => {
+test('a response failure reads local uncertainty and offers same-operation resend without another purchase', async () => {
   const f = fixture();
   await prepare(f);
   f.native.ssnConfirm.mockImplementationOnce(async () => {
@@ -151,12 +152,14 @@ test('a response failure reads local uncertainty and offers fresh entry without 
     throw { code: 'outcomeUnknown' };
   });
   await f.c.confirm();
-  expect(f.c.state.sheet).toMatchObject({ kind: 'recovery', recovery: 'fresh' });
+  expect(f.c.state.sheet).toMatchObject({ kind: 'recovery', recovery: 'resend' });
   expect(f.c.state.snapshot?.attempt?.operationID).toBe('operation');
   await f.c.retry();
   expect(f.native.ssnRecover).not.toHaveBeenCalled();
   expect(f.native.ssnRequestFreshConfirmation).not.toHaveBeenCalled();
-  expect(f.c.state.editing).toBe(true);
+  expect(f.c.state.editing).toBe(false);
+  expect(f.native.ssnResendUnresolved).toHaveBeenCalledTimes(1);
+  expect(f.c.state.snapshot?.attempt?.operationID).toBe('operation');
   expect(f.native.ssnConfirm).toHaveBeenCalledTimes(1);
   expect(f.native.ssnRequestConfirmation).toHaveBeenCalledTimes(1);
 });
@@ -322,3 +325,15 @@ jest.mock('@kenshiki/identity-capture', () => ({
     '../../ReactNative/identity-capture/src/codes',
   ).isCaptureErrorCode,
 }));
+
+test('same-operation recovery accepts a result without asking for digits or a new purchase', async () => {
+  const f = fixture(pending);
+  await f.c.open();
+  f.native.ssnResendUnresolved.mockResolvedValueOnce(complete);
+  await f.c.resend();
+  expect(f.c.state.snapshot?.receipt).toEqual(receipt);
+  expect(f.native.ssnResendUnresolved).toHaveBeenCalledTimes(1);
+  expect(f.native.ssnConfirm).not.toHaveBeenCalled();
+  expect(f.native.ssnRequestConfirmation).not.toHaveBeenCalled();
+  expect(f.native.ssnRequestFreshConfirmation).not.toHaveBeenCalled();
+});

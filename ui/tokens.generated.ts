@@ -94,6 +94,10 @@ export const opacity = {
 } as const;
 
 export const size = {
+  fusionDiagram: 200,
+  fusionRing: 80,
+  fusionMinimumScale: 0.18,
+  fusionMaximumScale: 1.65,
   actionMinHeight: 50,
   documentPreviewHeight: 220,
   documentImageHeight: 200,
@@ -111,6 +115,7 @@ export const size = {
 
 /** SF Symbol names: tab bar items and the icons of list rows. */
 export const symbol = {
+  fusionTab: "square.stack.3d.up",
   identityTab: "person.text.rectangle",
   sensorsTab: "sensor",
   settingsTab: "gearshape",

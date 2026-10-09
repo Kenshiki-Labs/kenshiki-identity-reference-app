@@ -10,6 +10,14 @@ final class ArtifactIntegrationTests: XCTestCase {
     return app
   }
 
+  /// Identity workflows explicitly choose their tab; Fusion is now the initial screen.
+  @MainActor
+  static func openIdentity(_ app: XCUIApplication) {
+    let identity = app.tabBars.buttons["Identity"]
+    XCTAssertTrue(identity.waitForExistence(timeout: 30))
+    identity.tap()
+  }
+
   /// Exercises the real packaged sensor bridge without granting permissions or requesting a fix.
   /// The board and its detail pages are the Sensors tab's stack and its settings are the Settings
   /// tab; both tabs share one session. Leaving them releases it, and returning must establish a
@@ -22,6 +30,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--reference-holder=" + UUID().uuidString]
     app.launch()
+    Self.openIdentity(app)
 
     func reveal(_ element: XCUIElement, upward: Bool = true) {
       for _ in 0..<30 where !element.isHittable {
@@ -104,6 +113,86 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(app.buttons["open-ssn"].waitForExistence(timeout: 10))
   }
 
+  /// Exercises the real native navigation and shared signed-reading flow on a simulator.
+  /// No synthetic pressure comparison is injected, and this does not qualify physical sensors.
+  @MainActor
+  func testFusionFirstTabMathAndSharedPausedEnvelope() throws {
+    #if !targetEnvironment(simulator)
+    throw XCTSkip("This navigation check avoids acquiring personal device observations")
+    #endif
+    let app = Self.hostApp()
+    app.launchArguments = ["--reference-holder=" + UUID().uuidString]
+    app.launch()
+    let tabs = app.tabBars.firstMatch
+    XCTAssertTrue(tabs.waitForExistence(timeout: 30))
+    XCTAssertEqual(tabs.buttons.allElementsBoundByIndex.map(\.label), ["Fusion", "Sensors", "Identity", "Settings"])
+    XCTAssertTrue(app.navigationBars["Fusion"].waitForExistence(timeout: 10), "Fusion opens first")
+
+    func reveal(_ element: XCUIElement) {
+      for _ in 0..<30 where !element.isHittable { app.swipeUp() }
+      XCTAssertTrue(element.isHittable, element.label)
+    }
+    func back() {
+      let edge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.005, dy: 0.5))
+      edge.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+    }
+    let continuity = app.buttons["Continuity"]
+    reveal(continuity)
+    continuity.tap()
+    let evaluate = app.buttons["Evaluate this reading"]
+    XCTAssertTrue(evaluate.waitForExistence(timeout: 10))
+    let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: evaluate)
+    XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 30), .completed,
+      "Initial Fusion focus opens the session and produces a signed Sensors reading")
+    tabs.buttons["Sensors"].tap()
+    let pause = app.buttons["Pause sensors"]
+    XCTAssertTrue(pause.waitForExistence(timeout: 20), "Initial Fusion focus must open a real shared session")
+    // Hold one signed envelope fixed so navigation/re-evaluation cannot manufacture new passes.
+    pause.tap()
+    XCTAssertTrue(app.buttons["Resume sensors"].waitForExistence(timeout: 10))
+    tabs.buttons["Fusion"].tap()
+    XCTAssertTrue(app.navigationBars["Continuity"].waitForExistence(timeout: 10))
+    XCTAssertTrue(evaluate.isEnabled, "The paused Sensors reading is available in Fusion")
+    evaluate.tap()
+    let count = app.otherElements["continuity-pass-count"]
+    XCTAssertTrue(count.waitForExistence(timeout: 10))
+    reveal(count)
+    XCTAssertTrue(count.exists, "Native continuity evaluation must succeed")
+    let original = count.label
+
+    let math = app.buttons["How this was worked out"]
+    for _ in 0..<30 where !math.isHittable { app.swipeDown() }
+    math.tap()
+    XCTAssertTrue(app.otherElements["fusion-math"].waitForExistence(timeout: 10))
+    let done = app.buttons["Done"]
+    reveal(done)
+    done.tap()
+    XCTAssertFalse(app.otherElements["fusion-math"].waitForExistence(timeout: 2))
+
+    tabs.buttons["Sensors"].tap()
+    XCTAssertTrue(app.buttons["Resume sensors"].waitForExistence(timeout: 10), "Switching tabs must preserve pause and session")
+    tabs.buttons["Fusion"].tap()
+    XCTAssertTrue(app.navigationBars["Continuity"].waitForExistence(timeout: 10), "Fusion retains its own navigation stack")
+    for _ in 0..<30 where !evaluate.isHittable { app.swipeDown() }
+    evaluate.tap()
+    reveal(count)
+    XCTAssertEqual(count.label, original, "Re-evaluating the same envelope cannot increment history")
+    let forget = app.buttons["Forget continuity history"]
+    reveal(forget)
+    forget.tap()
+    XCTAssertTrue(app.sheets.firstMatch.waitForExistence(timeout: 10))
+    app.sheets.buttons["Cancel"].tap()
+    back()
+    XCTAssertTrue(app.navigationBars["Fusion"].waitForExistence(timeout: 10))
+    let air = app.buttons["Air check"]
+    reveal(air)
+    air.tap()
+    XCTAssertTrue(app.navigationBars["Air check"].waitForExistence(timeout: 10))
+    XCTAssertTrue(app.buttons["Run air check"].exists, "Air Check remains an explicit acquisition")
+    back()
+    XCTAssertTrue(app.navigationBars["Fusion"].waitForExistence(timeout: 10))
+  }
+
   /// The native navigation: a tab bar whose tabs keep their own stacks; a pushed screen returns by
   /// the edge swipe; a capture opens as a full-screen modal and Cancel closes it; a destructive
   /// choice is an action sheet. Each screen is captured in light and dark appearance.
@@ -115,6 +204,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--ssn-artifact-fixture", "--reference-holder=" + UUID().uuidString]
     app.launch()
+    Self.openIdentity(app)
     addTeardownBlock { XCUIDevice.shared.appearance = .light }
 
     func screenshot(_ name: String) {
@@ -201,6 +291,7 @@ final class ArtifactIntegrationTests: XCTestCase {
   func testUnavailablePhoneUsesBottomSheetAndReturnsToIdentity() {
     let app = Self.hostApp()
     app.launch()
+    Self.openIdentity(app)
     let open = app.buttons["open-phone"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
     for _ in 0..<3 where !open.isHittable { app.swipeUp() }
@@ -219,6 +310,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--phone-artifact-fixture"]
     app.launch()
+    Self.openIdentity(app)
     let open = app.buttons["open-phone"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
     for _ in 0..<3 where !open.isHittable { app.swipeUp() }
@@ -237,6 +329,7 @@ final class ArtifactIntegrationTests: XCTestCase {
   func testUnavailableSSNProviderHasABottomSheetAndReturnToIdentity() {
     let app = Self.hostApp()
     app.launch()
+    Self.openIdentity(app)
     let open = app.buttons["open-ssn"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
     for _ in 0..<3 where !open.isHittable { app.swipeUp() }
@@ -259,6 +352,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--ssn-artifact-fixture", "--reference-holder=" + UUID().uuidString]
     app.launch()
+    Self.openIdentity(app)
     let open = completeSyntheticSSN(app)
     app.buttons["finish-ssn"].tap()
     XCTAssertTrue(open.waitForExistence(timeout: 5))
@@ -305,10 +399,12 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--ssn-artifact-fixture", first]
     app.launch()
+    Self.openIdentity(app)
     _ = completeSyntheticSSN(app)
     app.terminate()
     app.launchArguments = ["--ssn-artifact-fixture", first]
     app.launch()
+    Self.openIdentity(app)
     let open = app.buttons["open-ssn"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
     for _ in 0..<3 where !open.isHittable { app.swipeUp() }
@@ -318,6 +414,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     app.terminate()
     app.launchArguments = ["--ssn-artifact-fixture", second]
     app.launch()
+    Self.openIdentity(app)
     XCTAssertTrue(open.waitForExistence(timeout: 30))
     for _ in 0..<3 where !open.isHittable { app.swipeUp() }
     open.tap()
@@ -329,6 +426,7 @@ final class ArtifactIntegrationTests: XCTestCase {
   func testBackgroundingCoversPersonalDataAndForegroundRemovesTheCover() {
     let app = Self.hostApp()
     app.launch()
+    Self.openIdentity(app)
     let open = app.buttons["open-ssn"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
     XCTAssertFalse(app.otherElements["privacy-cover"].exists)
@@ -348,6 +446,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     #endif
     let app = Self.hostApp()
     app.launch()
+    Self.openIdentity(app)
     let open = app.buttons["open-driver-license"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
     open.tap()
@@ -373,6 +472,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--reference-holder=" + UUID().uuidString]
     app.launch()
+    Self.openIdentity(app)
     let passport = app.buttons["open-capture-flow"]
     XCTAssertTrue(passport.waitForExistence(timeout: 30))
     XCTAssertFalse(passport.isEnabled)
@@ -386,6 +486,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["--document-check-artifact-fixture"]
     app.launch()
+    Self.openIdentity(app)
     let settings = app.tabBars.buttons["Settings"]
     XCTAssertTrue(settings.waitForExistence(timeout: 30))
     settings.tap()
@@ -406,6 +507,7 @@ final class ArtifactIntegrationTests: XCTestCase {
   func testInstalledPackageAcrossJavaScriptAndNativeBoundaries() throws {
     let app = Self.hostApp()
     app.launch()
+    Self.openIdentity(app)
     let settings = app.tabBars.buttons["Settings"]
     XCTAssertTrue(settings.waitForExistence(timeout: 30))
     settings.tap()

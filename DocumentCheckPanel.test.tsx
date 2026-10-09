@@ -71,7 +71,7 @@ async function setup() {
   const press = async (label: string) =>
     act(async () => {
       const button = view.root.findByProps({ label });
-      if (!button) throw new Error('Missing button: ' + label);
+      if (!button) throw new Error(`Missing button: ${label}`);
       invoke(button, 'onPress');
     });
   return { view, native, press };
