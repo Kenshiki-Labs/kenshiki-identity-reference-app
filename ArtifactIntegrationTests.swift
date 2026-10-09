@@ -196,7 +196,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(run.waitForExistence(timeout: 30))
     run.tap()
     let status = app.staticTexts["sdk-check-status"]
-    let finished = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "18 checks passed"), object: status)
+    let finished = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "19 checks passed"), object: status)
     XCTAssertEqual(XCTWaiter.wait(for: [finished], timeout: 30), .completed, status.label)
     XCTAssertEqual(app.alerts.count, 0)
   }
@@ -213,7 +213,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(run.waitForExistence(timeout: 30), "Packaged React Native host did not load")
     run.tap()
     let status = app.staticTexts["sdk-check-status"]
-    let finished = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "18 checks passed"), object: status)
+    let finished = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "19 checks passed"), object: status)
     XCTAssertEqual(XCTWaiter.wait(for: [finished], timeout: 30), .completed, status.label)
   }
 }

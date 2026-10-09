@@ -298,7 +298,10 @@ function IntegrationChecks({configuration}: {configuration: Configuration}) {
     try {
       const isolated = <T extends {directoryURL: string; keychainService: string}>(value: T): T => ({...value,
         directoryURL: value.directoryURL + '-integration-checks', keychainService: value.keychainService + '.integration-checks'});
-      first = await IdentityCaptureSession.create({trustAnchorsURL: 'file:///missing-test-anchors.pem',
+      // A configured resource that does not exist is refused when the session is created.
+      await rejects(() => IdentityCaptureSession.create({trustAnchorsURL: 'file:///missing-test-anchors.pem'}),
+        'invalidConfiguration');
+      first = await IdentityCaptureSession.create({
         results: configuration.results && isolated(configuration.results),
         document: configuration.document && isolated(configuration.document)});
       second = await IdentityCaptureSession.create();
@@ -319,7 +322,7 @@ function IntegrationChecks({configuration}: {configuration: Configuration}) {
       await rejects(() => first!.ssnCancel(), 'ssnNotConfigured');
       await rejects(() => first!.phoneSnapshot(), 'phoneNotConfigured');
       await rejects(() => first!.phoneCancel(), 'phoneNotConfigured');
-      await rejects(() => first!.readPassport({...parsed, consent: true, messages}), 'nfcUnsupported');
+      await rejects(() => first!.readPassport({...parsed, consent: true, messages}), 'passportNotConfigured');
       const cameraFailure = new Promise<CaptureErrorCode>((resolve, reject) => {
         const timer = setTimeout(() => { off(); reject(new Error('Missing camera failure event')); }, 5000);
         const off = first!.subscribe(event => {
