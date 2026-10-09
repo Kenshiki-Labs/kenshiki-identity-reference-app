@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Button, Pressable, SafeAreaView, ScrollView, Text, View} from 'react-native';
 import {IdentityCaptureSession, IdentityCapturePreview} from '@kenshiki/identity-capture';
-import type {Configuration} from '@kenshiki/identity-capture';
+import type {CaptureErrorCode, Configuration} from '@kenshiki/identity-capture';
 import {Action, CaptureResultDetails, IdentityCaptureFlow, styles} from './IdentityCaptureFlow';
 import {CaptureFlowController, type CompletedCapture} from './CaptureFlowController';
 import {DocumentResultDetails, DriverLicenseFlow, documentName} from './DriverLicenseFlow';
@@ -289,7 +289,7 @@ function IntegrationChecks({configuration}: {configuration: Configuration}) {
       if (!condition) throw new Error(name);
       checks.push(name); setResults([...checks]);
     };
-    async function rejects(operation: () => Promise<unknown>, code: string) {
+    async function rejects(operation: () => Promise<unknown>, code: CaptureErrorCode) {
       try { await operation(); } catch (error) {
         check(errorCode(error) === code, code); return;
       }
@@ -319,8 +319,8 @@ function IntegrationChecks({configuration}: {configuration: Configuration}) {
       await rejects(() => first!.ssnCancel(), 'ssnNotConfigured');
       await rejects(() => first!.phoneSnapshot(), 'phoneNotConfigured');
       await rejects(() => first!.phoneCancel(), 'phoneNotConfigured');
-      await rejects(() => first!.readPassport({...parsed, consent: true, messages}), 'unsupported');
-      const cameraFailure = new Promise<string>((resolve, reject) => {
+      await rejects(() => first!.readPassport({...parsed, consent: true, messages}), 'nfcUnsupported');
+      const cameraFailure = new Promise<CaptureErrorCode>((resolve, reject) => {
         const timer = setTimeout(() => { off(); reject(new Error('Missing camera failure event')); }, 5000);
         const off = first!.subscribe(event => {
           if (event.type === 'failure' && event.capability === 'selfie') {
@@ -329,7 +329,7 @@ function IntegrationChecks({configuration}: {configuration: Configuration}) {
         });
       });
       await first.startSelfie(true);
-      check(await cameraFailure === 'unavailable', 'Simulator fails closed without TrueDepth');
+      check(await cameraFailure === 'cameraUnavailable', 'Simulator fails closed without TrueDepth');
       await first.cancel();
       await first.release();
       await rejects(() => first!.parseMRZ(rows), 'sessionUnavailable');

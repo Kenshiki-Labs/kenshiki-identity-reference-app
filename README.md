@@ -85,8 +85,10 @@ server. For Debug instead, run `npm start` from the host root in a second termin
 Open the `.xcworkspace`, not the `.xcodeproj`.
 
 The Identity screen should offer Driver's license, Passport, Face match, Social Security number
-and Phone cards. No provider or personal data is required to open it. Face match remains disabled
-until a passport portrait exists. Simulator camera/NFC/TrueDepth and text messaging are unavailable:
+and Phone cards. No provider or personal data is required to open it. The simulator host has no
+trust anchors or face models, so the Passport card is disabled and says passport chip checking is
+not set up; Face match is disabled without both models, and otherwise until a passport portrait
+exists. A card for saved results stays available to open them. Simulator camera/NFC/TrueDepth and text messaging are unavailable:
 those workflows must show recovery, not a successful hardware check. Without a registered native
 provider, SSN, phone and document checking remain explicitly unavailable. This is expected.
 
@@ -96,9 +98,15 @@ below and replace `YOUR_SIMULATOR_UUID`. Run from the host root:
 ```sh
 xcrun simctl list devices available
 xcodebuild test -workspace ios/IdentitySDKHost.xcworkspace -scheme IdentitySDKHost \
-  -configuration Release -destination 'platform=iOS Simulator,id=YOUR_SIMULATOR_UUID' \
+  -configuration Debug -destination 'platform=iOS Simulator,id=YOUR_SIMULATOR_UUID' \
   -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-
 ```
+
+The UI tests run the Debug configuration, because only a simulator Debug build offers the
+developer checks two of them drive. `configure-host.rb` sets `FORCE_BUNDLING` on Debug, so the
+JavaScript bundle is embedded and no Metro server is needed. The UI-test target's bundle
+identifier is the app's bundle identifier followed by `.ArtifactIntegrationTests`; after changing
+the app's identifier, run `configure-host.rb` on the host again to update it.
 
 Keep simulator ad hoc signing enabled: the tests exercise actual Keychain-backed custody. Do not
 reuse these signing flags for a physical iPhone. The reference app's **Developer checks** appear
@@ -174,8 +182,14 @@ session while rendering `IdentityCaptureImage`, which references native image ha
 Do not copy image bytes or PII into JavaScript persistence, analytics or logs.
 
 The default AppDelegate configures separate encrypted stores in private app support directories, each
-with dedicated Keychain names, and the hub opens the current holder's saved results at launch. **This is
-a single-holder test host with no sign-in. Do not use its unchanged configuration in a multiuser or
+with dedicated Keychain names, and the hub opens the current holder's saved results at launch. Every
+store is scoped to one local holder: its files are under `IdentityHolders/<holder UUID>/` (`Results`,
+`Documents`, and on the simulator fixtures `ArtifactSSN` and `ArtifactPhone`), and its Keychain service
+is `<app bundle ID>.identity.<holder UUID>.<store>`. The SSN and phone workflow IDs are derived from the
+holder, so the same holder reopens the same workflow. The AppDelegate creates the holder UUID once and
+keeps it in `UserDefaults`; if the stored value cannot be read it configures no store and the hub says
+so, rather than creating another holder. On the simulator only, `--reference-holder=<UUID>` selects the
+holder for a launch. **This is a single-holder test host with no sign-in. Do not use its unchanged configuration in a multiuser or
 shared-device SSA app.** Authenticate and select a stable local holder scope in native code before
 configuring custody or mounting the identity UI. Use the
 [scoped native configuration guidance](../../ReactNative/identity-capture/README.md#configure-in-native-code-before-mounting-react).
@@ -201,8 +215,9 @@ The document check panel shows returned provider checks and submitted fields ins
 success banner. It opens retained replies locally, requests a response only through an explicit action,
 and allows only corrections named by that reply. SSN results describe issuance, not ownership, and
 render provider details or explicit missing values. Phone results separate receipt evidence from the
-subscriber comparison; reopening uncertainty does not silently start a new comparison. A contradicted
-subscriber comparison stops the journey and offers a retry; it is never presented as a completed check.
+subscriber comparison; reopening uncertainty does not silently start a new comparison. A receipt whose
+carrier comparison is contradicted, or whose subscriber comparison is not satisfied, stops the journey
+and offers a retry; it is never presented as a completed check.
 
 ## Troubleshooting
 
@@ -231,8 +246,9 @@ the native code on an iOS simulator, and **device** runs on a physical iPhone.
 - The developer checks (simulator tier, Debug builds only) use separate test custody and do not
   erase normal records.
 
-Simulator-only launch fixtures are deliberately limited: `--ssn-artifact-fixture` accepts only invalid
-synthetic `000-00-1234`; `--phone-artifact-fixture` checks unavailable text messaging;
+Simulator-only launch fixtures are deliberately limited: `--ssn-artifact-fixture` answers only the
+synthetic `000-00-1234`, which it reports as not issued (area 000 is never issued), and refuses every
+other number before dispatch; `--phone-artifact-fixture` checks unavailable text messaging;
 `--document-check-artifact-fixture` registers a provider that refuses dispatch and tests missing-front
 rejection. None proves successful live document/provider checks or hardware capture. Synthetic document
 response, correction and durable-recovery coverage is in the SDK's native runtime tests (simulator tier),
@@ -251,15 +267,20 @@ the open dependencies are in the [SSA distribution note](../../Distribution/SSA-
 The reference app leaves these to the SSA app. They are product decisions, not SDK features, and
 the reference app does not build them:
 
-- **Authentication before reopening saved results.** The hub reopens the current holder's saved
-  results at launch, with no authentication step (`App.tsx`).
+- **Authentication before reopening saved results.** On launch the hub opens the local holder's
+  saved passport and face results, and the SSN, phone and document screens open their saved checks,
+  with no authentication step (`App.tsx`). Authenticate the holder before mounting the identity UI or
+  opening any saved result.
 - **Showing the holder's name on the hub.** The Passport card shows the given names and surname read
-  from the chip (`App.tsx`).
-- **The Privacy Act notice at SSN entry.** The reference SSN screen shows none (`SSNFlow.tsx`).
-- **Localization.** Every string is English and written in the source files.
-- **The holder model.** One local holder at a time: there is no sign-in, holder picker or holder
-  switch screen. The SSA app decides how holders authenticate and switch, following the
+  from the chip (`App.tsx`). Decide whether a name may appear before authentication, and on a shared
+  device.
+- **The Privacy Act notice at SSN entry.** The reference SSN screen shows none (`SSNFlow.tsx`). The
+  SSA app supplies the notice and places it before the number is entered.
+- **Localization.** Every string is US English and written in the source files; dates use the en-US
+  format in the device time zone. Strings are not externalized.
+- **The holder model.** The AppDelegate keeps one local holder UUID from first launch and scopes every
+  store and Keychain name to it. There is no sign-in, holder picker or holder-switch screen. The SSA
+  app resolves the local holder from its own authorization. On logout or a holder switch it releases
+  every session and clears personal state before the next holder's configuration is mounted, and
+  runs each capability's erase when the holder's records must be deleted, following the
   [logout and holder-switch sequence](../../ReactNative/identity-capture/README.md#logout-holder-switch-and-erasure).
-
-[INTEGRATOR: merge the limits section Fix B drafted in its report into this list, then delete this
-line.]
