@@ -12,7 +12,7 @@ export const color = {
   secondaryText: PlatformColor("secondaryLabel"),
   tint: DynamicColorIOS({light: "#0D2958", dark: "#8FB3E6"}),
   wordmark: DynamicColorIOS({light: "#1D1D1F", dark: "#F5F5F7"}),
-  onTint: "#FFFFFF",
+  onTint: DynamicColorIOS({light: "#FFFFFF", dark: "#1D1D1F"}),
   cameraBackground: "#000000",
   onCamera: "#FFFFFF",
   destructive: PlatformColor("systemRed"),
@@ -38,6 +38,7 @@ export const color = {
 export const appearanceColor = {
   tint: {light: "#0D2958", dark: "#8FB3E6"},
   wordmark: {light: "#1D1D1F", dark: "#F5F5F7"},
+  onTint: {light: "#FFFFFF", dark: "#1D1D1F"},
 } as const;
 
 /** Text styles, each on a step of the iOS Dynamic Type ramp. */

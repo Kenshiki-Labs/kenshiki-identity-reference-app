@@ -49,8 +49,10 @@
     // (`TextRole.defaultColor`), which reads on the light and the dark grouped background. The
     // launch screen's wordmark keeps pulse-ios's fixed 0.96 white: its background is always dark.
     "wordmark": {"light": "#1D1D1F", "dark": "#F5F5F7"},
-    // Text on a filled tint button. Replaces #fff.
-    "onTint": {"fixed": "white"},
+    // Text on a filled tint button. Brand: pulse-ios `KTheme.onAction` (`Color(light: 0xFFFFFF,
+    // dark: 0x1D1D1F)`): white on the navy tint, ink on the light dark-mode tint, where white fails
+    // contrast. Replaces a fixed white, which replaced #fff.
+    "onTint": {"light": "#FFFFFF", "dark": "#1D1D1F"},
     // Camera screen background, behind the live preview. Replaces #152032.
     "cameraBackground": {"fixed": "black"},
     // Text and the selfie guide drawn over the camera preview. Replaces #fff.
