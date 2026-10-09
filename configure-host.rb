@@ -1,10 +1,28 @@
 require 'xcodeproj'
 require 'fileutils'
+require 'optparse'
+# Signing for a physical iPhone, all optional: --bundle-identifier, --development-team (automatic
+# signing) and --app-attest-environment. create-host.py passes whichever it was given.
+signing = {}
+OptionParser.new do |options|
+  options.on('--bundle-identifier ID') { |value| signing[:bundle_identifier] = value }
+  options.on('--development-team TEAM') { |value| signing[:team] = value }
+  options.on('--app-attest-environment ENVIRONMENT', %w[development production]) do |value|
+    signing[:app_attest] = value
+  end
+end.parse!
 host = File.expand_path(ARGV.fetch(0))
 # The name under the app icon: brand.appName in locales/en.jsonc, which create-host.py passes.
 app_name = ARGV.fetch(1)
 project = Xcodeproj::Project.open(File.join(host, 'ios/IdentitySDKHost.xcodeproj'))
 app = project.targets.find { |target| target.name == 'IdentitySDKHost' }
+app.build_configurations.each do |config|
+  config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = signing[:bundle_identifier] if signing[:bundle_identifier]
+  if signing[:team]
+    config.build_settings['DEVELOPMENT_TEAM'] = signing[:team]
+    config.build_settings['CODE_SIGN_STYLE'] = 'Automatic'
+  end
+end
 FileUtils.cp(File.join(__dir__, 'AppDelegate.swift'), File.join(host, 'ios/IdentitySDKHost/AppDelegate.swift'))
 info_path = File.join(host, 'ios/IdentitySDKHost/Info.plist')
 info = Xcodeproj::Plist.read_from_path(info_path)
@@ -27,6 +45,9 @@ entitlements = File.join(host, 'ios', entitlements_setting)
 granted = File.exist?(entitlements) ? Xcodeproj::Plist.read_from_path(entitlements) : {}
 formats = Array(granted['com.apple.developer.nfc.readersession.formats'])
 granted['com.apple.developer.nfc.readersession.formats'] = (formats + ['TAG']).uniq
+# App Attest: the environment must match the server the app attests to (a production server refuses
+# a development attestation).
+granted['com.apple.developer.devicecheck.appattest-environment'] = signing[:app_attest] if signing[:app_attest]
 Xcodeproj::Plist.write_to_path(granted, entitlements)
 app.build_configurations.each { |config| config.build_settings['CODE_SIGN_ENTITLEMENTS'] = entitlements_setting }
 resources = File.join(host, 'ios/CaptureResources')
@@ -65,6 +86,10 @@ tests.build_configurations.each do |config|
     config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = app_id + '.ArtifactIntegrationTests'
     config.build_settings['SWIFT_VERSION'] = '6.0'
     config.build_settings['TEST_TARGET_NAME'] = 'IdentitySDKHost'
+    if signing[:team]
+      config.build_settings['DEVELOPMENT_TEAM'] = signing[:team]
+      config.build_settings['CODE_SIGN_STYLE'] = 'Automatic'
+    end
 end
 # The brand, from the host's brand/ folder (create-host.py copies it there). The one Icon Composer
 # source supplies the layered icon and its appearance variants, named after its folder.
