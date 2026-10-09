@@ -4,6 +4,7 @@ Usage: python3 create-host.py /absolute/new/host /absolute/package.tgz
 """
 from pathlib import Path
 import argparse
+import hashlib
 import shutil
 import subprocess
 import json
@@ -15,6 +16,9 @@ parser.add_argument('artifact', type=Path)
 parser.add_argument('--trust-anchors', type=Path)
 parser.add_argument('--embedder', type=Path)
 parser.add_argument('--detector', type=Path)
+# The delivered zip places integration-manifest.json two levels above this script.
+parser.add_argument('--integration-manifest', type=Path,
+                    default=Path(__file__).resolve().parents[2] / 'integration-manifest.json')
 args = parser.parse_args()
 host = args.host.resolve()
 artifact = args.artifact.resolve()
@@ -22,6 +26,9 @@ if host.exists():
     raise SystemExit('Choose a new host directory')
 if not artifact.is_file():
     raise SystemExit('Package artifact does not exist')
+if not args.integration_manifest.is_file():
+    raise SystemExit('Integration manifest does not exist: ' + str(args.integration_manifest) +
+                     '. Run this script from the unzipped delivery or pass --integration-manifest.')
 # Refuse incomplete deliveries and missing tools before the CLI creates a partial host.
 for command in ['npx', 'node', 'npm', 'ruby', 'pod', 'xcodebuild']:
     if shutil.which(command) is None:
@@ -49,7 +56,15 @@ try:
                     'package/Frameworks/IdentityCaptureRuntime.xcframework/Info.plist']
         if any(name not in members for name in required):
             raise ValueError('Use the binary delivery tarball, not npm pack from an unbuilt source directory')
-except (tarfile.TarError, KeyError, ValueError, TypeError) as error:
+        binary_commit = json.load(package.extractfile('package/build-manifest.json')).get('sdkCommit')
+    # Identity, not just name: the tarball must be the exact artifact this delivery recorded.
+    delivery = json.loads(args.integration_manifest.read_text())
+    if hashlib.sha256(artifact.read_bytes()).hexdigest() != delivery.get('sdkArtifactSHA256'):
+        raise ValueError('SHA-256 differs from sdkArtifactSHA256 in ' + str(args.integration_manifest))
+    if binary_commit != delivery.get('sdkBinarySourceCommit'):
+        raise ValueError('build-manifest.json sdkCommit differs from sdkBinarySourceCommit in ' +
+                         str(args.integration_manifest))
+except (tarfile.TarError, KeyError, ValueError, TypeError, OSError) as error:
     raise SystemExit('Invalid SDK artifact: ' + str(error))
 for source, directory in [(args.trust_anchors, False), (args.embedder, True), (args.detector, True)]:
     if source is not None and not (source.is_dir() if directory else source.is_file()):
