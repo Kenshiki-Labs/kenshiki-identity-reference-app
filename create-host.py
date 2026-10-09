@@ -5,7 +5,9 @@ Usage: python3 create-host.py /absolute/new/host /absolute/package.tgz
 from pathlib import Path
 import argparse
 import hashlib
+import re
 import shutil
+import ssl
 import subprocess
 import json
 import tarfile
@@ -69,6 +71,19 @@ except (tarfile.TarError, KeyError, ValueError, TypeError, OSError) as error:
 for source, directory in [(args.trust_anchors, False), (args.embedder, True), (args.detector, True)]:
     if source is not None and not (source.is_dir() if directory else source.is_file()):
         raise SystemExit('Resource must be a ' + ('compiled model directory: ' if directory else 'PEM file: ') + str(source))
+# Content checks, before anything is created. They catch an empty or wrong file, not a wrong model
+# or anchor set: a compiled model is a non-empty directory, and the PEM holds certificates.
+for source in [args.embedder, args.detector]:
+    if source is not None and not any(path.is_file() for path in source.rglob('*')):
+        raise SystemExit('Compiled model directory contains no files: ' + str(source))
+if args.trust_anchors is not None:
+    blocks = re.findall(r'-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----',
+                        args.trust_anchors.read_text(errors='replace'), re.S)
+    try:
+        if not blocks or any(not ssl.PEM_cert_to_DER_cert(block) for block in blocks):
+            raise ValueError
+    except ValueError:
+        raise SystemExit('Trust anchors must be PEM certificates (BEGIN CERTIFICATE blocks): ' + str(args.trust_anchors))
 subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'IdentitySDKHost',
                 '--version', '0.87.1', '--directory', str(host), '--skip-install', '--skip-git-init'], check=True)
 for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
@@ -96,7 +111,11 @@ vendor = host / 'vendor'
 vendor.mkdir()
 shutil.copyfile(artifact, vendor / artifact.name)
 podfile = host / 'ios/Podfile'
-podfile.write_text(podfile.read_text().replace('platform :ios, min_ios_version_supported', "platform :ios, '18.0'"))
+template_platform = 'platform :ios, min_ios_version_supported'
+if template_platform not in podfile.read_text():
+    raise SystemExit('The generated Podfile has no "' + template_platform + '" line to set to 18.0; '
+                     'set the platform to 18.0 by hand in ' + str(podfile))
+podfile.write_text(podfile.read_text().replace(template_platform, "platform :ios, '18.0'"))
 subprocess.run(['npm', 'install', './vendor/' + artifact.name], cwd=host, check=True)
 subprocess.run(['ruby', str(Path(__file__).with_name('configure-host.rb')), str(host)], check=True)
 subprocess.run(['pod', 'install'], cwd=host / 'ios', check=True)

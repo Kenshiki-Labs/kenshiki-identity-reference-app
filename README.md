@@ -57,7 +57,23 @@ The script checks the package and tools, invokes the pinned React Native CLI, co
 tests, copies the tarball into the new host's `vendor` directory, installs npm dependencies,
 configures the native targets and runs `pod install`. It refuses a tarball whose SHA-256 or SDK
 commit differs from the archive's `integration-manifest.json`. Wait for `Independent host ready:`
-before continuing. It does not build, launch or publish an app. If generation fails after creating the
+before continuing.
+
+Before creating anything, `create-host.py` also refuses a compiled model directory that contains no
+files and a trust-anchor file without a PEM certificate block. These checks catch an empty or wrong
+file; they do not show that a model or anchor set is the right one. Then it changes the generated
+project as follows:
+
+- `create-host.py` deletes the CLI's starter test `__tests__/App.test.tsx`, copies supplied
+  resources into `ios/CaptureResources`, and sets the Podfile platform to iOS 18.0. It stops with an
+  error if the generated Podfile lacks the line it replaces.
+- `configure-host.rb` replaces `ios/IdentitySDKHost/AppDelegate.swift` with this example's; sets the
+  camera and NFC usage descriptions and the passport application identifier in `Info.plist`, and
+  removes an empty location usage description (the app never requests location); merges NFC tag
+  reading (`TAG`) into the app's existing entitlements file; adds `ios/CaptureResources` to the app
+  when it exists; sets the deployment target to 18.0 and `FORCE_BUNDLING` on Debug; adds the
+  `ArtifactIntegrationTests` UI-test target; and makes the scheme's test action run that target in
+  Debug. It does not build, launch or publish an app. If generation fails after creating the
 host, preserve the error output and use a new destination when retrying; it will not overwrite
 an existing project.
 

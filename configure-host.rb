@@ -9,10 +9,20 @@ info = Xcodeproj::Plist.read_from_path(info_path)
 info['NSCameraUsageDescription'] = 'Scan your ID or passport and take a selfie when you start an identity check.'
 info['NFCReaderUsageDescription'] = 'Read your passport chip when you choose to continue.'
 info['com.apple.developer.nfc.readersession.iso7816.select-identifiers'] = ['A0000002471001']
+# The reference app never requests location (requiresLocation is false), so an empty purpose
+# string from the template is removed rather than shipped blank.
+location = 'NSLocationWhenInUseUsageDescription'
+info.delete(location) if info.key?(location) && info[location].to_s.strip.empty?
 Xcodeproj::Plist.write_to_path(info, info_path)
-entitlements = File.join(host, 'ios/IdentitySDKHost/IdentitySDKHost.entitlements')
-Xcodeproj::Plist.write_to_path({'com.apple.developer.nfc.readersession.formats' => ['TAG']}, entitlements)
-app.build_configurations.each { |config| config.build_settings['CODE_SIGN_ENTITLEMENTS'] = 'IdentitySDKHost/IdentitySDKHost.entitlements' }
+# Merge the NFC tag-reading format into the app's entitlements, keeping any entitlement already there.
+entitlements_setting = app.build_configurations.first.build_settings['CODE_SIGN_ENTITLEMENTS'] ||
+  'IdentitySDKHost/IdentitySDKHost.entitlements'
+entitlements = File.join(host, 'ios', entitlements_setting)
+granted = File.exist?(entitlements) ? Xcodeproj::Plist.read_from_path(entitlements) : {}
+formats = Array(granted['com.apple.developer.nfc.readersession.formats'])
+granted['com.apple.developer.nfc.readersession.formats'] = (formats + ['TAG']).uniq
+Xcodeproj::Plist.write_to_path(granted, entitlements)
+app.build_configurations.each { |config| config.build_settings['CODE_SIGN_ENTITLEMENTS'] = entitlements_setting }
 resources = File.join(host, 'ios/CaptureResources')
 if File.directory?(resources) && !project.files.any? { |ref| ref.path == 'CaptureResources' }
   ref = project.main_group.new_file('CaptureResources'); ref.last_known_file_type = 'folder'
