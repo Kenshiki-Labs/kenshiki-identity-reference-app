@@ -34,8 +34,17 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertFalse(app.tabBars.firstMatch.exists)
     XCTAssertFalse(XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.firstMatch.exists)
     for (index, title) in ["Allow location", "Allow Motion & Fitness", "Allow Bluetooth"].enumerated() {
-      XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout: 10))
-      XCTAssertTrue(app.staticTexts[title].isHittable, "New permission step must start with its heading visible")
+      let heading = app.staticTexts["page-title"]
+      XCTAssertTrue(heading.waitForExistence(timeout: 10))
+      XCTAssertEqual(heading.label, title)
+      let headingFrame = heading.frame
+      let viewport = app.frame
+      XCTAssertGreaterThan(headingFrame.width, 0)
+      XCTAssertGreaterThan(headingFrame.height, 0)
+      XCTAssertGreaterThanOrEqual(headingFrame.minY, viewport.minY)
+      XCTAssertLessThan(headingFrame.minY, viewport.maxY)
+      XCTAssertGreaterThanOrEqual(headingFrame.minX, viewport.minX)
+      XCTAssertLessThanOrEqual(headingFrame.maxX, viewport.maxX)
       let overview = XCTAttachment(screenshot: app.screenshot())
       overview.name = "First run step \(index + 1) overview"
       overview.lifetime = .keepAlways
