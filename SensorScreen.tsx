@@ -1,14 +1,24 @@
-import type { Configuration } from '@kenshiki/identity-capture';
-import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-import { Alert, AppState, ScrollView, Text, View } from 'react-native';
-import { Action, styles } from './IdentityCaptureFlow';
+import type { Configuration, SensorBoardState } from '@kenshiki/identity-capture';
+import { createContext, type ReactElement, type ReactNode, useContext, useEffect, useState } from 'react';
+import { Alert, AppState, ScrollView, StyleSheet } from 'react-native';
 import { t } from './locales/i18n';
 import { SensorBoardController, type SensorBoardPresentation } from './SensorBoardController';
 import { SensorDocuments } from './SensorBoardDocuments';
-import { type BoardActions, LocationRows, WeatherRows } from './SensorBoardLocation';
-import { boardStyles, Note, Row, Section, SensorIconContext, SignalRows } from './SensorBoardRows';
+import { type BoardActions, locationRows, useSecondClock, weatherRows } from './SensorBoardLocation';
+import { note, Row, Section, SensorIconContext, signalRows, warning } from './SensorBoardRows';
 import { SensorSettings } from './SensorBoardSettings';
-import { copy, moment, pages, permissioned, prefix, type SensorPage, title } from './SensorPresentation';
+import {
+  copy,
+  failureText,
+  moment,
+  pages,
+  permissioned,
+  prefix,
+  type SensorPage,
+  title,
+} from './SensorPresentation';
+import { BarButton, ListGroupTitle, ListRow, ListSection, TextRow } from './ui/List';
+import { color, spacing } from './ui/tokens.generated';
 
 type SensorSessionValue = {
   state: SensorBoardPresentation;
@@ -25,8 +35,8 @@ const SensorSessionContext = createContext<SensorSessionValue>({
 });
 
 /** Owns the one sensor board session while any sensor screen is open. The board, its detail pages
- * and its settings are separate pushed screens that share it; leaving the last of them releases it,
- * and opening the board again starts a new session. */
+ * and its settings are separate screens that share it; leaving the last of them releases it, and
+ * opening the board again starts a new session. */
 export function SensorSession({
   configuration,
   open,
@@ -77,155 +87,160 @@ export function SensorSession({
   );
 }
 
-/** The board: every sensor section, grouped by whether iOS asks permission first. */
+/** Pause or Resume, for the Sensors tab's navigation bar: collection is the screen's one control. */
+export function SensorCollectionButton() {
+  const { state, perform } = useContext(SensorSessionContext);
+  const board = state.board;
+  if (!board) return null;
+  const paused = board.collection.paused;
+  return (
+    <BarButton
+      label={paused ? t('sensors.resume') : t('sensors.pause')}
+      disabled={state.busy}
+      onPress={() => perform(paused ? { action: 'resume', consent: true } : { action: 'pause' })}
+    />
+  );
+}
+
+/** The board: every sensor section, grouped by whether iOS asks permission first, as SensorHost's
+ * Sensors tab lists them. Each section's last row opens its page. */
 export function SensorBoardScreen({ onOpenPage }: { onOpenPage: (page: SensorPage) => void }) {
   const { state, perform } = useContext(SensorSessionContext);
   const board = state.board;
+  const now = useSecondClock();
   return (
     <SensorScroll enabledIcons testID="sensor-screen">
-      {board && (
+      {board ? (
         <>
-          {board.reading?.deviceSurface.simulator && <Note text={t('sensors.notice.simulator')} />}
-          {board.permissions.motion !== 'given' && <Note text={t('sensors.notice.motion')} />}
-          {[false, true].map((requiresPermission) => (
-            <View key={String(requiresPermission)}>
-              <Text accessibilityRole="header" style={boardStyles.group}>
-                {requiresPermission ? t('sensors.group.permissioned') : t('sensors.group.free')}
-              </Text>
-              {pages
-                .filter((page) => permissioned(page) === requiresPermission)
-                .map((page) => (
-                  <View key={page}>
-                    <SensorSection
-                      board={board}
-                      busy={state.busy}
-                      perform={perform}
-                      page={page}
-                      sessionId={state.sessionId}
-                    />
-                    <Action
-                      secondary
-                      label={t('sensors.about', { title: title(page) })}
-                      onPress={() => onOpenPage(page)}
-                    />
-                  </View>
-                ))}
-            </View>
-          ))}
+          <ListSection>
+            {board.reading?.deviceSurface.simulator ? note(copy('sensorGroup.notice.simulator')) : null}
+            {board.permissions.motion !== 'given' ? warning(copy('sensorGroup.notice.motion')) : null}
+          </ListSection>
+          {[false, true].map((requiresPermission) => [
+            <ListGroupTitle
+              key={`group-${String(requiresPermission)}`}
+              title={copy(requiresPermission ? 'sensorGroup.permissioned' : 'sensorGroup.free')}
+              note={copy(requiresPermission ? 'sensorGroup.permissioned.note' : 'sensorGroup.free.note')}
+            />,
+            ...pages
+              .filter((page) => permissioned(page) === requiresPermission)
+              .map((page) => (
+                <Section key={page} section={prefix(page)}>
+                  {pageRows(page, { board, busy: state.busy, perform }, state.sessionId, now)}
+                  <ListRow
+                    label={t('sensors.about', { title: title(page) })}
+                    onPress={() => onOpenPage(page)}
+                  />
+                </Section>
+              )),
+          ])}
         </>
-      )}
+      ) : null}
     </SensorScroll>
   );
 }
 
-/** One section with Apple's documentation for it and, where one exists, its algorithm. */
+/** One sensor's page: its section without a header, since the page's title names it, then Apple's
+ * documentation for it and, where the SDK computes the value, how. */
 export function SensorDetailScreen({ page }: { page: SensorPage }) {
   const { state, perform, setFailure } = useContext(SensorSessionContext);
   const board = state.board;
+  const now = useSecondClock();
   return (
     <SensorScroll enabledIcons={false} testID="sensor-detail">
-      {board && (
-        <SensorSection
-          board={board}
-          busy={state.busy}
-          perform={perform}
-          page={page}
-          sessionId={state.sessionId}
-        />
-      )}
+      {board ? (
+        <Section section={prefix(page)} heading={false}>
+          {pageRows(page, { board, busy: state.busy, perform }, state.sessionId, now)}
+        </Section>
+      ) : null}
       <SensorDocuments page={page} onFailure={setFailure} />
     </SensorScroll>
   );
 }
 
-/** Export, units, permissions, reading windows, erase, stores, environment and limits, followed by
- * whatever settings of its own the app adds. */
+/** Export, units, permissions, reading time, erase, stores, where data is kept and limits, followed
+ * by whatever settings of its own the app adds. */
 export function SensorSettingsScreen({ children }: { children?: ReactNode }) {
   const { state, perform, setFailure } = useContext(SensorSessionContext);
   const board = state.board;
   return (
-    <SensorScroll enabledIcons collectionControl={false} testID="sensor-settings">
-      {board && <SensorSettings board={board} busy={state.busy} perform={perform} onFailure={setFailure} />}
+    <SensorScroll enabledIcons testID="sensor-settings">
+      {board ? (
+        <SensorSettings board={board} busy={state.busy} perform={perform} onFailure={setFailure} />
+      ) : null}
       {children}
     </SensorScroll>
   );
 }
 
-/** What every sensor screen shows above its own content: failures, the opening state and, on the
- * board, the control that pauses or resumes collection. */
+/** What every sensor screen shows above its own sections: a failure, or that the board is still
+ * opening. */
 function SensorScroll({
   enabledIcons,
-  collectionControl = true,
   testID,
   children,
 }: {
   enabledIcons: boolean;
-  collectionControl?: boolean;
   testID: string;
   children: ReactNode;
 }) {
-  const { state, failure, perform } = useContext(SensorSessionContext);
-  const board = state.board;
+  const { state, failure } = useContext(SensorSessionContext);
   const shown = failure || state.failure;
   return (
     <SensorIconContext.Provider value={{ sessionId: state.sessionId, enabled: enabledIcons }}>
       <ScrollView
-        style={styles.root}
+        style={scrollStyles.root}
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={scrollStyles.content}
         testID={testID}
       >
-        {shown && (
-          <Text accessibilityRole="alert" style={boardStyles.warning}>
-            {shown}
-          </Text>
-        )}
-        {!board && <Note text={t('sensors.opening')} />}
-        {board && collectionControl && (
-          <Action
-            label={board.collection.paused ? t('sensors.resume') : t('sensors.pause')}
-            disabled={state.busy}
-            onPress={() =>
-              perform(board.collection.paused ? { action: 'resume', consent: true } : { action: 'pause' })
-            }
-          />
-        )}
+        <ListSection>
+          {shown ? <TextRow text={shown} tone="warning" alert /> : null}
+          {state.board ? null : <TextRow text={t('sensors.opening')} />}
+        </ListSection>
         {children}
       </ScrollView>
     </SensorIconContext.Provider>
   );
 }
 
-function SensorSection({
-  board,
-  busy,
-  perform,
-  page,
-  sessionId,
-}: BoardActions & { page: SensorPage; sessionId: string | null }) {
-  return (
-    <Section title={title(page)}>
-      <Note text={copy(`meaning.${page}`, '')} />
-      {page === 'status' ? (
-        <>
-          <Row label={copy('collection.row.collectedAt')} value={moment(board.collection.collectedAt)} />
-          <Row
-            label={copy('collection.row.state')}
-            value={
-              board.collection.paused
-                ? t('sensors.state.paused')
-                : copy(busy ? 'collection.state.collecting' : 'collection.state.idle')
-            }
-          />
-          {board.collection.failure && <Note text={board.collection.failure} />}
-        </>
-      ) : null}
-      {page === 'location' && (
-        <LocationRows board={board} busy={busy} perform={perform} sessionId={sessionId} />
-      )}
-      {page === 'weather' && <WeatherRows board={board} busy={busy} perform={perform} />}
-      {!['status', 'location', 'weather'].includes(page) && <SignalRows board={board} page={page} />}
-      <Note text={copy(`${prefix(page)}.footer`, '')} />
-    </Section>
-  );
+/** A sensor's rows, as SensorHost lays out each section: what the sensor tells you, then its
+ * values. One element per row. */
+function pageRows(
+  page: SensorPage,
+  actions: BoardActions,
+  sessionId: string | null,
+  now: number,
+): (ReactElement | null)[] {
+  const { board, busy } = actions;
+  const meaning = note(copy(`meaning.${page}`, ''), 'meaning');
+  if (page === 'status') return [meaning, ...statusRows(board, busy)];
+  if (page === 'location') return [meaning, ...locationRows({ ...actions, sessionId, now })];
+  if (page === 'weather') return [meaning, ...weatherRows(actions)];
+  return [meaning, ...signalRows(board, page)];
 }
+
+function statusRows(board: SensorBoardState, busy: boolean): (ReactElement | null)[] {
+  return [
+    <Row
+      key="collectedAt"
+      label={copy('collection.row.collectedAt')}
+      value={moment(board.collection.collectedAt)}
+    />,
+    <Row
+      key="state"
+      label={copy('collection.row.state')}
+      value={
+        board.collection.paused
+          ? t('sensors.state.paused')
+          : copy(busy ? 'collection.state.collecting' : 'collection.state.idle')
+      }
+    />,
+    warning(board.collection.failure && failureText(board.collection.failure), 'failure'),
+  ];
+}
+
+const scrollStyles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: color.background },
+  content: { padding: spacing.md, paddingBottom: spacing.xxxxl, gap: spacing.lg },
+});

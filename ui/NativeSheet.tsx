@@ -67,6 +67,23 @@ export function useConfirmation(request: Confirmation | undefined) {
   }, [key]);
 }
 
+/** Asks a destructive question with the iOS action sheet, now, for an action a row starts. The
+ * destructive choice is first and red; the other leaves everything as it is. */
+export function confirmDestructive(question: Omit<Confirmation, 'key' | 'onKeep'>) {
+  ActionSheetIOS.showActionSheetWithOptions(
+    {
+      title: question.title,
+      message: question.message,
+      options: [question.confirm, question.keep],
+      destructiveButtonIndex: 0,
+      cancelButtonIndex: 1,
+    },
+    (index) => {
+      if (index === 0) question.onConfirm();
+    },
+  );
+}
+
 const sheetStyles = StyleSheet.create({
   surface: { flex: 1, backgroundColor: color.sheet },
   content: { padding: spacing.xxl, paddingBottom: spacing.xxxl, gap: spacing.xl },

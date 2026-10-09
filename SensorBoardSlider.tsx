@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { t } from './locales/i18n';
 import { sensorConfig } from './SensorPresentation';
-import { border, color, opacity, radius, size, text } from './ui/tokens.generated';
+import { border, color, opacity, radius, size } from './ui/tokens.generated';
 
 const {
   minimumSeconds: minimum,
@@ -12,7 +12,8 @@ const {
 function bounded(value: number) {
   return Math.max(minimum, Math.min(maximum, Math.round(value / step) * step));
 }
-/** Commit once at the end of a drag; VoiceOver adjustments each commit one step. */
+/** Commit once at the end of a drag; VoiceOver adjustments each commit one step. The row it sits in
+ * shows the value, as a SwiftUI slider row does. */
 export function SensorWindowSlider({
   label,
   value,
@@ -56,9 +57,6 @@ export function SensorWindowSlider({
       <View style={sliderStyles.track} />
       <View style={[sliderStyles.fill, { width: `${((draft - minimum) / (maximum - minimum)) * 100}%` }]} />
       <View style={[sliderStyles.thumb, { left: `${((draft - minimum) / (maximum - minimum)) * 100}%` }]} />
-      <Text accessibilityElementsHidden style={sliderStyles.value}>
-        {t('sensors.seconds', { value: draft.toFixed(1) })}
-      </Text>
     </View>
   );
 }
@@ -76,12 +74,5 @@ const sliderStyles = StyleSheet.create({
     backgroundColor: color.sliderThumb,
     borderColor: color.sliderThumbBorder,
     borderWidth: border.hairline,
-  },
-  value: {
-    ...text.caption,
-    position: 'absolute',
-    right: 0,
-    top: size.sliderValueOffset,
-    color: color.secondaryText,
   },
 });

@@ -1,60 +1,77 @@
-import type { SensorBoardRequest, SensorPermission } from '@kenshiki/identity-capture';
-import { Alert, Linking, Share, Switch, View } from 'react-native';
-import { Action } from './IdentityCaptureFlow';
+import type { SensorBoardRequest, SensorPermission, SensorUnits } from '@kenshiki/identity-capture';
+import { Linking, Share } from 'react-native';
 import { t } from './locales/i18n';
 import type { BoardActions } from './SensorBoardLocation';
-import { Note, Row, Section } from './SensorBoardRows';
+import { Row, Section, warning } from './SensorBoardRows';
 import { SensorWindowSlider } from './SensorBoardSlider';
-import { copy, moment, plain } from './SensorPresentation';
+import { copy, failureText, moment, plain } from './SensorPresentation';
+import { ButtonRow, CheckRow, ContentRow, RowNote, SwitchRow, TitleRow, ValueLine } from './ui/List';
+import { confirmDestructive } from './ui/NativeSheet';
 
 type SettingsProps = BoardActions & { onFailure: (message: string) => void };
+
+/** Asks before a destructive board action, with the iOS action sheet. */
 function confirm(
-  label: string,
+  title: string,
   message: string,
+  label: string,
   request: SensorBoardRequest,
   perform: BoardActions['perform'],
 ) {
-  Alert.alert(label, message, [
-    { text: t('common.cancel'), style: 'cancel' },
-    { text: label, style: 'destructive', onPress: () => perform(request) },
-  ]);
+  confirmDestructive({
+    title,
+    message,
+    confirm: label,
+    keep: t('common.cancel'),
+    onConfirm: () => perform(request),
+  });
 }
+
+/** The Settings tab's sensor sections, in SensorHost's order: export, units, permissions, reading
+ * time, erase, what is saved, where it is kept, the battery reader and what cannot be checked. */
 export function SensorSettings(props: SettingsProps) {
   const { board, busy, perform, onFailure } = props;
+  const exportURL = board.evidence.exportURL;
   return (
     <>
-      <Section title={copy('export.header')}>
+      <Section section="export">
         <Row label={copy('export.row.kept')} value={board.evidence.count} />
-        <Action
+        <ButtonRow
           label={t('sensors.export.prepare')}
           disabled={busy || board.evidence.count === 0}
           onPress={() => perform({ action: 'export', consent: true })}
         />
-        {board.evidence.exportURL && (
-          <Action
+        {exportURL ? (
+          <ButtonRow
             label={t('sensors.export.share')}
             onPress={() => {
-              const url = board.evidence.exportURL;
-              if (url?.startsWith('file://'))
-                Share.share({ url }).catch(() => onFailure(t('sensors.export.shareFailed')));
+              if (exportURL.startsWith('file://'))
+                Share.share({ url: exportURL }).catch(() => onFailure(t('sensors.export.shareFailed')));
               else onFailure(t('sensors.export.notLocal'));
             }}
           />
-        )}
-        <Action
-          destructive
-          label={t('sensors.export.tamper')}
-          disabled={busy || board.evidence.count === 0}
-          onPress={() =>
-            confirm(
-              t('sensors.export.tamperTitle'),
-              t('sensors.export.tamperBody'),
-              { action: 'tamper', consent: true },
-              perform,
-            )
-          }
-        />
-        <Action
+        ) : null}
+        {/* Altering a signed reading is a developer's check that verification catches it. The
+            build configuration decides: a Release bundle compiles __DEV__ to false, so the row
+            and its request are not in it. */}
+        {__DEV__ ? (
+          <ButtonRow
+            destructive
+            testID="sensor-tamper"
+            label={t('sensors.export.tamper')}
+            disabled={busy || board.evidence.count === 0}
+            onPress={() =>
+              confirm(
+                t('sensors.export.tamperTitle'),
+                t('sensors.export.tamperBody'),
+                t('sensors.export.tamper'),
+                { action: 'tamper', consent: true },
+                perform,
+              )
+            }
+          />
+        ) : null}
+        <ButtonRow
           destructive
           label={t('sensors.export.forget')}
           disabled={busy}
@@ -62,28 +79,31 @@ export function SensorSettings(props: SettingsProps) {
             confirm(
               t('sensors.export.forgetTitle'),
               t('sensors.export.forgetBody'),
+              t('sensors.export.forget'),
               { action: 'forget', consent: true },
               perform,
             )
           }
         />
-        {board.evidence.failure && <Note text={board.evidence.failure} />}
+        {warning(board.evidence.failure && failureText(board.evidence.failure))}
       </Section>
-      <Section title={copy('units.header')}>
-        {(['system', 'metric', 'imperial'] as const).map((units) => (
-          <Action
+      <Section section="units">
+        {(['system', 'metric', 'imperial'] as const satisfies readonly SensorUnits[]).map((units) => (
+          <CheckRow
             key={units}
-            secondary
-            label={board.units === units ? t('sensors.units.selected', { name: plain(units) }) : plain(units)}
+            label={copy(`units.${units}`, plain(units))}
+            selected={board.units === units}
             disabled={busy}
             onPress={() => perform({ action: 'units', units })}
           />
         ))}
+        <Row label={copy('units.metric')} value={copy('units.metric.example')} />
+        <Row label={copy('units.imperial')} value={copy('units.imperial.example')} />
       </Section>
       <PermissionSettings {...props} />
       <WindowSettings {...props} />
-      <Section title={copy('erase.header')}>
-        <Action
+      <Section section="erase">
+        <ButtonRow
           destructive
           label={t('sensors.erase.action')}
           disabled={busy}
@@ -91,6 +111,7 @@ export function SensorSettings(props: SettingsProps) {
             confirm(
               t('sensors.erase.title'),
               t('sensors.erase.body'),
+              t('sensors.erase.action'),
               { action: 'erase', consent: true },
               perform,
             )
@@ -99,66 +120,86 @@ export function SensorSettings(props: SettingsProps) {
         {board.storage.eraseResults.map((result) => (
           <Row
             key={result.name}
-            label={result.name}
-            value={t('sensors.erase.result', {
-              status: copy(result.erased ? 'erase.status.erased' : 'erase.status.failed'),
-              detail: result.detail,
-            })}
+            label={copy(`savedData.${result.name}`, plain(result.name))}
+            value={copy(result.erased ? 'erase.status.erased' : 'erase.status.failed')}
           />
         ))}
         <Row label={copy('erase.row.erasedAt')} value={moment(board.storage.erasedAt)} />
         <Row
-          label={t('sensors.erase.keysLeft')}
+          label={copy('erase.row.keysLeft')}
           value={board.storage.trackers.reduce((sum, tracker) => sum + tracker.keys.length, 0)}
         />
-        {board.collection.paused && (
-          <Action
+        {board.collection.paused ? (
+          <ButtonRow
             label={t('sensors.resumeCollection')}
             onPress={() => perform({ action: 'resume', consent: true })}
             disabled={busy}
           />
-        )}
+        ) : null}
       </Section>
-      <Section title={copy('persisted.header')}>
-        {board.storage.trackers.map((tracker) => (
-          <View key={tracker.name}>
-            <Row
-              label={tracker.name}
-              value={t('sensors.persisted.savedItems', { count: plain(tracker.keys.length) })}
-            />
-            {Object.entries(tracker.counts).map(([name, count]) => (
-              <Row key={name} label={plain(name)} value={count} />
-            ))}
-          </View>
+      <Section section="persisted">
+        {board.storage.trackers.flatMap((tracker) => [
+          <Row
+            key={tracker.name}
+            label={copy(`savedData.${tracker.name}`, plain(tracker.name))}
+            value={
+              tracker.keys.length
+                ? t('sensors.persisted.savedItems', { count: plain(tracker.keys.length) })
+                : copy('persisted.value.nothing')
+            }
+          />,
+          ...Object.entries(tracker.counts).map(([name, count]) => (
+            <Row key={`${tracker.name}-${name}`} label={plain(name)} value={count} />
+          )),
+        ])}
+      </Section>
+      <Section section="environment">
+        {(
+          [
+            ['defaultsSuite', board.environment.defaultsSuiteName],
+            ['durableRoot', board.environment.directoryURL],
+            ['applicationIdentifier', board.environment.applicationIdentifier],
+            [
+              'beforeSuite',
+              board.environment.unconfiguredDefaultsSuiteName ?? copy('environment.value.standardDomain'),
+            ],
+            ['beforeRoot', board.environment.unconfiguredDirectoryURL],
+            [
+              'beforeIdentifier',
+              board.environment.unconfiguredApplicationIdentifier ?? copy('common.notGiven'),
+            ],
+          ] as const
+        ).map(([key, value]) => (
+          <Row key={key} label={copy(`environment.row.${key}`)} value={value} />
         ))}
       </Section>
-      <Section title={copy('environment.header')}>
-        {Object.entries(board.environment).map(([key, value]) => (
-          <Row key={key} label={plain(key)} value={value} />
-        ))}
+      <Section section="batterySeam">
+        <Row label={copy('batterySeam.row.provider')} value={copy('batterySeam.value.provider')} />
+        <Row label={copy('batterySeam.row.readingsTaken')} value={board.batteryProvider.reads} />
+        <Row
+          label={copy('batterySeam.row.monitoringEnables')}
+          value={board.batteryProvider.monitoringEnables}
+        />
       </Section>
-      <Section title={copy('batterySeam.header')}>
-        <Row label={t('sensors.battery.provider')} value={t('sensors.battery.hostReader')} />
-        <Row label={t('sensors.battery.reads')} value={board.batteryProvider.reads} />
-        <Row label={t('sensors.battery.monitoringEnables')} value={board.batteryProvider.monitoringEnables} />
-      </Section>
-      <Section title={copy('gaps.header')}>
-        <Note text={copy('gaps.readBack.body')} />
+      <Section section="gaps">
+        <TitleRow title={copy('gaps.readBack.title')} detail={copy('gaps.readBack.body')} />
       </Section>
     </>
   );
 }
+
+type Permission = 'motion' | 'bluetooth' | 'location' | 'always' | 'precise';
 function PermissionControl({
-  name,
+  title,
   state,
   value,
   permission,
   props,
 }: {
-  name: string;
+  title: string;
   state: SensorPermission;
   value: boolean;
-  permission: 'motion' | 'bluetooth' | 'location' | 'always' | 'precise';
+  permission: Permission;
   props: SettingsProps;
 }) {
   const change = (wanted: boolean) => {
@@ -169,21 +210,36 @@ function PermissionControl({
     if (canRequest) props.perform({ action: 'permission', consent: true, permission });
     else Linking.openSettings().catch(() => props.onFailure(t('sensors.failure.settings')));
   };
+  const notes: Record<Permission, string> = {
+    motion: 'permissions.motion.note',
+    bluetooth: 'permissions.bluetooth.note',
+    location: 'permissions.whileUsing.note',
+    always: 'permissions.always.note',
+    precise: 'permissions.precise.note',
+  };
+  const words =
+    permission === 'always'
+      ? copy(value ? 'permissions.always.state.granted' : 'permissions.always.state.notGranted')
+      : plain(state);
   return (
-    <View>
-      <Row label={name} value={state} />
-      <Switch accessibilityLabel={name} value={value} disabled={props.busy} onValueChange={change} />
-    </View>
+    <SwitchRow
+      title={title}
+      state={words}
+      note={copy(notes[permission])}
+      value={value}
+      disabled={props.busy}
+      onChange={change}
+    />
   );
 }
 function PermissionSettings(props: SettingsProps) {
   const permissions = props.board.permissions;
   return (
-    <Section title={copy('permissions.header')}>
+    <Section section="permissions">
       {(['motion', 'bluetooth', 'location'] as const).map((permission) => (
         <PermissionControl
           key={permission}
-          name={copy(`permissions.${permission === 'location' ? 'whileUsing' : permission}.title`)}
+          title={copy(`permissions.${permission === 'location' ? 'whileUsing' : permission}.title`)}
           state={permissions[permission]}
           value={permissions[permission] === 'given'}
           permission={permission}
@@ -191,31 +247,34 @@ function PermissionSettings(props: SettingsProps) {
         />
       ))}
       <PermissionControl
-        name={t('sensors.permission.always')}
+        title={t('sensors.permission.always')}
         state={permissions.location}
         value={permissions.always}
         permission="always"
         props={props}
       />
-      {permissions.location === 'given' && (
+      {permissions.location === 'given' ? (
         <PermissionControl
-          name={copy('permissions.precise.title')}
+          title={copy('permissions.precise.title')}
           state={permissions.location}
           value={permissions.precise}
           permission="precise"
           props={props}
         />
-      )}
-      <Note text={copy('permissions.footer')} />
+      ) : null}
     </Section>
   );
 }
 function WindowSettings({ board, busy, perform }: SettingsProps) {
+  const sensors = ['motion', 'magnetometer', 'barometer'] as const;
   return (
-    <Section title={copy('captureWindows.header')}>
-      {(['motion', 'magnetometer', 'barometer'] as const).map((sensor) => (
-        <View key={sensor}>
-          <Row label={plain(sensor)} value={t('sensors.seconds', { value: plain(board.windows[sensor]) })} />
+    <Section section="captureWindows">
+      {sensors.map((sensor) => (
+        <ContentRow key={sensor}>
+          <ValueLine
+            label={copy(`captureWindows.${sensor}.label`, plain(sensor))}
+            value={t('sensors.seconds', { value: plain(board.windows[sensor]) })}
+          />
           <SensorWindowSlider
             label={t('sensors.window.label', { sensor: plain(sensor) })}
             value={board.windows[sensor]}
@@ -231,13 +290,16 @@ function WindowSettings({ board, busy, perform }: SettingsProps) {
               })
             }
           />
-        </View>
+          <RowNote text={copy(`captureWindows.${sensor}.note`)} />
+        </ContentRow>
       ))}
-      <Row
-        label={t('sensors.window.shared')}
-        value={t('sensors.seconds', { value: plain(board.windows.sharedMotion) })}
-      />
-      <Note text={copy('captureWindows.footer')} />
+      <ContentRow>
+        <ValueLine
+          label={t('sensors.window.shared')}
+          value={t('sensors.seconds', { value: plain(board.windows.sharedMotion) })}
+        />
+        <RowNote text={copy('captureWindows.note.sharedCapture')} />
+      </ContentRow>
     </Section>
   );
 }

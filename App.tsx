@@ -28,10 +28,16 @@ import { PhoneFlow } from './PhoneFlow';
 import type { SavedPhoneCheck } from './PhoneFlowController';
 import { phoneCheckStopped } from './PhonePolicy';
 import { copy, type SensorPage, title } from './SensorPresentation';
-import { SensorBoardScreen, SensorDetailScreen, SensorSession, SensorSettingsScreen } from './SensorScreen';
+import {
+  SensorBoardScreen,
+  SensorCollectionButton,
+  SensorDetailScreen,
+  SensorSession,
+  SensorSettingsScreen,
+} from './SensorScreen';
 import { SSNFlow, ssnSummary } from './SSNFlow';
 import type { SavedSSNCheck } from './SSNFlowController';
-import { BarButton, ListRow, ListSection } from './ui/List';
+import { BarButton, ListRow, ListSection, TextRow } from './ui/List';
 import type { CancelHandle } from './ui/ModalCancel';
 import { NativeSheet, useConfirmation } from './ui/NativeSheet';
 import { appearanceColor, color, symbol } from './ui/tokens.generated';
@@ -486,6 +492,7 @@ export default function App({
     return (
       <SensorSettingsScreen>
         <ListSection header={t('settings.identityData')} footer={t('hub.action.savedNotice')} icons>
+          {!erasable && <TextRow text={t('settings.nothingSaved')} />}
           {result && (
             <ListRow
               label={t('hub.action.eraseAll')}
@@ -505,7 +512,6 @@ export default function App({
             />
           )}
         </ListSection>
-        {!erasable && <Text style={styles.label}>{t('settings.nothingSaved')}</Text>}
         {developerChecks && __DEV__ && (
           <ListSection header={t('settings.developer')} icons>
             <ListRow
@@ -623,7 +629,14 @@ export default function App({
   function renderSensorsTab() {
     return (
       <SensorStack.Navigator screenOptions={pushed}>
-        <SensorStack.Screen name="SensorBoard" options={{ ...large, title: copy('tab.sensors.title') }}>
+        <SensorStack.Screen
+          name="SensorBoard"
+          options={{
+            ...large,
+            title: copy('tab.sensors.title'),
+            headerRight: () => <SensorCollectionButton />,
+          }}
+        >
           {({ navigation: sensors }: { navigation: NativeStackNavigationProp<SensorRoutes> }) => (
             <SensorBoardScreen onOpenPage={(page) => sensors.navigate('SensorDetail', { page })} />
           )}

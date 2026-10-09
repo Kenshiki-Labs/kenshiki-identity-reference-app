@@ -37,6 +37,8 @@ export type MessageValues = {
   readonly "common.compared": undefined;
   readonly "common.actionFailed": undefined;
   readonly "common.cancel": undefined;
+  readonly "common.labelAndStatus": {readonly label: string | number; readonly status: string | number};
+  readonly "common.checkmark": undefined;
   readonly "format.timeNotRecorded": undefined;
   readonly "format.dateNotRecorded": undefined;
   readonly "format.mrzDate": {readonly day: string | number; readonly month: string; readonly year: string | number};
@@ -680,10 +682,6 @@ export type MessageValues = {
   readonly "sensors.resumeCollection": undefined;
   readonly "sensors.about": {readonly title: string | number};
   readonly "sensors.waitingForReading": undefined;
-  readonly "sensors.group.free": undefined;
-  readonly "sensors.group.permissioned": undefined;
-  readonly "sensors.notice.simulator": undefined;
-  readonly "sensors.notice.motion": undefined;
   readonly "sensors.state.paused": undefined;
   readonly "sensors.permission.given": undefined;
   readonly "sensors.permission.refused": undefined;
@@ -707,6 +705,13 @@ export type MessageValues = {
   readonly "sensors.seconds": {readonly value: string | number};
   readonly "sensors.secondsSpoken": {readonly value: string | number};
   readonly "sensors.joiner": undefined;
+  readonly "sensors.failureCode.saveFailed": undefined;
+  readonly "sensors.failureCode.tamperFailed": undefined;
+  readonly "sensors.failureCode.forgetFailed": undefined;
+  readonly "sensors.failureCode.readFailed": undefined;
+  readonly "sensors.failureCode.noFixMeetsContract": undefined;
+  readonly "sensors.failureCode.locationUnavailable": undefined;
+  readonly "sensors.failureCode.noLocationFix": undefined;
   readonly "sensors.failure.open": undefined;
   readonly "sensors.failure.activity": undefined;
   readonly "sensors.failure.closeTitle": undefined;
@@ -732,14 +737,7 @@ export type MessageValues = {
   readonly "sensors.erase.action": undefined;
   readonly "sensors.erase.title": undefined;
   readonly "sensors.erase.body": undefined;
-  readonly "sensors.erase.result": {readonly detail: string | number; readonly status: string | number};
-  readonly "sensors.erase.keysLeft": undefined;
   readonly "sensors.persisted.savedItems": {readonly count: string | number};
-  readonly "sensors.battery.provider": undefined;
-  readonly "sensors.battery.hostReader": undefined;
-  readonly "sensors.battery.reads": undefined;
-  readonly "sensors.battery.monitoringEnables": undefined;
-  readonly "sensors.units.selected": {readonly name: string | number};
   readonly "sensors.window.label": {readonly sensor: string | number};
   readonly "sensors.window.shared": undefined;
   readonly "sensors.location.fixesOnMap": {readonly count: string | number; readonly limit: string | number};
@@ -755,10 +753,6 @@ export type MessageValues = {
   readonly "sensors.weather.row.source": undefined;
   readonly "sensors.weather.row.reportedAt": undefined;
   readonly "sensors.docs.openFailed": undefined;
-  readonly "sensors.docs.updates": undefined;
-  readonly "sensors.docs.limits": undefined;
-  readonly "sensors.docs.api": {readonly abstract: string | number; readonly framework: string | number; readonly symbol: string | number};
-  readonly "sensors.docs.entry": {readonly name: string | number; readonly quote: string | number};
   readonly "sensors.docs.howWorkedOut": {readonly title: string | number};
   readonly "sensors.docs.step": {readonly number: string | number; readonly text: string | number};
   readonly "testSupport.unexpectedNativeOperation": undefined;
@@ -840,6 +834,8 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "common.compared": "Compared",
       "common.actionFailed": "This action could not finish. Try again.",
       "common.cancel": "Cancel",
+      "common.labelAndStatus": [["arg", "label"], ", ", ["arg", "status"]],
+      "common.checkmark": "✓",
       "format.timeNotRecorded": "Time not recorded",
       "format.dateNotRecorded": "Date not recorded",
       "format.mrzDate": [["arg", "day"], " ", ["select", "month", {"m01": "Jan", "m02": "Feb", "m03": "Mar", "m04": "Apr", "m05": "May", "m06": "Jun", "m07": "Jul", "m08": "Aug", "m09": "Sep", "m10": "Oct", "m11": "Nov", "m12": "Dec", "other": ""}], " ’", ["arg", "year"]],
@@ -1483,10 +1479,6 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "sensors.resumeCollection": "Resume collection",
       "sensors.about": ["About ", ["arg", "title"]],
       "sensors.waitingForReading": "Waiting for a reading.",
-      "sensors.group.free": "Freely readable",
-      "sensors.group.permissioned": "With your permission",
-      "sensors.notice.simulator": "Simulator readings are limited.",
-      "sensors.notice.motion": "Enable Motion & Fitness in Settings to read air pressure.",
       "sensors.state.paused": "Paused",
       "sensors.permission.given": "Allowed",
       "sensors.permission.refused": "Denied",
@@ -1510,6 +1502,13 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "sensors.seconds": [["arg", "value"], " s"],
       "sensors.secondsSpoken": [["arg", "value"], " seconds"],
       "sensors.joiner": " · ",
+      "sensors.failureCode.saveFailed": "The signed reading could not be saved.",
+      "sensors.failureCode.tamperFailed": "The newest reading could not be altered.",
+      "sensors.failureCode.forgetFailed": "The kept readings could not be deleted.",
+      "sensors.failureCode.readFailed": "The kept readings could not be read.",
+      "sensors.failureCode.noFixMeetsContract": "No position iOS delivered met the fix terms.",
+      "sensors.failureCode.locationUnavailable": "Location is unavailable.",
+      "sensors.failureCode.noLocationFix": "Weather needs a position first. Get one fix, then try again.",
       "sensors.failure.open": "Sensors could not be opened.",
       "sensors.failure.activity": "Sensors could not change activity state.",
       "sensors.failure.closeTitle": "Sensors could not close",
@@ -1535,14 +1534,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "sensors.erase.action": "Erase local sensor data",
       "sensors.erase.title": "Erase sensor data",
       "sensors.erase.body": "Delete local sensor readings, continuity records, signing keys and biometric approval keys in this app. Identity documents stay on the phone. Collection will remain paused.",
-      "sensors.erase.result": [["arg", "status"], " · ", ["arg", "detail"]],
-      "sensors.erase.keysLeft": "Keys left",
       "sensors.persisted.savedItems": [["arg", "count"], " saved items"],
-      "sensors.battery.provider": "Provider",
-      "sensors.battery.hostReader": "Host battery reader",
-      "sensors.battery.reads": "Readings taken",
-      "sensors.battery.monitoringEnables": "Monitoring enables",
-      "sensors.units.selected": ["✓ ", ["arg", "name"]],
       "sensors.window.label": [["arg", "sensor"], " reading time"],
       "sensors.window.shared": "Shared motion capture",
       "sensors.location.fixesOnMap": [["arg", "count"], " of ", ["arg", "limit"]],
@@ -1558,10 +1550,6 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "sensors.weather.row.source": "Source",
       "sensors.weather.row.reportedAt": "Reported at",
       "sensors.docs.openFailed": "The documentation could not be opened.",
-      "sensors.docs.updates": "Updates",
-      "sensors.docs.limits": "Limits",
-      "sensors.docs.api": [["arg", "symbol"], " · ", ["arg", "framework"], "\n", ["arg", "abstract"]],
-      "sensors.docs.entry": [["arg", "name"], "\n", ["arg", "quote"]],
       "sensors.docs.howWorkedOut": ["How ", ["arg", "title"], " is worked out"],
       "sensors.docs.step": [["arg", "number"], ". ", ["arg", "text"]],
       "testSupport.unexpectedNativeOperation": "Unexpected native operation in this test",

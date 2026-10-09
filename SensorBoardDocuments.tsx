@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import { Linking, Modal, ScrollView, Text } from 'react-native';
-import { Action } from './IdentityCaptureFlow';
+import { Linking } from 'react-native';
 import { t } from './locales/i18n';
-import { boardStyles, Note, Section } from './SensorBoardRows';
 import { copy, pageDoc, type SensorPage, title } from './SensorPresentation';
+import { BarButton, LinkRow, ListRow, ListSection, TextRow } from './ui/List';
+import { NativeSheet } from './ui/NativeSheet';
+
+/** A sensor's documentation, as SensorHost's page sections show it: Apple's APIs, the permission,
+ * the hardware and how it updates, each a row that opens Apple's page; then what the values mean,
+ * what they cannot do, and, where the SDK computes the value, how, on a sheet of its own. */
 export function SensorDocuments({
   page,
   onFailure,
@@ -17,94 +21,81 @@ export function SensorDocuments({
   const link = (url: string) => {
     Linking.openURL(url).catch(() => onFailure(t('sensors.docs.openFailed')));
   };
+  const appleSays = copy('page.footer.appleSays');
   return (
     <>
-      {docs.apis.length > 0 && (
-        <Section title={copy('page.header.apis')}>
-          {docs.apis.map((api) => (
-            <Action
-              key={api.url}
-              secondary
-              label={t('sensors.docs.api', {
-                symbol: api.symbol,
-                framework: api.framework,
-                abstract: api.abstractKey ? copy(api.abstractKey) : '',
-              })}
-              onPress={() => link(api.url)}
-            />
-          ))}
-        </Section>
-      )}
-      {(docs.usageKey || docs.checks.length > 0) && (
-        <Section title={copy('page.header.permission')}>
-          {docs.usageKey && (
-            <Action
-              secondary
-              label={t('sensors.docs.entry', {
-                name: docs.usageKey.key,
-                quote: copy(docs.usageKey.quoteKey),
-              })}
-              onPress={() => {
-                if (docs.usageKey) link(docs.usageKey.url);
-              }}
-            />
-          )}
-          {docs.checks.map((check) => (
-            <Action
-              key={check.url}
-              secondary
-              label={t('sensors.docs.entry', { name: check.symbol, quote: copy(check.quoteKey) })}
-              onPress={() => link(check.url)}
-            />
-          ))}
-        </Section>
-      )}
-      {[
-        [copy('page.header.hardware'), docs.hardware],
-        [t('sensors.docs.updates'), docs.updates],
-      ].map(([heading, entry]) =>
-        typeof entry === 'object' && entry ? (
-          <Section key={String(heading)} title={String(heading)}>
-            <Action secondary label={copy(entry.quoteKey)} onPress={() => link(entry.url)} />
-          </Section>
+      <ListSection header={copy('page.header.apis')} headerIcon={null} footer={appleSays}>
+        {docs.apis.map((api) => (
+          <LinkRow
+            key={api.url}
+            code={api.symbol}
+            caption={api.framework}
+            quote={api.abstractKey ? copy(api.abstractKey) : undefined}
+            onPress={() => link(api.url)}
+          />
+        ))}
+      </ListSection>
+      <ListSection header={copy('page.header.permission')} headerIcon={null} footer={appleSays}>
+        {docs.usageKey ? (
+          <LinkRow
+            code={docs.usageKey.key}
+            caption={copy('page.row.infoPlistKey')}
+            quote={copy(docs.usageKey.quoteKey)}
+            onPress={() => {
+              if (docs.usageKey) link(docs.usageKey.url);
+            }}
+          />
+        ) : null}
+        {docs.checks.map((check) => (
+          <LinkRow
+            key={check.url}
+            code={check.symbol}
+            quote={copy(check.quoteKey)}
+            onPress={() => link(check.url)}
+          />
+        ))}
+      </ListSection>
+      {(
+        [
+          ['hardware', copy('page.header.hardware'), docs.hardware],
+          ['updates', copy('page.header.updates'), docs.updates],
+        ] as const
+      ).map(([key, heading, entry]) =>
+        entry ? (
+          <ListSection key={key} header={heading} headerIcon={null} footer={appleSays}>
+            <LinkRow quote={copy(entry.quoteKey)} onPress={() => link(entry.url)} />
+          </ListSection>
         ) : null,
       )}
-      <Section title={t('sensors.about', { title: title(page) })}>
+      <ListSection header={copy('page.header.about')} headerIcon={null}>
         {docs.noteKeys.map((key) => (
-          <Note key={key} text={copy(key)} />
+          <TextRow key={key} text={copy(key)} />
         ))}
-      </Section>
-      {docs.limitKeys.length > 0 && (
-        <Section title={t('sensors.docs.limits')}>
-          {docs.limitKeys.map((key) => (
-            <Text key={key} style={boardStyles.warning}>
-              {copy(key)}
-            </Text>
-          ))}
-        </Section>
-      )}
-      {docs.algorithmKeys.length > 0 && (
-        <Action
-          secondary
-          label={t('sensors.docs.howWorkedOut', { title: title(page) })}
-          onPress={() => setAlgorithm(true)}
-        />
-      )}
-      <Modal visible={algorithm} animationType="slide" onRequestClose={() => setAlgorithm(false)}>
-        <ScrollView contentContainerStyle={boardStyles.documents}>
-          <Action label={copy('common.done')} onPress={() => setAlgorithm(false)} />
-          <Section title={title(page)}>
+      </ListSection>
+      <ListSection header={copy('page.header.limits')} headerIcon={null}>
+        {docs.limitKeys.map((key) => (
+          <TextRow key={key} text={copy(key)} tone="warning" />
+        ))}
+      </ListSection>
+      <ListSection>
+        {docs.algorithmKeys.length > 0 ? (
+          <ListRow
+            label={t('sensors.docs.howWorkedOut', { title: title(page) })}
+            onPress={() => setAlgorithm(true)}
+          />
+        ) : null}
+      </ListSection>
+      {algorithm ? (
+        <NativeSheet onDismiss={() => setAlgorithm(false)}>
+          <BarButton label={copy('common.done')} onPress={() => setAlgorithm(false)} />
+          <ListSection header={title(page)} headerIcon={null}>
             {docs.algorithmKeys.map((key, index) => (
-              <Note key={key} text={t('sensors.docs.step', { number: index + 1, text: copy(key) })} />
+              <TextRow key={key} text={t('sensors.docs.step', { number: index + 1, text: copy(key) })} />
             ))}
-            {docs.algorithmCode && (
-              <Text selectable style={boardStyles.note}>
-                {docs.algorithmCode}
-              </Text>
-            )}
-          </Section>
-        </ScrollView>
-      </Modal>
+            {docs.algorithmCode ? <TextRow text={docs.algorithmCode} /> : null}
+          </ListSection>
+        </NativeSheet>
+      ) : null}
     </>
   );
 }

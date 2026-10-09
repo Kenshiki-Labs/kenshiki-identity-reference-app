@@ -70,7 +70,12 @@
     // Shown under a button whose action failed before it could report its own error.
     "actionFailed": "This action could not finish. Try again.",
     // Dismisses a confirmation without acting.
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    // What VoiceOver reads for a list row with a status line: {label} is the row's title, {status}
+    // the line under it.
+    "labelAndStatus": "{label}, {status}",
+    // Marks the chosen row of a list of choices.
+    "checkmark": "✓"
   },
 
   // Dates and times.
@@ -948,14 +953,6 @@
     // {title} is a sensor section's name, such as Motion.
     "about": "About {title}",
     "waitingForReading": "Waiting for a reading.",
-    "group": {
-      "free": "Freely readable",
-      "permissioned": "With your permission"
-    },
-    "notice": {
-      "simulator": "Simulator readings are limited.",
-      "motion": "Enable Motion & Fitness in Settings to read air pressure."
-    },
     "state": {
       "paused": "Paused"
     },
@@ -991,6 +988,17 @@
     "secondsSpoken": "{value} seconds",
     // Joins the parts of a short value, as in a weather station's name and identifier.
     "joiner": " · ",
+    // The words for a reason the native sensor board reported by code. SensorHost's own words are
+    // used where it has them (collection, export, erase and weather-provider failures).
+    "failureCode": {
+      "saveFailed": "The signed reading could not be saved.",
+      "tamperFailed": "The newest reading could not be altered.",
+      "forgetFailed": "The kept readings could not be deleted.",
+      "readFailed": "The kept readings could not be read.",
+      "noFixMeetsContract": "No position iOS delivered met the fix terms.",
+      "locationUnavailable": "Location is unavailable.",
+      "noLocationFix": "Weather needs a position first. Get one fix, then try again."
+    },
     "failure": {
       "open": "Sensors could not be opened.",
       "activity": "Sensors could not change activity state.",
@@ -1022,23 +1030,10 @@
       "action": "Erase local sensor data",
       "title": "Erase sensor data",
       "body": "Delete local sensor readings, continuity records, signing keys and biometric approval keys in this app. Identity documents stay on the phone. Collection will remain paused.",
-      // {status} is Erased or Failed; {detail} is the store's own report.
-      "result": "{status} · {detail}",
-      "keysLeft": "Keys left"
     },
     "persisted": {
       // {count} is already formatted.
       "savedItems": "{count} saved items"
-    },
-    "battery": {
-      "provider": "Provider",
-      "hostReader": "Host battery reader",
-      "reads": "Readings taken",
-      "monitoringEnables": "Monitoring enables"
-    },
-    "units": {
-      // Marks the unit system in use; {name} is its name.
-      "selected": "✓ {name}"
     },
     "window": {
       // {sensor} is the sensor's name. VoiceOver reads this as the slider's label.
@@ -1067,12 +1062,6 @@
     // Apple documentation pages for a sensor section.
     "docs": {
       "openFailed": "The documentation could not be opened.",
-      "updates": "Updates",
-      "limits": "Limits",
-      // {symbol} is an Apple API name, {framework} its framework, {abstract} Apple's summary.
-      "api": "{symbol} · {framework}\n{abstract}",
-      // {name} is an API or Info.plist key, {quote} Apple's words about it.
-      "entry": "{name}\n{quote}",
       // {title} is a sensor section's name.
       "howWorkedOut": "How {title} is worked out",
       // One numbered step of an algorithm explanation.

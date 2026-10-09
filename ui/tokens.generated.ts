@@ -61,6 +61,7 @@ export const text = {
   rowTitle: {fontSize: 17, lineHeight: 22, fontWeight: "400"},
   rowStatus: {fontSize: 15, lineHeight: 20, fontWeight: "400"},
   listFooter: {fontSize: 13, lineHeight: 18, fontWeight: "400"},
+  code: {fontSize: 16, lineHeight: 21, fontWeight: "400", fontFamily: "ui-monospace"},
   wordmark: {fontSize: 20, lineHeight: 25, fontWeight: "700", fontFamily: "ui-serif"},
 } as const;
 
@@ -103,7 +104,6 @@ export const size = {
   touchTarget: 44,
   sliderTrack: 4,
   sliderThumb: 24,
-  sliderValueOffset: 30,
   iconTile: 28,
   iconGlyph: 15,
   chevron: 13,
@@ -123,6 +123,7 @@ export const symbol = {
   erase: "trash.fill",
   developer: "hammer.fill",
   chevron: "chevron.right",
+  externalLink: "arrow.up.right",
 } as const;
 
 /** The system color each kind of symbol is drawn in. */

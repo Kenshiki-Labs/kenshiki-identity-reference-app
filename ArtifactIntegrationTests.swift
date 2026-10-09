@@ -57,9 +57,11 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(tabs.waitForExistence(timeout: 30), "The root is a native tab bar")
     tabs.buttons["Sensors"].tap()
     XCTAssertTrue(app.navigationBars["Sensors"].waitForExistence(timeout: 10))
-    // These controls are rendered only after sensorBoard returns a decoded native board.
+    // These controls are rendered only after sensorBoard returns a decoded native board. Pause is
+    // the navigation bar's button, not a control in the list.
     let pause = app.buttons["Pause sensors"]
     XCTAssertTrue(pause.waitForExistence(timeout: 20), "The real sensor bridge must load its board")
+    XCTAssertTrue(app.navigationBars["Sensors"].buttons["Pause sensors"].exists, "Pause is a bar button")
     reveal(pause, upward: false)
     pause.tap()
     XCTAssertTrue(app.buttons["Resume sensors"].waitForExistence(timeout: 10))
@@ -79,6 +81,8 @@ final class ArtifactIntegrationTests: XCTestCase {
     tabs.buttons["Settings"].tap()
     XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), "Settings is its own tab")
     XCTAssertTrue(app.buttons["Prepare export"].waitForExistence(timeout: 10))
+    // Altering a signed reading is a developer's check: present in this Debug build only.
+    XCTAssertTrue(app.buttons["sensor-tamper"].exists, "Debug builds offer the tamper check")
     let motionWindow = app.descendants(matching: .any)
       .matching(NSPredicate(format: "label == %@", "motion reading time")).firstMatch
     reveal(motionWindow)

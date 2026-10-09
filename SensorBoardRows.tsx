@@ -1,6 +1,6 @@
 import { IdentitySensorSymbol, type SensorBoardState } from '@kenshiki/identity-capture';
-import { createContext, type ReactNode, useContext } from 'react';
-import { PixelRatio, StyleSheet, Text, View } from 'react-native';
+import { createContext, type ReactElement, type ReactNode, useContext } from 'react';
+import { PixelRatio, View } from 'react-native';
 import { t } from './locales/i18n';
 import {
   copy,
@@ -13,35 +13,10 @@ import {
   sensorConfig,
   swiftColor,
 } from './SensorPresentation';
-import { color, radius, spacing, text } from './ui/tokens.generated';
-export const boardStyles = StyleSheet.create({
-  section: {
-    backgroundColor: color.card,
-    borderRadius: radius.group,
-    padding: spacing.md,
-    gap: spacing.sm,
-    marginVertical: spacing.xs,
-  },
-  heading: { ...text.groupTitle, color: color.text },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-    paddingVertical: spacing.xxs,
-  },
-  label: { ...text.row, color: color.text, flex: 1 },
-  value: {
-    ...text.row,
-    color: color.secondaryText,
-    textAlign: 'right',
-    flex: 1,
-    fontVariant: ['tabular-nums'],
-  },
-  note: { ...text.note, color: color.secondaryText },
-  warning: { ...text.warning, color: color.warning },
-  group: { ...text.groupHeader, marginTop: spacing.lg, color: color.text },
-  documents: { padding: spacing.xl },
-});
+import { ListSection, TextRow, ValueRow } from './ui/List';
+
+/** Whether this screen heads its sections with SensorHost's icon tiles, and the session that
+ * draws them. A tab's root uses tiles; a pushed page, whose own title names its subject, does not. */
 export const SensorIconContext = createContext<{ sessionId: string | null; enabled: boolean }>({
   sessionId: null,
   enabled: false,
@@ -71,10 +46,10 @@ const iconSections: Record<string, string> = {
   gaps: 'limits',
 };
 const icons: Record<string, { symbol: string; color: string }> = sensorConfig.sections;
-function SectionIcon({ title }: { title: string }) {
+/** SensorHost's tile for a section, scaled with the text beside it, as `PageSectionHeader` does. */
+function SectionIcon({ section }: { section: string }) {
   const { sessionId, enabled } = useContext(SensorIconContext);
-  const key = Object.keys(iconSections).find((key) => copy(`${key}.header`) === title);
-  const icon = key ? icons[iconSections[key] ?? ''] : undefined;
+  const icon = icons[iconSections[section] ?? ''];
   if (!enabled || !sessionId || !icon) return null;
   const scale = PixelRatio.getFontScale();
   const size = sensorConfig.sectionIcon.size * scale;
@@ -102,32 +77,49 @@ function SectionIcon({ title }: { title: string }) {
     </View>
   );
 }
-export function Section({ title, children }: { title: string; children: ReactNode }) {
+
+/** One of SensorHost's sections, as its SwiftUI List draws it: the tile and the title above the
+ * cells, the rows inside, and the explanation in the footer. `section` is the copy prefix, such as
+ * `export` or `motion`; the title and the footer are SensorHost's own words for it. A section with
+ * `heading={false}` has no header, as a sensor's page shows its own section under its title. */
+export function Section({
+  section,
+  heading = true,
+  footer,
+  children,
+}: {
+  section: string;
+  heading?: boolean;
+  footer?: string | undefined;
+  children: ReactNode;
+}) {
+  const fromCopy = copy(`${section}.footer`, '');
   return (
-    <View style={boardStyles.section}>
-      <View
-        style={{ flexDirection: 'row', alignItems: 'center', gap: sensorConfig.layout.headerIconSpacing }}
-      >
-        <SectionIcon title={title} />
-        <Text accessibilityRole="header" style={boardStyles.heading}>
-          {title}
-        </Text>
-      </View>
+    <ListSection
+      header={heading ? copy(`${section}.header`) : undefined}
+      headerIcon={<SectionIcon section={section} />}
+      footer={footer ?? (fromCopy || undefined)}
+    >
       {children}
-    </View>
+    </ListSection>
   );
 }
+
+/** A label and its value. */
 export function Row({ label, value }: { label: string; value: unknown }) {
-  return (
-    <View style={boardStyles.row}>
-      <Text style={boardStyles.label}>{label}</Text>
-      <Text style={boardStyles.value}>{plain(value)}</Text>
-    </View>
-  );
+  return <ValueRow label={label} value={plain(value)} />;
 }
-export function Note({ text }: { text: string }) {
-  return text ? <Text style={boardStyles.note}>{text}</Text> : null;
+
+/** Explanatory words inside a section; nothing at all when there are none. */
+export function note(text: string | null | undefined, key?: string): ReactElement | null {
+  return text ? <TextRow key={key ?? text} text={text} /> : null;
 }
+
+/** A warning inside a section, such as a failure the SDK reported by code. */
+export function warning(text: string | null | undefined, key?: string): ReactElement | null {
+  return text ? <TextRow key={key ?? text} text={text} tone="warning" alert /> : null;
+}
+
 type Field = [label: string, property: string, unit?: MeasureKind | 'time' | 'presence'];
 const fields: Partial<Record<SensorPage, Field[]>> = {
   audioRoute: [
@@ -219,35 +211,40 @@ function fieldValue(value: unknown, unit: Field[2], board: SensorBoardState): st
   if (unit && typeof value === 'number') return measure(value, unit, board);
   return plain(value);
 }
-export function SignalRows({ board, page }: { board: SensorBoardState; page: SensorPage }) {
+
+/** One sensor's rows, in SensorHost's order: what it says now, its status and the line under it,
+ * its samples, then each value. One element per row. */
+export function signalRows(board: SensorBoardState, page: SensorPage): ReactElement[] {
   const source = signal(board, page);
-  if (!source) return <Note text={t('sensors.waitingForReading')} />;
-  const support = source.support;
+  if (!source) return [<TextRow key="waiting" text={t('sensors.waitingForReading')} />];
   const nowFields: Partial<Record<SensorPage, Field>> = {
     thermalAndPower: ['batteryLevel', 'level', 'fraction'],
     callActivity: ['activeCalls', 'activeCallCount'],
     deviceSurface: ['system', 'systemName'],
   };
   const first = nowFields[page] ?? (fields[page] ?? [])[0];
-  return (
-    <>
-      {first && <Row label={copy('sensorGroup.now')} value={fieldValue(source[first[1]], first[2], board)} />}
-      {typeof support === 'object' && support !== null && 'status' in support && (
-        <SupportRows status={String(support.status)} board={board} page={page} />
-      )}
-      {'sampleCount' in source && <Row label={copy('common.row.samples')} value={source.sampleCount} />}
-      {(fields[page] ?? []).map(([label, property, unit]) => (
-        <Row
-          key={property}
-          label={copy(`${prefix(page)}.row.${label}`, label)}
-          value={fieldValue(source[property], unit, board)}
-        />
-      ))}
-    </>
-  );
+  const rows: (ReactElement | null)[] = [
+    first ? (
+      <Row key="now" label={copy('sensorGroup.now')} value={fieldValue(source[first[1]], first[2], board)} />
+    ) : null,
+    ...supportRows(source.support, board, page),
+    'sampleCount' in source ? (
+      <Row key="samples" label={copy('common.row.samples')} value={source.sampleCount} />
+    ) : null,
+    ...(fields[page] ?? []).map(([label, property, unit]) => (
+      <Row
+        key={property}
+        label={copy(`${prefix(page)}.row.${label}`, label)}
+        value={fieldValue(source[property], unit, board)}
+      />
+    )),
+  ];
+  return rows.filter((row): row is ReactElement => row !== null);
 }
 
-function SupportRows({ status, board, page }: { status: string; board: SensorBoardState; page: SensorPage }) {
+function supportRows(support: unknown, board: SensorBoardState, page: SensorPage): (ReactElement | null)[] {
+  if (typeof support !== 'object' || support === null || !('status' in support)) return [];
+  const status = String(support.status);
   const key = status.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
   let hint = copy(`supportStatus.explanation.${key}`, '');
   if (key === 'notCollected' && page === 'magnetometer') hint = copy('supportStatus.hint.compassCalibration');
@@ -256,10 +253,12 @@ function SupportRows({ status, board, page }: { status: string; board: SensorBoa
     const hints: Record<string, string> = { notRequested: 'motionNotAsked', refused: 'motionOff' };
     hint = copy(`supportStatus.hint.${hints[permission] ?? 'barometerSlow'}`);
   }
-  return (
-    <>
-      <Row label={copy('common.row.status')} value={copy(`supportStatus.${key}`, plain(status))} />
-      <Note text={hint} />
-    </>
-  );
+  return [
+    <Row
+      key="status"
+      label={copy('common.row.status')}
+      value={copy(`supportStatus.${key}`, plain(status))}
+    />,
+    note(hint, 'statusHint'),
+  ];
 }

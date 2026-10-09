@@ -3,37 +3,36 @@ import {
   type SensorBoardRequest,
   type SensorBoardState,
 } from '@kenshiki/identity-capture';
-import { useEffect, useState } from 'react';
-import { Text } from 'react-native';
-import { Action } from './IdentityCaptureFlow';
+import { type ReactElement, useEffect, useState } from 'react';
 import { t } from './locales/i18n';
-import { boardStyles, Note, Row } from './SensorBoardRows';
-import { copy, measure, moment, plain, sensorConfig } from './SensorPresentation';
+import { note, Row, warning } from './SensorBoardRows';
+import { copy, failureText, measure, moment, plain, sensorConfig } from './SensorPresentation';
+import { ButtonRow, ContentRow, RowNote } from './ui/List';
 export type BoardActions = {
   board: SensorBoardState;
   busy: boolean;
   perform: (request: SensorBoardRequest) => void;
 };
-export function LocationRows({
+
+/** The location section's rows, as SensorHost's `locationSection` lays them out: what iOS allows,
+ * one fix on request, the map of this session's fixes, and the newest fix's own facts. */
+export function locationRows({
   board,
   busy,
   perform,
   sessionId,
-}: { sessionId: string | null } & BoardActions) {
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-  return (
-    <>
-      <Row label={copy('sensorGroup.now')} value={board.permissions.location} />
-      <Action
-        label={copy('location.button.getOneFix')}
-        disabled={busy}
-        onPress={() => perform({ action: 'location', consent: true })}
-      />
-      <Note text={copy('location.note.getOneFix')} />
+  now,
+}: { sessionId: string | null; now: number } & BoardActions): ReactElement[] {
+  const rows: (ReactElement | null)[] = [
+    <Row key="now" label={copy('sensorGroup.now')} value={board.permissions.location} />,
+    <ButtonRow
+      key="getOneFix"
+      label={copy('location.button.getOneFix')}
+      note={copy('location.note.getOneFix')}
+      disabled={busy}
+      onPress={() => perform({ action: 'location', consent: true })}
+    />,
+    <ContentRow key="map">
       {sessionId && (
         <IdentitySensorMap
           sessionId={sessionId}
@@ -41,7 +40,7 @@ export function LocationRows({
         />
       )}
       {board.location.trail.length === 0 && (
-        <Note
+        <RowNote
           text={copy(
             board.permissions.location === 'given'
               ? 'location.map.empty.noFixes'
@@ -49,34 +48,42 @@ export function LocationRows({
           )}
         />
       )}
-      <Row
-        label={copy('location.map.row.fixesOnMap')}
-        value={t('sensors.location.fixesOnMap', {
-          count: plain(board.location.trail.length),
-          limit: plain(sensorConfig.map.trailLimit),
-        })}
-      />
-      <Action
-        secondary
-        label={copy('location.map.button.clear')}
-        disabled={busy}
-        onPress={() => perform({ action: 'clearTrail', consent: true })}
-      />
-      <Note text={copy('location.map.note')} />
-      <Note text={copy('location.footer')} />
-      {board.location.failure && (
-        <Text accessibilityRole="alert" style={boardStyles.warning}>
-          {board.location.failure}
-        </Text>
-      )}
-      {board.location.answeredAt && !board.location.fix && <Note text={copy('location.note.noFix')} />}
-      <FixRows board={board} now={now} />
-    </>
-  );
+      <RowNote text={copy('location.map.note')} />
+    </ContentRow>,
+    <Row
+      key="fixesOnMap"
+      label={copy('location.map.row.fixesOnMap')}
+      value={t('sensors.location.fixesOnMap', {
+        count: plain(board.location.trail.length),
+        limit: plain(sensorConfig.map.trailLimit),
+      })}
+    />,
+    <ButtonRow
+      key="clear"
+      label={copy('location.map.button.clear')}
+      disabled={busy}
+      onPress={() => perform({ action: 'clearTrail', consent: true })}
+    />,
+    warning(board.location.failure && failureText(board.location.failure), 'failure'),
+    board.location.answeredAt && !board.location.fix ? note(copy('location.note.noFix'), 'noFix') : null,
+    ...fixRows(board, now),
+  ];
+  return rows.filter((row): row is ReactElement => row !== null);
 }
-function FixRows({ board, now }: { board: SensorBoardState; now: number }) {
+
+/** Keeps a page's "age" row current: the now the location rows count from, once a second. */
+export function useSecondClock(): number {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  return now;
+}
+
+function fixRows(board: SensorBoardState, now: number): (ReactElement | null)[] {
   const fix = board.location.fix;
-  if (!fix) return null;
+  if (!fix) return [];
   const age = (now - new Date(fix.measuredAt).getTime()) / 1000;
   const rows: [string, unknown][] = [
     ['latitude', String(fix.latitude)],
@@ -101,30 +108,27 @@ function FixRows({ board, now }: { board: SensorBoardState; now: number }) {
     ],
     ['simulated', fix.simulated],
     ['fromAccessory', fix.accessory],
-    ['fixContract', copy(fix.accepted ? 'location.value.accepted' : 'location.value.notAccepted')],
+    [
+      'fixContract',
+      copy(fix.unmetTerms.length === 0 ? 'location.value.accepted' : 'location.value.notAccepted'),
+    ],
     ['fixesDelivered', board.location.deliveredCount],
     ['permissionThen', board.location.permissionAtDelivery],
     ['precisionThen', board.location.precisionAtDelivery],
   ];
-  return (
-    <>
-      {rows.map(([key, value]) => (
-        <Row key={key} label={copy(`location.row.${key}`)} value={value} />
-      ))}
-      {fix.unmetTerms.map((term) => (
-        <Text key={term} style={boardStyles.warning}>
-          {copy(`fixTerm.${term}`, plain(term))}
-        </Text>
-      ))}
-      {['position', 'accuracy', 'altitude', 'movement', 'time', 'source', 'contract'].map((key) => (
-        <Note key={key} text={copy(`location.note.${key}`)} />
-      ))}
-    </>
-  );
+  return [
+    ...rows.map(([key, value]) => <Row key={key} label={copy(`location.row.${key}`)} value={value} />),
+    ...fix.unmetTerms.map((term) => warning(copy(`fixTerm.${term}`, plain(term)), `term-${term}`)),
+    ...['position', 'accuracy', 'altitude', 'movement', 'time', 'source', 'contract'].map((key) =>
+      note(copy(`location.note.${key}`), `note-${key}`),
+    ),
+  ];
 }
-export function WeatherRows({ board, busy, perform }: BoardActions) {
+
+/** The weather section's rows: read on request, the report when there is one, and why not. */
+export function weatherRows({ board, busy, perform }: BoardActions): ReactElement[] {
   const weather = board.weather;
-  const rows: [string, unknown][] = [
+  const values: [string, unknown][] = [
     [t('sensors.weather.row.pressure'), measure(weather.pressureKPa, 'pressure', board)],
     [t('sensors.weather.row.temperature'), measure(weather.temperatureC, 'temperature', board)],
     [t('sensors.weather.row.humidity'), measure(weather.humidityPercent, 'percentage', board)],
@@ -139,25 +143,19 @@ export function WeatherRows({ board, busy, perform }: BoardActions) {
     [t('sensors.weather.row.reportedAt'), moment(weather.observedAt)],
     [copy('weather.row.readAt'), moment(weather.readAt)],
   ];
-  return (
-    <>
-      <Action
-        label={copy('weather.button.read')}
-        disabled={busy}
-        onPress={() => perform({ action: 'weather', consent: true })}
-      />
-      <Note text={t('sensors.weather.note')} />
-      {weather.state === 'notConfigured' && <Note text={t('sensors.weather.notConfigured')} />}
-      {weather.state === 'available' &&
-        rows.map(([label, value]) => <Row key={label} label={label} value={value} />)}
-      {weather.failure && (
-        <Text accessibilityRole="alert" style={boardStyles.warning}>
-          {weather.failure}
-        </Text>
-      )}
-      {[...new Set(weather.details)].map((detail) => (
-        <Note key={detail} text={detail} />
-      ))}
-    </>
-  );
+  const rows: (ReactElement | null)[] = [
+    <ButtonRow
+      key="read"
+      label={copy('weather.button.read')}
+      note={t('sensors.weather.note')}
+      disabled={busy}
+      onPress={() => perform({ action: 'weather', consent: true })}
+    />,
+    ...(weather.state === 'available'
+      ? values.map(([label, value]) => <Row key={label} label={label} value={value} />)
+      : []),
+    warning(weather.failure && failureText(weather.failure), 'failure'),
+    ...[...new Set(weather.details)].map((detail) => note(detail, `detail-${detail}`)),
+  ];
+  return rows.filter((row): row is ReactElement => row !== null);
 }

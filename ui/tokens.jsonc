@@ -149,6 +149,8 @@
     "rowStatus": {"style": "subheadline", "fontWeight": "400"},
     // A grouped list's section header and footer.
     "listFooter": {"style": "footnote", "fontWeight": "400"},
+    // An API or Info.plist name on a sensor's page, set as code, as SensorHost's `docEntry` does.
+    "code": {"style": "callout", "fontWeight": "400", "design": "monospaced"},
     // The wordmark in the Identity tab's navigation bar. Brand: pulse-ios sets its wordmark in the
     // h1 role, bold and in the system serif (`TextRole.h1`); here it takes the title3 step so it
     // sits inside the bar's row, above the large title it must not cover.
@@ -214,8 +216,6 @@
     "sliderTrack": 4,
     // The capture-window slider's thumb diameter. Replaces 24.
     "sliderThumb": 24,
-    // How far below the slider's top its printed value sits. Replaces 30.
-    "sliderValueOffset": 30,
     // A list row's icon tile and the glyph inside it: SensorHost's `sectionIcon` size and
     // glyph size.
     "iconTile": 28,
@@ -251,7 +251,9 @@
     "savedChecks": "clock.arrow.circlepath",
     "erase": "trash.fill",
     "developer": "hammer.fill",
-    "chevron": "chevron.right"
+    "chevron": "chevron.right",
+    // A row that opens Apple's documentation outside the app: SensorHost's `externalLink`.
+    "externalLink": "arrow.up.right"
   },
 
   // The system color each kind of symbol is drawn in, from the set the SDK's IdentitySymbol draws.

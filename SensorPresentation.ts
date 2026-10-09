@@ -115,6 +115,25 @@ export function measure(
   const [factor, offset, unit] = conversions[kind];
   return t('sensors.measurement', { value: plain(value * factor + offset), unit });
 }
+/** The words for a reason the sensor board reported by code. SensorHost's own words where it has
+ * them; a weather provider's own report, which is not one of these codes, is shown as it came. */
+export function failureText(code: string): string {
+  const words: Record<string, string> = {
+    collectionFailed: copy('collection.failure'),
+    saveFailed: t('sensors.failureCode.saveFailed'),
+    exportFailed: copy('export.failed'),
+    tamperFailed: t('sensors.failureCode.tamperFailed'),
+    forgetFailed: t('sensors.failureCode.forgetFailed'),
+    eraseFailed: copy('erase.outcome.failed'),
+    readFailed: t('sensors.failureCode.readFailed'),
+    noFixMeetsContract: t('sensors.failureCode.noFixMeetsContract'),
+    locationUnavailable: t('sensors.failureCode.locationUnavailable'),
+    noLocationFix: t('sensors.failureCode.noLocationFix'),
+    providerFailed: copy('airCheck.absence.weatherProviderFailure'),
+    providerNotConfigured: t('sensors.weather.notConfigured'),
+  };
+  return words[code] ?? code;
+}
 /** SensorHost names icon colors with SwiftUI's standard color names (config.json `sections`). */
 const swiftColors: Record<string, ColorValue> = {
   blue: color.swiftBlue,
