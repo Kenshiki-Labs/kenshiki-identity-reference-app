@@ -318,6 +318,13 @@ the reference app does not build them:
   runs each capability's erase when the holder's records must be deleted, following the
   [logout and holder-switch sequence](../../ReactNative/identity-capture/README.md#logout-holder-switch-and-erasure).
 
+## App Store Connect distribution
+
+The reference delivery includes [Fastlane release instructions](fastlane/README.md) and the build,
+signing and export checks. The generated app receives a self-contained `fastlane/` directory.
+Use your own bundle identifier, Apple Developer team, App Store profile and App Store Connect
+account. The editable app and the SDK binary keep separate source-revision records.
+
 ## Acceptance test plan
 
 Follow [How to test the React Native SDK](../../docs/react-native-testing.md) for the source gates, installed-package tests, opt-in physical-device smoke tests and provider acceptance cases. `DeviceAcceptanceTests.swift` is copied into the generated UI-test target; it does not run device cases without explicit test-scheme opt-in.
