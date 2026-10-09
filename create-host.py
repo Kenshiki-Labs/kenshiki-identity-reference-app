@@ -98,7 +98,7 @@ for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts
     contents = contents.replace('../../ReactNative/identity-capture/src/codes', '@kenshiki/identity-capture/src/codes')
     (host / filename).write_text(contents)
 (host / 'CaptureFlowController.test.ts').write_text(Path(__file__).with_name('CaptureFlowController.test.ts').read_text().replace('../../ReactNative/identity-capture/src/codes', '@kenshiki/identity-capture/src/codes'))
-shutil.copyfile(Path(__file__).with_name('IdentityCaptureFlow.test.tsx'), host / 'IdentityCaptureFlow.test.tsx')
+(host / 'IdentityCaptureFlow.test.tsx').write_text(Path(__file__).with_name('IdentityCaptureFlow.test.tsx').read_text().replace('../../ReactNative/identity-capture/src/codes', '@kenshiki/identity-capture/src/codes'))
 shutil.copyfile(Path(__file__).parent / '__tests__/support.ts', host / '__tests__/support.ts')
 # Replace the CLI's starter-screen test with this example's actual controller tests.
 (host / '__tests__/App.test.tsx').unlink(missing_ok=True)
