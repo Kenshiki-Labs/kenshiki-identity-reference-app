@@ -1,142 +1,227 @@
-# iOS React Native reference app
+# React Native iOS reference app — 0.6.0
 
-This adopter-owned UI installs the **built npm tarball**, not an SDK source checkout. It offers
-an Identity hub with Driver licence, Passport, Face match, SSN issuance and Phone cards. Passport MRZ capture and review leads
-to NFC and immediately inspectable passport results. Face match reuses that passport photo;
-paired TrueDepth capture automatically starts the local comparison.
-The screens and controller are reusable reference source for SSA's app. The native SDK remains
-usable without this UI. Copy, branding, navigation and enrollment decisions belong to the adopter.
+Start here to run an independent app against the delivered SDK. You need both
+`kenshiki-identity-capture-0.6.0.tgz` and `identity-capture-react-native-example.zip` from the same
+release. The generator installs the binary tarball; it does not require an SDK or Pulse checkout.
+This is editable reference UI for the adopting team, not a finished SSA enrollment app.
 
-All app recovery and restart prompts use an in-view bottom sheet. Apple still presents its own
-camera permission and NFC system UI. The app starts idle; capture follows an explicit action.
-Backgrounding cancels active work and requires an explicit resume. Cancelling Apple's NFC sheet
-quietly returns to the printed details. Camera and comparison failures offer targeted retry while
-keeping a successful passport read. Restart starts a new workflow and preserves previously saved results.
-Interruption waits for native cancellation and the active JavaScript command to settle. If a read or
-comparison completed before cancellation won, its committed observations replace the prior result
-before review becomes available; the interrupted camera screen is never reopened by that delivery.
+The baseline is **bare React Native 0.87.1, React 19.2.3, New Architecture, iOS 18+**. Android,
+Expo Go and other React Native versions are not validated by this example. The generated CLI
+project may contain Android files; this SDK delivery and these instructions are iOS only.
 
-`IdentityCaptureFlow.onComplete(result)` transfers ownership of its live native session to the
-adopter before unmount. `CompletedCapture` includes the passport/protocol observations, printed/chip
-correspondence, optional comparison and its receipt, and the session handle. The receiving app must
-call `result.session.release()` when clearing the result or ending its owning scope. Unmounting the
-completed flow does not release transferred evidence. Cancelling an unfinished flow does release it.
-Do not retain only the observations and then release the session if you still need image review.
+## 1. Prepare a Mac
 
-The AppDelegate configures encrypted passport/face custody in the app's private support directory
-with a dedicated Keychain identity. The Identity hub restores a single saved passport on startup;
-when several workflows exist, opening its card offers a saved-result picker. Face results reopen
-only with the matching passport portrait. Release clears decrypted images, and relaunch can reopen
-the encrypted records without acquisition. An explicit bottom sheet confirms erasing all passport
-and face records, images and their key. A failed local save offers saving again without repeating
-the completed hardware check. The optional SDK configuration also supports transient-only callers.
-
-`IdentityCaptureImage` renders hash-bound passport photos and selfies from native memory.
-Chip fields, independent protocol outcomes and depth details remain available in the results view.
-Driver licence captures and document-check journals share the native encrypted document store;
-the app never calls `exportPassport`. A configured native document provider enables
-`DocumentCheckPanel` on the completed licence screen. It shows the actual returned checks and
-submitted fields, opens saved replies locally, and offers explicit reconciliation and requested
-corrections. Wrap this panel in `IdentitySheetHost` above scroll/navigation content so recovery and
-correction sheets attach to the screen bottom. Without a provider it accurately reports unavailable.
-See the [document provider contract](../../ReactNative/identity-capture/README.md#optional-document-check-06).
-
-The SSN card is independent of document capture and phone verification. The adopting app registers
-its native provider through `IDCaptureRegisterSSNIssuanceProvider`, then supplies `ssn.context.credentialID`,
-a stable `workflowID`, the registered `providerID` and dedicated directory/Keychain custody names.
-Authentication and service signing stay in native code; the JavaScript configuration has no bearer
-token or gateway credentials. Without a provider/configuration the card reports service unavailable
-and sends no request. See the [package integration guide](../../ReactNative/identity-capture/README.md#optional-ssn-issuance-flow).
-
-The SDK owns exact-digit confirmation, encrypted phone-only retention and local recovery. The UI
-does not checkpoint entered digits; the native journal retains the exact confirmed number and reply,
-without exporting saved digits on reopening. A missing response cannot be fetched remotely or retried
-automatically. A new check after uncertainty requires a separate confirmation explaining that the
-previous request may already have happened. Local-save recovery sends nothing to the provider.
-SSN confirmation, failure and recovery use bottom sheets and results say issuance, not ownership.
-
-`Hosts/SensorHost` (Kenshiki Sensors) also has native Identity cards using the public Swift APIs.
-This React Native app specifically tests the distributed artifact through the JavaScript bridge.
-Physical acceptance in either host is evidence for that path; it does not substitute for testing
-the other integration.
-
-## Generate a separate host
-
-Requires Node 22.11+, CocoaPods, Xcode and an iOS 18+ target. The tested baseline is React Native
-0.87.1 / React 19.2.3. SSA's actual React Native version and Expo/bare setup remain unknown.
+Install the full Xcode application, select it with `xcode-select`, finish its first-launch setup,
+and install an iPhone simulator runtime in Xcode Settings. Install Python 3, Node 22.11+ with npm,
+Ruby, CocoaPods and the Ruby `xcodeproj` gem. Internet access is needed for npm and CocoaPods.
+Run these in your terminal before generating the host:
 
 ```sh
-python3 create-host.py /absolute/new/IdentitySDKHost /absolute/kenshiki-identity-capture-0.6.0.tgz
+python3 --version
+node --version
+npm --version
+ruby --version
+ruby -rxcodeproj -e 'puts Xcodeproj::VERSION'
+pod --version
+xcodebuild -version
+xcrun simctl list devices available
 ```
 
-For a device journey, pass explicit `--trust-anchors /path/master-list.pem`,
-`--embedder /path/embedder.mlmodelc` and `--detector /path/detector.mlmodelc` inputs. These are copied
-into the generated host's `CaptureResources` folder. Its AppDelegate supplies their URLs to the
-React Native root; the SDK does not search the host bundle. Supply properly licensed compiled
-models and the intended passport trust anchors. Neither is included in the deliverable.
+The development environment inspected for this guide has Node 22.22.2, npm 10.9.7, Ruby 2.6.10,
+CocoaPods 1.16.2, xcodeproj 1.27.0 and Xcode 26.6. That is an environment record, not a claim that
+all earlier or later versions work. Use the release's [validation record](../../Distribution/README.md)
+for the actual artifact test evidence.
 
-The script writes camera/NFC usage descriptions, the passport AID and TAG entitlement. For device
-installation, set the generated app's bundle identity and signing team and enable NFC Tag Reading
-in its provisioning profile. Do not reuse a production app identity to run this disposable demo.
+The generator invokes **`ruby` and `pod` directly from PATH**. Its Ruby must be able to load
+`xcodeproj`; having the gem installed under a different Ruby is insufficient. If needed, install
+`cocoapods` and `xcodeproj` with your chosen Ruby's gem manager. The CLI also creates a Gemfile;
+this generator does not install or use that bundle. Do not mix `bundle exec pod` and direct `pod`
+without first resolving and testing your team's toolchain.
 
-## Checks
+## 2. Generate a new host
+
+Place both delivered files in a release folder. Run the following from that folder, replacing
+the host destination with a new absolute path. It must not exist yet. The application and Xcode
+scheme are named `IdentitySDKHost` regardless of the destination directory name.
 
 ```sh
-cd /absolute/new/IdentitySDKHost
+unzip identity-capture-react-native-example.zip
+python3 Examples/ReactNativeCaptureHost/create-host.py \
+  "$HOME/Developer/IdentitySDKHost" \
+  "$PWD/kenshiki-identity-capture-0.6.0.tgz"
+```
+
+The script checks the package and tools, invokes the pinned React Native CLI, copies the UI and
+tests, copies the tarball into the new host's `vendor` directory, installs npm dependencies,
+configures the native targets and runs `pod install`. Wait for `Independent host ready:` before
+continuing. It does not build, launch or publish an app. If generation fails after creating the
+host, preserve the error output and use a new destination when retrying; it will not overwrite
+an existing project.
+
+For an existing SSA app, use the [package integration guide](../../ReactNative/identity-capture/README.md)
+and copy only the desired UI source. It is also installed at
+`node_modules/@kenshiki/identity-capture/README.md`. Do not run `configure-host.rb`
+against your existing app: it assumes the generated `IdentitySDKHost` target, replaces its
+AppDelegate and rewrites its test scheme.
+
+## 3. Build and run the simulator app
+
+From the generated host root:
+
+```sh
+cd "$HOME/Developer/IdentitySDKHost"
 npx tsc --noEmit
 npx jest --runInBand
-cd ios
-xcodebuild test -workspace IdentitySDKHost.xcworkspace -scheme IdentitySDKHost \
-  -configuration Release -destination 'platform=iOS Simulator,id=YOUR_SIMULATOR' \
+open ios/IdentitySDKHost.xcworkspace
+```
+
+In Xcode select the `IdentitySDKHost` scheme and an **iPhone simulator**. In Edit Scheme → Run,
+set Build Configuration to **Release**, then Run. Release bundles JavaScript and needs no Metro
+server. For Debug instead, run `npm start` from the host root in a second terminal before Run.
+Open the `.xcworkspace`, not the `.xcodeproj`.
+
+The Identity screen should offer Driver's license, Passport, Face match, Social Security number
+and Phone cards. No provider or personal data is required to open it. Face match remains disabled
+until a passport portrait exists. Simulator camera/NFC/TrueDepth and text messaging are unavailable:
+those workflows must show recovery, not a successful hardware check. Without a registered native
+provider, SSN, phone and document checking remain explicitly unavailable. This is expected.
+
+For the installed-package UI tests, choose an available iPhone simulator UUID from the command
+below and replace `YOUR_SIMULATOR_UUID`. Run from the host root:
+
+```sh
+xcrun simctl list devices available
+xcodebuild test -workspace ios/IdentitySDKHost.xcworkspace -scheme IdentitySDKHost \
+  -configuration Release -destination 'platform=iOS Simulator,id=YOUR_SIMULATOR_UUID' \
   -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-
 ```
 
-The controller tests use an explicit mocked SDK to exercise result handoff, targeted recovery,
-automatic comparison and late-result fencing. A rendered React test completes a passport read,
-returns to Identity and reopens results without rescanning or prematurely releasing evidence.
-The historical 0.3 UI tests targeted the installed native artifact: twelve bridge checks, unavailable document/MRZ
-camera recovery, an unavailable-SSN-service bottom sheet, and synthetic standalone SSN confirmation,
-result and reopening. All five passed against the 0.3 package built from clean commit `082088e`,
-along with TypeScript checking and 61 reference-flow tests. The exact artifact hash and evidence
-are recorded in [the distribution record](../../Distribution/README.md#030-standalone-ssn-correction-2026-10-08).
+Keep simulator ad hoc signing enabled: the tests exercise actual Keychain-backed custody. Do not
+reuse these signing flags for a physical iPhone. The reference app's **Developer checks → Run
+simulator checks** is also simulator-only; its assertions deliberately expect unavailable hardware.
 
-For the synthetic SSN test only, AppDelegate registers a fixture when launched with
-`--ssn-artifact-fixture`. It is compiled only for the simulator, accepts only the invalid synthetic
-number `000-00-1234`, and makes no network request. It cannot be enabled in a physical-device build.
-This proves neither live provider behavior nor supplier non-retention. Ordinary launches require
-the adopter's real native provider. The simulator host uses ad hoc signing because custody uses the
-real Keychain. Release builds bundle JavaScript and need no Metro server at runtime.
+## 4. Enable physical capture and native services
 
-For physical acceptance, scan and review a passport, read its chip, test pull-away recovery and
-cancellation, then capture and compare a real selfie. Repeat after backgrounding and restarting.
-Check unsupported TrueDepth hardware fails closed. Record exact artifact hashes, device/OS and
-observations without copying personal data into logs. VoiceOver focus, large text and localized
-copy need acceptance in SSA's app; this reference flow is not a production accessibility claim.
+Generate a separate device host with the resources supplied by your integration owner:
 
-The source result screen also renders issuance region, date range, classification, source
-and response codes when the native provider supplies `SSNIssuanceProviderDetails`. Those
-observations survive encrypted receipt restoration and bridge into `receipt.details`.
-Absent observations are labeled “Not returned”; earlier receipts explain that details were
-not retained. This source update is not a claim that the earlier 0.3.0 artifact includes it.
+```sh
+python3 Examples/ReactNativeCaptureHost/create-host.py \
+  "$HOME/Developer/IdentitySDKDeviceHost" \
+  "$PWD/kenshiki-identity-capture-0.6.0.tgz" \
+  --trust-anchors /absolute/passport-master-list.pem \
+  --embedder /absolute/embedder.mlmodelc \
+  --detector /absolute/detector.mlmodelc
+```
 
-The Phone card uses `PhoneFlowController` to preserve native session ownership, subscribe to
-receipt updates and drain interrupted composition/polling before returning to Identity. Opening
-saved results is local-only. It shows the received number, dates, separate subscriber outcome,
-field grades and carrier observations, including missing values. See the [native provider
-contract](../../ReactNative/identity-capture/README.md#phone-flow-04-source). The example requires
-an approved native service and checked-document reference; none is silently selected. The current
-legacy phone backend does not meet the phone-only PII requirement.
+Run that command from the release folder used in step 2. The `.mlmodelc` inputs must be compiled
+model directories compatible with the SDK, not arbitrary models or `.mlmodel` files. The PEM must
+contain the intended passport trust anchors. These licensed/configured resources are **not included**
+in the delivery. Request their compatible versions and provenance from your integration owner.
+The script copies them into `ios/CaptureResources`; AppDelegate resolves their bundle URLs and
+passes them to the SDK explicitly. A trust result is only as appropriate as the supplied anchors.
 
-The 0.5 subscriber composition keeps that same text, wait and result journey. A registered native
-`SubscriberCheckProvider`, selected with `phone.subscriberProviderID`, attaches the independent
-comparison after the actual receipt. It adds no normal UI step or extra comparison button.
-`SubscriberResultDetails` shows the individual grades, scope, missing evidence and whole-address
-observation on the existing result screen. A lost answer remains explicit uncertainty; reopening
-does not run another comparison. See the [composition contract](../../ReactNative/identity-capture/README.md#subscriber-composition-05-source).
+Open the new workspace, give the app a unique test bundle identifier, select your Apple development
+team and enable NFC Tag Reading for that app/provisioning profile. Set signing for the UI-test target
+as well if testing on a device. Enable Developer Mode on the paired iPhone if Xcode requires it.
+The script supplies camera/NFC usage descriptions, passport AID `A0000002471001` and TAG entitlement;
+your team remains responsible for provisioning and product-appropriate permission copy.
+Use a TrueDepth-equipped iPhone for selfie liveness. RGB-only hardware must fail closed.
 
-For the 0.6 document registration test, `--document-check-artifact-fixture` registers a simulator-only
-provider whose methods refuse dispatch. The installed bridge must recognize it and refuse a check
-without a retained front. The 18 developer checks also exercise completed-result discovery and
-erasure in separate test custody. They never erase normal user records. Full document response,
-correction, cancellation and result reopening are exercised by native runtime tests using synthetic
-providers. These tests do not validate a licensed reader, a live supplier or physical capture.
+Native service adapters are separate from hardware capture:
+
+| Capability | What the adopting native team supplies |
+| --- | --- |
+| Document check | `DocumentCheckProvider`, registration via `IDCaptureRegisterDocumentCheckProvider`, and `configuration.document.check` |
+| SSN issuance | `SSNIssuanceProvider`, `IDCaptureRegisterSSNIssuanceProvider`, stable workflow/context and dedicated custody configuration |
+| Phone | `PhoneCheckProvider`, `IDCaptureRegisterPhoneCheckProvider`, approved service, checked-document reference and custody configuration |
+| Subscriber comparison | Optional separately qualified `SubscriberCheckProvider`, selected through `phone.subscriberProviderID` |
+
+Ordinary AppDelegate launches register none of these services. JavaScript does not receive gateway
+credentials. A card being present does not mean a live endpoint is ready. Live phone storage,
+authorization and supplier qualification remain unresolved; keep the approved in-app text journey,
+and do not route it to the legacy backend as a shortcut. Follow the detailed provider contracts in
+the [package integration guide](../../ReactNative/identity-capture/README.md). Supplier non-retention requires independent qualification.
+
+## UI source and result ownership
+
+| File | Responsibility |
+| --- | --- |
+| `App.tsx`, `AppDelegate.swift` | Identity hub, startup recovery, host-owned resource/custody configuration |
+| `IdentityCaptureFlow.tsx`, `CaptureFlowController.ts` | MRZ → review → NFC → passport result → optional paired TrueDepth selfie/comparison |
+| `DriverLicenseFlow.tsx`, `DocumentFlowController.ts` | Front/back capture, encrypted document recovery and image review |
+| `DocumentCheckPanel.tsx` | Explicit document-check consent, actual returned findings, local reply restore, requested corrections and reconciliation |
+| `SSNFlow.tsx`, `PhoneFlow.tsx` and their controllers | Independent service journeys, native session ownership and interruption handling |
+| `IdentitySheetHost.tsx` | Screen-level bottom-sheet host; wrap panels above scroll/navigation content |
+
+All app recovery/confirmation prompts use bottom sheets. Apple's permission, NFC and message
+composer interfaces remain system-owned. Active work cancels and drains on backgrounding; the user
+explicitly resumes. No remote check is purchased by opening saved results.
+
+`IdentityCaptureFlow.onComplete(result)` transfers the live session to its recipient. The recipient
+must call `result.session.release()` when it no longer needs decrypted native images. Merely unmounting
+a completed flow does not release transferred ownership; canceling an unfinished flow does. Keep the
+session while rendering `IdentityCaptureImage`, which references native image handles and digests.
+Do not copy image bytes or PII into JavaScript persistence, analytics or logs.
+
+The default AppDelegate configures separate encrypted document and completed-result stores in private
+app support directories, each with dedicated Keychain names. These names are fixed for the app installation,
+and the hub automatically opens saved results. **This is a single-holder test host. Do not use its unchanged
+configuration in a multiuser or shared-device SSA app.** Authenticate and select a stable local holder scope
+in native code before configuring custody or mounting the identity UI. Use the
+[scoped native configuration guidance](../../ReactNative/identity-capture/README.md#configure-in-native-code-before-mounting-react).
+On a holder switch, cancel and drain active operations, release every old session, clear personal JavaScript
+state and only then mount the next holder's configuration. Do not change credentials underneath a live
+session. If logout policy requires deletion, explicitly erase each old holder store before releasing it;
+release alone preserves its encrypted records. A custody folder name or workflow UUID is not authentication.
+
+Passport/face completion is saved before publication. A save failure offers a local retry without repeating NFC or comparison. Startup opens a
+single saved passport automatically; multiple workflows lead to a picker. A saved face result is attached
+only to its matching passport portrait. Restored selfies are reviewable history, not fresh liveness evidence.
+
+`release()` clears session memory; **it does not erase configured durable records**. Restart begins another
+workflow and preserves existing saved results. Erase-all passport/face and erase-all document actions
+require confirmation and remove their respective encrypted records/images and custody key. They are
+separate domains; clearing a passport does not erase SSN, phone or document custody. Erasure failures
+must remain visible and retryable. Without `configuration.results`, passport/face are session-only.
+SSN and phone have their own explicit native recovery/erasure operations; use their supplied controllers.
+
+The document check panel shows returned provider checks and submitted fields instead of a generic
+success banner. It opens retained replies locally, requests a response only through an explicit action,
+and allows only corrections named by that reply. SSN results describe issuance, not ownership, and
+render provider details or explicit missing values. Phone results separate receipt evidence from the
+subscriber comparison; reopening uncertainty does not silently start a new comparison.
+
+## Troubleshooting
+
+| Symptom | Check or next action |
+| --- | --- |
+| `cannot load such file -- xcodeproj` | Run the Ruby preflight above; install the gem for the same Ruby used by the script. |
+| `pod` is missing or `pod install` fails | Check CocoaPods on PATH, selected Xcode, network access and the actual CocoaPods error. Do not alternate Ruby environments mid-install. |
+| Missing runtime framework / native module | Use the built 0.6.0 tarball, finish `pod install`, open the workspace and rebuild the native app. Reloading JavaScript cannot add native code. |
+| JavaScript bundle unavailable | Release must finish the bundle build phase; Debug needs Metro from this host root. Inspect `ios/.xcode.env` and `.xcode.env.local` for a stale Node path. |
+| Hardware recovery sheet on simulator | Expected. Use the physical-device path for real capture; do not remove the hardware gate. |
+| Passport trust unavailable or face models unavailable | Check supplied resource formats and their URLs in AppDelegate. Never replace missing trust/model inputs with an accepted result. |
+| SSN/phone/document service unavailable | Register the native adapter and matching provider ID/configuration. SDK installation alone supplies no live service credentials. |
+| Saved results cannot be opened | Retry local recovery; preserve stable directory and Keychain names. Do not interpret an integrity/key failure as an empty store or automatically erase it. |
+| NFC signing/entitlement error | Confirm the app identifier, team, NFC capability, provisioning profile and generated entitlements agree. |
+
+## What testing establishes
+
+TypeScript validates source types. Jest uses mocked SDK sessions to test UI/controller behavior; it
+cannot prove native capture, encryption or a live provider. The Xcode tests exercise the installed
+binary through React Native and actual simulator Keychain storage, including failure recovery.
+
+Simulator-only launch fixtures are deliberately limited: `--ssn-artifact-fixture` accepts only invalid
+synthetic `000-00-1234`; `--phone-artifact-fixture` checks unavailable text messaging;
+`--document-check-artifact-fixture` registers a provider that refuses dispatch and tests missing-front
+rejection. The 18 developer checks use separate test custody and do not erase normal records. None
+proves successful live document/provider checks or hardware capture. Full synthetic document response,
+correction and durable-recovery coverage lives in the SDK's native runtime tests, not this host suite.
+
+For physical acceptance, capture and reopen documents; inspect document-check details with the qualified
+provider; scan/review/read a passport; exercise pull-away, cancel and background recovery; compare a real
+selfie; relaunch and inspect saved results; then erase and confirm they no longer reopen. Check unsupported
+TrueDepth hardware fails closed. Record artifact hashes and device/OS with non-PII observations. VoiceOver,
+large text, translations and actual SSA React Native integration require separate product acceptance.
+Historical release hashes, test counts and known limits belong in the
+[distribution record](../../Distribution/README.md).

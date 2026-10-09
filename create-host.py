@@ -6,7 +6,8 @@ from pathlib import Path
 import argparse
 import shutil
 import subprocess
-import sys
+import json
+import tarfile
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('host', type=Path)
@@ -21,6 +22,38 @@ if host.exists():
     raise SystemExit('Choose a new host directory')
 if not artifact.is_file():
     raise SystemExit('Package artifact does not exist')
+# Refuse incomplete deliveries and missing tools before the CLI creates a partial host.
+for command in ['npx', 'node', 'npm', 'ruby', 'pod', 'xcodebuild']:
+    if shutil.which(command) is None:
+        raise SystemExit('Required command is missing from PATH: ' + command)
+try:
+    subprocess.run(['ruby', '-rxcodeproj', '-e', 'exit'], check=True, capture_output=True)
+except subprocess.CalledProcessError:
+    raise SystemExit('The ruby on PATH cannot load xcodeproj. Install it for that Ruby before generating the host.')
+try:
+    subprocess.run(['xcodebuild', '-version'], check=True, capture_output=True)
+except subprocess.CalledProcessError:
+    raise SystemExit('Select the full Xcode installation and complete its first-launch setup before generating the host.')
+node_version = subprocess.check_output(['node', '--version'], text=True).strip().lstrip('v')
+if tuple(map(int, node_version.split('.')[:3])) < (22, 11, 0):
+    raise SystemExit('React Native 0.87.1 requires Node 22.11.0 or later')
+try:
+    with tarfile.open(artifact, 'r:gz') as package:
+        metadata = json.load(package.extractfile('package/package.json'))
+        members = set(package.getnames())
+        if metadata.get('name') != '@kenshiki/identity-capture':
+            raise ValueError('Not an @kenshiki/identity-capture package')
+        if metadata.get('version') != '0.6.0':
+            raise ValueError('This reference host requires the matching 0.6.0 package')
+        required = ['package/build-manifest.json',
+                    'package/Frameworks/IdentityCaptureRuntime.xcframework/Info.plist']
+        if any(name not in members for name in required):
+            raise ValueError('Use the binary delivery tarball, not npm pack from an unbuilt source directory')
+except (tarfile.TarError, KeyError, ValueError, TypeError) as error:
+    raise SystemExit('Invalid SDK artifact: ' + str(error))
+for source, directory in [(args.trust_anchors, False), (args.embedder, True), (args.detector, True)]:
+    if source is not None and not (source.is_dir() if directory else source.is_file()):
+        raise SystemExit('Resource must be a ' + ('compiled model directory: ' if directory else 'PEM file: ') + str(source))
 subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'IdentitySDKHost',
                 '--version', '0.87.1', '--directory', str(host), '--skip-install', '--skip-git-init'], check=True)
 for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
