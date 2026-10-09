@@ -178,6 +178,8 @@
   "capture.portrait.top": "Top edge",
   "capture.portrait.unavailable": "The selected on-device model is unavailable. No other provider will be used automatically.",
   "capture.portrait.unverifiedBoundary": "Boundary not independently verified.",
+  "capture.presenceRequired": "Tilt the card as shown before the photo is taken.",
+  "capture.presenceUnavailable": "The tilt check could not finish. Resume the camera to start again.",
   "capture.record": "Record",
   "capture.recordingFailed": "The supporting recording stopped. Resume the camera to continue.",
   "capture.recover": "Verify and open saved capture",
