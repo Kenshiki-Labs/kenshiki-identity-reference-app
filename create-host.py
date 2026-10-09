@@ -20,6 +20,12 @@ parser.add_argument('artifact', type=Path)
 parser.add_argument('--trust-anchors', type=Path)
 parser.add_argument('--embedder', type=Path)
 parser.add_argument('--detector', type=Path)
+# Signing for a physical iPhone. Each is optional; without them the generated app keeps the template's
+# identifier and no team, which is what the simulator tests use.
+parser.add_argument('--bundle-identifier', help="the app's bundle identifier, a registered App ID")
+parser.add_argument('--development-team', help='the Apple developer team that signs the app (automatic signing)')
+parser.add_argument('--app-attest-environment', choices=['development', 'production'],
+                    help='the App Attest environment the app is entitled to; the server it attests to decides')
 # The delivered zip places integration-manifest.json two levels above this script.
 parser.add_argument('--integration-manifest', type=Path,
                     default=Path(__file__).resolve().parents[2] / 'integration-manifest.json')
@@ -177,6 +183,12 @@ jest_config.write_text(
     "module.exports = {\n  preset: '" + preset.group(1) + "',\n  transformIgnorePatterns: [\n"
     "    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-navigation"
     "|react-native-screens|react-native-safe-area-context)/)',\n  ],\n};\n")
-subprocess.run(['ruby', str(Path(__file__).with_name('configure-host.rb')), str(host), app_name], check=True)
+signing = []
+for flag, value in [('--bundle-identifier', args.bundle_identifier), ('--development-team', args.development_team),
+                    ('--app-attest-environment', args.app_attest_environment)]:
+    if value is not None:
+        signing += [flag, value]
+subprocess.run(['ruby', str(Path(__file__).with_name('configure-host.rb')), str(host), app_name, *signing],
+               check=True)
 subprocess.run(['pod', 'install'], cwd=host / 'ios', check=True)
 print('Independent host ready:', host)

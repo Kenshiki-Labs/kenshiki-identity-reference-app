@@ -151,7 +151,9 @@ The script copies them into `ios/CaptureResources`; AppDelegate resolves their b
 passes them to the SDK explicitly. A trust result is only as appropriate as the supplied anchors.
 
 Open the new workspace, give the app a unique test bundle identifier, select your Apple development
-team and enable NFC Tag Reading for that app/provisioning profile. Set signing for the UI-test target
+team and enable NFC Tag Reading for that app/provisioning profile. Or let the script do it: pass
+`--bundle-identifier`, `--development-team` (automatic signing) and, for an app that attests to a
+server, `--app-attest-environment development|production` to `create-host.py`. Set signing for the UI-test target
 as well if testing on a device. Enable Developer Mode on the paired iPhone if Xcode requires it.
 The script supplies camera/NFC usage descriptions, passport AID `A0000002471001` and TAG entitlement;
 your team remains responsible for provisioning and product-appropriate permission copy.
