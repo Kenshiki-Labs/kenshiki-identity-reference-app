@@ -15,6 +15,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
   func application(_ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+    #if DEBUG
+    // The UI tests run Debug with its embedded bundle and no Metro server. React Native's own switch
+    // keeps every part of it from asking for one: each failed request is a warning whose banner
+    // covers the tab bar. See ReactNativeDelegate.bundleURL.
+    if ProcessInfo.processInfo.environment["IDENTITY_HOST_EMBEDDED_JAVASCRIPT"] == "1" {
+      RCTBundleURLProviderAllowPackagerServerAccess(false)
+    }
+    #endif
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()

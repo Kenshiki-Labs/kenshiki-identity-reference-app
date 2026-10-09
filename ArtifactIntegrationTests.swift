@@ -137,7 +137,8 @@ final class ArtifactIntegrationTests: XCTestCase {
       XCTAssertTrue(license.waitForExistence(timeout: 10))
       // The brand's wordmark sits in the bar's row, wholly above the large title it must not cover.
       let title = identity.staticTexts["Identity"]
-      let wordmark = app.staticTexts["Kenshiki Pulse"]
+      // The bar item wraps the wordmark's text in a label of its own, so the query matches twice.
+      let wordmark = identity.staticTexts["Kenshiki Pulse"].firstMatch
       XCTAssertTrue(title.exists, "The large title stays")
       XCTAssertTrue(wordmark.exists, "The wordmark is at the top of the Identity tab")
       XCTAssertLessThanOrEqual(wordmark.frame.maxY, title.frame.minY, "The wordmark is above the title")
