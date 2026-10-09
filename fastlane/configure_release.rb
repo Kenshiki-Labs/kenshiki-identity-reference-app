@@ -1,1 +1,0 @@
-../../../fastlane/configure_release.rb

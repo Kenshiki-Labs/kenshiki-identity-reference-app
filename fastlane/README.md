@@ -51,4 +51,4 @@ A changed app, dependency, profile or build number requires a new candidate. Do 
 
 ## Shared verification code
 
-In the publisher checkout, three helper paths are symlinks to the canonical release helpers. The reference delivery materializes them as ordinary files, so the generated app is self-contained. No network call to Kenshiki occurs during these lanes.
+`configure_release.rb`, `release_preflight.py` and `verify_export.py` are the SDK publisher's own release helpers. The SDK checkout keeps one copy of each, in its `fastlane/` folder. The reference delivery places them in this folder as ordinary files, so the generated app is self-contained. No network call to Kenshiki occurs during these lanes.

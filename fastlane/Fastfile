@@ -7,8 +7,17 @@ def adopter_root
   File.expand_path('..', __dir__)
 end
 
+# The SDK's shared release helpers: configure_release.rb, release_preflight.py and verify_export.py.
+# Their one copy is the SDK's fastlane/ folder. The reference delivery places them here, beside
+# this Fastfile, and create-host.py copies this folder into the generated app.
+def release_helper(name)
+  path = File.join(__dir__, name)
+  UI.user_error!("Missing #{name}: generate the app from the reference delivery") unless File.file?(path)
+  path
+end
+
 def adopter_verify(out, output)
-  sh('python3', File.join(__dir__, 'verify_export.py'), '--archive', File.join(out, 'App.xcarchive'),
+  sh('python3', release_helper('verify_export.py'), '--archive', File.join(out, 'App.xcarchive'),
     '--ipa', File.join(out, 'export/App.ipa'), '--preflight', File.join(out, 'preflight.json'),
     '--inputs', File.join(out, 'inputs.json'), '--output', File.join(out, output))
 end
@@ -51,7 +60,7 @@ platform :ios do
       '--bundle', ENV.fetch('APP_IDENTIFIER'), '--version', version, '--build', number)
     report = JSON.parse(File.read(File.join(out, 'preflight.json')))
     inputs = JSON.parse(File.read(File.join(out, 'inputs.json')))
-    adopter_child('ruby', File.join(__dir__, 'configure_release.rb'), host, File.join(out, 'preflight.json'),
+    adopter_child('ruby', release_helper('configure_release.rb'), host, File.join(out, 'preflight.json'),
       revision, inputs.fetch('sdkArtifactSHA256'), inputs.fetch('referenceManifestSHA256'), version, number, inputs.fetch('sdkBinarySourceCommit'))
     adopter_tool('freeze', '--out', out)
     selected = report.fetch('selected_profile')
