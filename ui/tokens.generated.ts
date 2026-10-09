@@ -95,6 +95,7 @@ export const opacity = {
 
 export const size = {
   actionMinHeight: 50,
+  navigationActionWidth: 72,
   documentPreviewHeight: 220,
   documentImageHeight: 200,
   developerPreviewHeight: 180,

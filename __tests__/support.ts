@@ -2,6 +2,17 @@ import type { CaptureSession } from '@kenshiki/identity-capture';
 import { ActionSheetIOS } from 'react-native';
 import type { ReactTestInstance } from 'react-test-renderer';
 import { t } from '../locales/i18n';
+
+// Jest has no native inset/layout events. Use the library's mock so modal and root providers
+// render their children; device layout remains a separate simulator/device check.
+jest.mock(
+  'react-native-safe-area-context',
+  () =>
+    jest.requireActual<typeof import('react-native-safe-area-context/jest/mock')>(
+      'react-native-safe-area-context/jest/mock',
+    ).default,
+);
+
 /** Replaces the iOS action sheet: records every question asked and lets the test choose. */
 export function actionSheets() {
   const asked: { title: string | undefined; options: string[]; choose: (index: number) => void }[] = [];

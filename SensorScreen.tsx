@@ -1,6 +1,6 @@
 import type { Configuration, SensorBoardState } from '@kenshiki/identity-capture';
 import { createContext, type ReactElement, type ReactNode, useContext, useEffect, useState } from 'react';
-import { Alert, AppState, ScrollView, StyleSheet } from 'react-native';
+import { Alert, AppState } from 'react-native';
 import { t } from './locales/i18n';
 import { SensorBoardController, type SensorBoardPresentation } from './SensorBoardController';
 import { SensorDocuments } from './SensorBoardDocuments';
@@ -17,8 +17,8 @@ import {
   type SensorPage,
   title,
 } from './SensorPresentation';
-import { BarButton, ListGroupTitle, ListRow, ListSection, TextRow } from './ui/List';
-import { color, spacing } from './ui/tokens.generated';
+import { ListGroupTitle, ListRow, ListSection, TextRow } from './ui/List';
+import { Page } from './ui/Page';
 
 type SensorSessionValue = {
   state: SensorBoardPresentation;
@@ -87,21 +87,6 @@ export function SensorSession({
   );
 }
 
-/** Pause or Resume, for the Sensors tab's navigation bar: collection is the screen's one control. */
-export function SensorCollectionButton() {
-  const { state, perform } = useContext(SensorSessionContext);
-  const board = state.board;
-  if (!board) return null;
-  const paused = board.collection.paused;
-  return (
-    <BarButton
-      label={paused ? t('sensors.resume') : t('sensors.pause')}
-      disabled={state.busy}
-      onPress={() => perform(paused ? { action: 'resume', consent: true } : { action: 'pause' })}
-    />
-  );
-}
-
 /** The board: every sensor section, grouped by whether iOS asks permission first, as SensorHost's
  * Sensors tab lists them. Each section's last row opens its page. */
 export function SensorBoardScreen({ onOpenPage }: { onOpenPage: (page: SensorPage) => void }) {
@@ -109,7 +94,7 @@ export function SensorBoardScreen({ onOpenPage }: { onOpenPage: (page: SensorPag
   const board = state.board;
   const now = useSecondClock();
   return (
-    <SensorScroll enabledIcons testID="sensor-screen">
+    <SensorScroll title={copy('tab.sensors.title')} enabledIcons testID="sensor-screen">
       {board ? (
         <>
           <ListSection>
@@ -147,7 +132,7 @@ export function SensorDetailScreen({ page }: { page: SensorPage }) {
   const board = state.board;
   const now = useSecondClock();
   return (
-    <SensorScroll enabledIcons={false} testID="sensor-detail">
+    <SensorScroll title={title(page)} enabledIcons={false} testID="sensor-detail">
       {board ? (
         <Section section={prefix(page)} heading={false}>
           {pageRows(page, { board, busy: state.busy, perform }, state.sessionId, now)}
@@ -164,7 +149,7 @@ export function SensorSettingsScreen({ children }: { children?: ReactNode }) {
   const { state, perform, setFailure } = useContext(SensorSessionContext);
   const board = state.board;
   return (
-    <SensorScroll enabledIcons testID="sensor-settings">
+    <SensorScroll title={copy('tab.settings.title')} enabledIcons testID="sensor-settings">
       {board ? (
         <SensorSettings board={board} busy={state.busy} perform={perform} onFailure={setFailure} />
       ) : null}
@@ -176,10 +161,12 @@ export function SensorSettingsScreen({ children }: { children?: ReactNode }) {
 /** What every sensor screen shows above its own sections: a failure, or that the board is still
  * opening. */
 function SensorScroll({
+  title,
   enabledIcons,
   testID,
   children,
 }: {
+  title: string;
   enabledIcons: boolean;
   testID: string;
   children: ReactNode;
@@ -188,18 +175,13 @@ function SensorScroll({
   const shown = failure || state.failure;
   return (
     <SensorIconContext.Provider value={{ sessionId: state.sessionId, enabled: enabledIcons }}>
-      <ScrollView
-        style={scrollStyles.root}
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={scrollStyles.content}
-        testID={testID}
-      >
+      <Page title={title} testID={testID}>
         <ListSection>
           {shown ? <TextRow text={shown} tone="warning" alert /> : null}
           {state.board ? null : <TextRow text={t('sensors.opening')} />}
         </ListSection>
         {children}
-      </ScrollView>
+      </Page>
     </SensorIconContext.Provider>
   );
 }
@@ -239,8 +221,3 @@ function statusRows(board: SensorBoardState, busy: boolean): (ReactElement | nul
     warning(board.collection.failure && failureText(board.collection.failure), 'failure'),
   ];
 }
-
-const scrollStyles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.background },
-  content: { padding: spacing.md, paddingBottom: spacing.xxxxl, gap: spacing.lg },
-});

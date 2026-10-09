@@ -101,9 +101,33 @@ test('passport completion returns to cards and results reopen without repeating 
   expect(view.root.findByProps({ testID: 'passport-result' })).toBeDefined();
   expect(mockSession.startMRZ).toHaveBeenCalledTimes(1);
   expect(mockSession.readPassport).toHaveBeenCalledTimes(1);
+  await tap('page-back');
+  expect(view.root.findByProps({ testID: 'identity-hub' })).toBeDefined();
+  expect(mockSession.release).not.toHaveBeenCalled();
   await act(async () => {
     view.unmount();
   });
+  expect(mockSession.release).toHaveBeenCalledTimes(1);
+});
+
+test('shared Page Cancel releases an unfinished capture before returning to Identity', async () => {
+  let view!: renderer.ReactTestRenderer;
+  await act(async () => {
+    view = renderer.create(<App configuration={{ trustAnchorsURL: 'file:///anchors.pem' }} />);
+  });
+  await act(async () => {
+    await invoke(view.root.findByProps({ testID: 'open-capture-flow' }), 'onPress');
+  });
+  await act(async () => {
+    await invoke(view.root.findByProps({ testID: 'start-passport-scan' }), 'onPress');
+  });
+  await act(async () => {
+    await invoke(view.root.findByProps({ testID: 'modal-cancel' }), 'onPress');
+  });
+  expect(view.root.findAllByProps({ testID: 'modal-cancel' })).toHaveLength(0);
+  expect(view.root.findByProps({ testID: 'identity-hub' })).toBeDefined();
+  expect(mockSession.release).toHaveBeenCalledTimes(1);
+  await act(async () => view.unmount());
   expect(mockSession.release).toHaveBeenCalledTimes(1);
 });
 

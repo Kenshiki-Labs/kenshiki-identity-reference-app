@@ -1,10 +1,12 @@
 import type { CaptureErrorCode, CaptureSession, Configuration } from '@kenshiki/identity-capture';
 import { IdentityCapturePreview, IdentityCaptureSession } from '@kenshiki/identity-capture';
 import { useEffect, useState } from 'react';
-import { Button, ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { errorCode } from './HolderText';
-import { styles } from './IdentityCaptureFlow';
 import { t } from './locales/i18n';
+import { Action } from './ui/Action';
+import { Page } from './ui/Page';
+import { styles } from './ui/styles';
 
 const rows: [[string], [string]] = [
   ['P<UTOSPECIMEN<<SYNTHETIC<<<<<<<<<<<<<<<<<<<<'],
@@ -149,24 +151,21 @@ export function IntegrationChecks({ configuration }: { configuration: Configurat
     }
   }
   return (
-    <View style={styles.root}>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.developerContent}>
-        <Text style={styles.developerTitle}>{t('developer.title')}</Text>
-        <Text style={styles.body}>{t('developer.environment')}</Text>
-        <Button title={t('developer.run')} onPress={run} disabled={busy} testID="run-sdk-checks" />
-        <Text style={styles.body} testID="sdk-check-status" accessibilityLabel={status}>
-          {status}
+    <Page title={t('developer.title')}>
+      <Text style={styles.body}>{t('developer.environment')}</Text>
+      <Action label={t('developer.run')} onPress={run} disabled={busy} testID="run-sdk-checks" />
+      <Text style={styles.body} testID="sdk-check-status" accessibilityLabel={status}>
+        {status}
+      </Text>
+      {results.map((result) => (
+        <Text style={styles.body} key={result}>
+          {result}
         </Text>
-        {results.map((result) => (
-          <Text style={styles.body} key={result}>
-            {result}
-          </Text>
-        ))}
-        <Text style={styles.body}>{t('developer.preview')}</Text>
-        <View style={styles.developerPreview}>
-          {session && <IdentityCapturePreview session={session} kind="mrz" style={{ flex: 1 }} />}
-        </View>
-      </ScrollView>
-    </View>
+      ))}
+      <Text style={styles.body}>{t('developer.preview')}</Text>
+      <View style={styles.developerPreview}>
+        {session && <IdentityCapturePreview session={session} kind="mrz" style={{ flex: 1 }} />}
+      </View>
+    </Page>
   );
 }

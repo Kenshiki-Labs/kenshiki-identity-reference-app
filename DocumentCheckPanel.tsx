@@ -7,9 +7,10 @@ import {
   type DocumentCheckState,
 } from './DocumentCheckController';
 import { type ErrorText, errorCode, errorText, formatMoment } from './HolderText';
-import { Action, styles } from './IdentityCaptureFlow';
 import { t } from './locales/i18n';
+import { Action } from './ui/Action';
 import { NativeSheet } from './ui/NativeSheet';
+import { styles } from './ui/styles';
 
 const labels = {
   recordMatched: t('documentCheck.outcome.recordMatched'),
@@ -192,12 +193,15 @@ function DocumentCheckView({ session, configured }: { session: DocumentCheckPort
   function renderCheckSheet() {
     if (sheet) {
       return (
-        <NativeSheet testID="document-check-bottom-sheet" onDismiss={busy ? undefined : closeSheet}>
-          <Text style={styles.sheetTitle}>
-            {sheet === 'correction'
+        <NativeSheet
+          title={
+            sheet === 'correction'
               ? t('documentCheck.sheet.correctionTitle')
-              : t('common.checkNeedsAttention')}
-          </Text>
+              : t('common.checkNeedsAttention')
+          }
+          testID="document-check-bottom-sheet"
+          onDismiss={busy ? undefined : closeSheet}
+        >
           {sheet === 'correction' ? (
             <>
               {result?.correctable.map(({ field, code }) => (

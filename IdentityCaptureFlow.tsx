@@ -5,14 +5,15 @@ import {
   IdentityCaptureSession,
 } from '@kenshiki/identity-capture';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppState, Linking, StyleSheet, Text, View } from 'react-native';
 import { CaptureFlowController, type CompletedCapture, type FlowState } from './CaptureFlowController';
 import { formatMoment } from './HolderText';
 import { t } from './locales/i18n';
-import { type CancelHandle, useCancel } from './ui/ModalCancel';
+import { Action } from './ui/Action';
 import { NativeSheet, useConfirmation } from './ui/NativeSheet';
-import { border, color, opacity, radius, size, spacing, text } from './ui/tokens.generated';
+import { Page } from './ui/Page';
+import { styles } from './ui/styles';
+import { size } from './ui/tokens.generated';
 
 /** Completion transfers the session to the adopter. Cancellation releases it. */
 export function IdentityCaptureFlow({
@@ -21,22 +22,18 @@ export function IdentityCaptureFlow({
   onComplete,
   completed,
   resume,
-  cancelRef,
 }: {
   configuration: Configuration;
   onExit: () => void;
   onComplete: (result: CompletedCapture) => void;
   completed?: CompletedCapture | undefined;
   resume?: ('selfie' | 'read') | undefined;
-  /** Filled in with this check's own way out, for the navigation bar's Cancel button. */
-  cancelRef?: CancelHandle | undefined;
 }) {
   const [state, setState] = useState<FlowState>({ phase: 'intro', busy: false, ready: false, preview: 0 });
   const [controller, setController] = useState<CaptureFlowController>();
   const [width, setWidth] = useState(0);
   const handoffStarted = useRef(false);
   const [finishing, setFinishing] = useState(false);
-  const insets = useSafeAreaInsets();
   useEffect(() => {
     const active = new CaptureFlowController(
       IdentityCaptureSession.create,
@@ -77,7 +74,7 @@ export function IdentityCaptureFlow({
       onExit();
     }
   };
-  useCancel(cancelRef, leave, (error) => controller?.fail(error));
+  const close = () => leave().catch((error: unknown) => controller?.fail(error));
   useConfirmation(
     controller && state.sheet?.kind === 'restart'
       ? {
@@ -95,7 +92,7 @@ export function IdentityCaptureFlow({
         }
       : undefined,
   );
-  if (!controller) return <View style={styles.root} />;
+  if (!controller) return <Page title={t('hub.passport.title')} onClose={close} />;
   const activeController = controller;
   const { phase, sheet } = state;
   const camera = phase === 'scanning' || phase === 'selfie';
@@ -123,14 +120,7 @@ export function IdentityCaptureFlow({
       return renderCamera();
     }
     return (
-      <ScrollView
-        accessibilityElementsHidden={!!sheet}
-        importantForAccessibility={sheet ? 'no-hide-descendants' : 'auto'}
-        contentContainerStyle={styles.content}
-      >
-        <Text accessibilityRole="header" style={styles.title}>
-          {title}
-        </Text>
+      <>
         {phase === 'loading' && <Text style={styles.body}>{t('common.openingSavedResults')}</Text>}
         {phase === 'saved' && (
           <>
@@ -216,16 +206,13 @@ export function IdentityCaptureFlow({
             testID="restart-check"
           />
         )}
-      </ScrollView>
+      </>
     );
   }
   function renderRecovery() {
     if (sheet?.kind !== 'recovery') return null;
     return (
-      <NativeSheet testID="capture-bottom-sheet">
-        <Text accessibilityRole="header" style={styles.sheetTitle}>
-          {t('common.letsTryAgain')}
-        </Text>
+      <NativeSheet title={t('common.letsTryAgain')} testID="capture-bottom-sheet">
         <Text style={styles.body}>{sheet.message}</Text>
         {renderRecoveryActions()}
       </NativeSheet>
@@ -233,12 +220,7 @@ export function IdentityCaptureFlow({
   }
   function renderCamera() {
     return (
-      <View
-        style={styles.camera}
-        accessibilityElementsHidden={!!sheet}
-        importantForAccessibility={sheet ? 'no-hide-descendants' : 'auto'}
-        onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
-      >
+      <View style={styles.camera} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
         {state.session && (
           <IdentityCapturePreview
             key={`${phase}-${state.preview}`}
@@ -261,14 +243,11 @@ export function IdentityCaptureFlow({
           </View>
         )}
         <View style={styles.cameraTop}>
-          <Text accessibilityRole="header" style={[styles.title, styles.white]}>
-            {title}
-          </Text>
           <Text style={[styles.body, styles.white]}>
             {phase === 'scanning' ? t('passport.camera.scanHint') : state.hint}
           </Text>
         </View>
-        <View style={[styles.cameraBottom, { paddingBottom: insets.bottom + spacing.lg }]}>{scanHint()}</View>
+        <View style={styles.cameraBottom}>{scanHint()}</View>
       </View>
     );
   }
@@ -341,10 +320,15 @@ export function IdentityCaptureFlow({
     );
   }
   return (
-    <View style={styles.root}>
+    <Page
+      title={title}
+      mode={camera ? 'camera' : 'scroll'}
+      onClose={close}
+      covered={!!sheet}
+      overlay={renderRecovery()}
+    >
       {renderCaptureStage()}
-      {renderRecovery()}
-    </View>
+    </Page>
   );
 }
 
@@ -631,119 +615,6 @@ function Details({ label, value }: { label: string; value: string }) {
     </View>
   );
 }
-export function Action({
-  label,
-  onPress,
-  disabled = false,
-  testID,
-  secondary = false,
-  destructive = false,
-}: {
-  label: string;
-  onPress: () => unknown;
-  disabled?: boolean | undefined;
-  testID?: string | undefined;
-  /** A plain tinted button, as iOS draws every action but the one prominent one. */
-  secondary?: boolean | undefined;
-  /** A plain red button: an action that deletes or discards. */
-  destructive?: boolean | undefined;
-}) {
-  const [failure, setFailure] = useState(false);
-  const press = () => {
-    setFailure(false);
-    try {
-      Promise.resolve(onPress()).catch(() => setFailure(true));
-    } catch {
-      setFailure(true);
-    }
-  };
-  return (
-    <>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ disabled }}
-        disabled={disabled}
-        testID={testID}
-        onPress={press}
-        style={[secondary || destructive ? styles.plain : styles.action, disabled && styles.disabled]}
-      >
-        <Text
-          style={[
-            secondary || destructive ? styles.plainText : styles.actionText,
-            destructive && styles.destructiveText,
-          ]}
-        >
-          {label}
-        </Text>
-      </Pressable>
-      {failure && (
-        <Text accessibilityRole="alert" style={styles.body}>
-          {t('common.actionFailed')}
-        </Text>
-      )}
-    </>
-  );
-}
-export const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.background },
-  content: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xxxxl,
-    gap: spacing.lg,
-  },
-  eyebrow: { ...text.eyebrow, color: color.secondaryText },
-  title: { ...text.screenTitle, color: color.text },
-  body: { ...text.body, color: color.text },
-  label: { ...text.label, color: color.secondaryText },
-  detail: { gap: spacing.xxs },
-  card: { padding: spacing.md, gap: spacing.sm, backgroundColor: color.card, borderRadius: radius.group },
-  portraits: { flexDirection: 'row', gap: spacing.sm },
-  portrait: { flex: 1, gap: spacing.xs },
-  image: { aspectRatio: size.portraitAspectRatio, width: '100%' },
-  camera: { flex: 1, backgroundColor: color.cameraBackground, justifyContent: 'space-between' },
-  cameraTop: { padding: spacing.xl, gap: spacing.sm },
-  cameraBottom: { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.sm },
-  white: { color: color.onCamera },
-  guideCenter: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  oval: { borderWidth: border.guide, borderColor: color.onCamera, borderRadius: radius.full },
-  action: {
-    backgroundColor: color.tint,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    minHeight: size.actionMinHeight,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionText: { ...text.action, color: color.onTint, textAlign: 'center' },
-  plain: {
-    minHeight: size.touchTarget,
-    paddingVertical: spacing.xs,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  plainText: { ...text.plainAction, color: color.tint, textAlign: 'center' },
-  destructiveText: { color: color.destructive },
-  disabled: { opacity: opacity.disabled },
-  sheetTitle: { ...text.sectionTitle, color: color.text },
-  entry: { ...text.entry, color: color.text },
-  list: { gap: spacing.md },
-  group: { gap: spacing.sm },
-  documentPreview: { height: size.documentPreviewHeight },
-  documentImage: { height: size.documentImageHeight },
-  developerContent: { padding: spacing.md, gap: spacing.md },
-  developerTitle: { ...text.developerTitle, color: color.text },
-  developerPreview: { height: size.developerPreviewHeight },
-});
 
 const protocolKeys = [
   'basicAccessControl',

@@ -22,7 +22,7 @@
   // The brand. An app that signs this host under its own brand replaces these words, the brand
   // values in ui/tokens.jsonc and the files in brand/.
   "brand": {
-    // The wordmark above the Identity tab's title. The launch screen in brand/ draws the same
+    // The wordmark in the shared page header. The launch screen in brand/ draws the same
     // words, set by pulse-ios's scripts/generate-launch-wordmark.swift.
     "wordmark": "Kenshiki Pulse",
     // The name under the app's icon on the Home Screen. create-host.py writes it into the
@@ -71,6 +71,8 @@
     "actionFailed": "This action could not finish. Try again.",
     // Dismisses a confirmation without acting.
     "cancel": "Cancel",
+    // Returns from a detail page to its parent.
+    "back": "Back",
     // What VoiceOver reads for a list row with a status line: {label} is the row's title, {status}
     // the line under it.
     "labelAndStatus": "{label}, {status}",
@@ -946,8 +948,6 @@
   // words this app adds around them.
   "sensors": {
     "opening": "Opening sensors…",
-    "pause": "Pause sensors",
-    "resume": "Resume sensors",
     // Re-enables collection after erase or a failed request.
     "resumeCollection": "Resume collection",
     // {title} is a sensor section's name, such as Motion.

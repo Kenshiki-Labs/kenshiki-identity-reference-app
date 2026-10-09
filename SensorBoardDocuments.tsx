@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Linking } from 'react-native';
 import { t } from './locales/i18n';
 import { copy, pageDoc, type SensorPage, title } from './SensorPresentation';
-import { BarButton, LinkRow, ListRow, ListSection, TextRow } from './ui/List';
+import { LinkRow, ListRow, ListSection, TextRow } from './ui/List';
 import { NativeSheet } from './ui/NativeSheet';
 
 /** A sensor's documentation, as SensorHost's page sections show it: Apple's APIs, the permission,
@@ -86,9 +86,8 @@ export function SensorDocuments({
         ) : null}
       </ListSection>
       {algorithm ? (
-        <NativeSheet onDismiss={() => setAlgorithm(false)}>
-          <BarButton label={copy('common.done')} onPress={() => setAlgorithm(false)} />
-          <ListSection header={title(page)} headerIcon={null}>
+        <NativeSheet title={title(page)} onDismiss={() => setAlgorithm(false)}>
+          <ListSection>
             {docs.algorithmKeys.map((key, index) => (
               <TextRow key={key} text={t('sensors.docs.step', { number: index + 1, text: copy(key) })} />
             ))}

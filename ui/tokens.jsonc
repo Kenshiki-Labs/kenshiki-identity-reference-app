@@ -44,7 +44,7 @@
     // Brand: pulse-ios `KTheme.accent` (KenshikiTheme.swift, `Color(light: 0x0D2958, dark:
     // 0x8FB3E6)`), the navy identity ink. Replaces systemBlue, which replaced #173965.
     "tint": {"light": "#0D2958", "dark": "#8FB3E6"},
-    // The "Kenshiki Pulse" wordmark above the Identity tab's title. Brand: pulse-ios `KTheme.text`
+    // The "Kenshiki Pulse" wordmark in the shared page header. Brand: pulse-ios `KTheme.text`
     // (`Color(light: 0x1D1D1F, dark: 0xF5F5F7)`), the ink pulse-ios gives its h1 role
     // (`TextRole.defaultColor`), which reads on the light and the dark grouped background. The
     // launch screen's wordmark keeps pulse-ios's fixed 0.96 white: its background is always dark.
@@ -151,7 +151,7 @@
     "listFooter": {"style": "footnote", "fontWeight": "400"},
     // An API or Info.plist name on a sensor's page, set as code, as SensorHost's `docEntry` does.
     "code": {"style": "callout", "fontWeight": "400", "design": "monospaced"},
-    // The wordmark in the Identity tab's navigation bar. Brand: pulse-ios sets its wordmark in the
+    // The wordmark in the shared page header. Brand: pulse-ios sets its wordmark in the
     // h1 role, bold and in the system serif (`TextRole.h1`); here it takes the title3 step so it
     // sits inside the bar's row, above the large title it must not cover.
     "wordmark": {"style": "title3", "fontWeight": "700", "design": "serif"}
@@ -197,6 +197,8 @@
   "size": {
     // A prominent button's minimum height. Replaces 52.
     "actionMinHeight": 50,
+    // Symmetric space beside the wordmark for Back, Cancel or Done.
+    "navigationActionWidth": 72,
     // The captured front shown while the back is still needed. Replaces 220.
     "documentPreviewHeight": 220,
     // Each side of a saved license on its results card. Replaces 200.

@@ -113,7 +113,8 @@ if len(icons) != 1 or not (brand / 'LaunchScreen.storyboard').is_file():
     raise SystemExit('brand/ must hold exactly one Icon Composer .icon and a LaunchScreen.storyboard: ' + str(brand))
 subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'IdentitySDKHost',
                 '--version', '0.87.1', '--directory', str(host), '--skip-install', '--skip-git-init'], check=True)
-for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
+for filename in ['App.tsx', 'AppNavigator.tsx', 'useIdentityWorkspace.ts',
+                 'IdentityHome.tsx', 'IdentityResults.tsx', 'IdentitySettings.tsx', 'IdentityRecovery.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
                  'DriverLicenseFlow.tsx', 'DocumentFlowController.ts', 'DocumentCheckPanel.tsx',
                  'DocumentCheckPanel.test.tsx',
                  'DriverLicenseFlow.test.tsx', 'DocumentFlowController.test.ts',

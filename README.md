@@ -101,7 +101,7 @@ server. For Debug instead, run `npm start` from the host root in a second termin
 Open the `.xcworkspace`, not the `.xcodeproj`.
 
 The app opens on a native tab bar: Identity, Sensors and Settings, each its own navigation stack
-with a large title. The Identity tab lists Driver's license, Passport, Face match, Social Security
+using the same `Page` container. The Identity tab lists Driver's license, Passport, Face match, Social Security
 number and Phone as inset grouped rows. No provider or personal data is required to open it. The
 simulator host has no trust anchors or face models, so the Passport row is dimmed and the section
 footer says passport chip checking is not set up; Face match is dimmed without both models, and
@@ -183,20 +183,25 @@ Supplier non-retention requires independent qualification.
 
 | File | Responsibility |
 | --- | --- |
-| `App.tsx`, `AppDelegate.swift` | Native tabs and stacks, the Identity list, startup recovery, host-owned resource/custody configuration |
+| `App.tsx` | Composition root: safe-area provider and the configured app navigator. |
+| `AppNavigator.tsx` | Native tabs and stacks, flow routing, and sensor-session lifetime from tab focus. |
+| `AppDelegate.swift` | Host-owned native resource and custody configuration. |
 | `IdentityCaptureFlow.tsx`, `CaptureFlowController.ts` | MRZ → review → NFC → passport result → optional paired TrueDepth selfie/comparison |
 | `DriverLicenseFlow.tsx`, `DocumentFlowController.ts` | Front/back capture, encrypted document recovery and image review |
 | `DocumentCheckPanel.tsx` | Explicit document-check consent, actual returned findings, local reply restore, requested corrections and reconciliation |
 | `SSNFlow.tsx`, `PhoneFlow.tsx` and their controllers | Independent service journeys, native session ownership and interruption handling |
 | `SensorScreen.tsx` and `SensorBoard*.tsx` | The Sensors tab's board and detail pages, and the Settings tab's sensor settings, sharing one sensor session while either tab is in front |
-| `ui/List.tsx`, `ui/NativeSheet.tsx`, `ui/ModalCancel.ts` | Inset grouped rows with SF Symbol tiles, UIKit page sheets and action sheets, and the navigation bar's Cancel for a full-screen check |
+| `useIdentityWorkspace.ts` | Owns the current holder’s retained sessions, saved-result restoration, handoff and erasure. Receives stable navigation callbacks; imports no view or navigator. |
+| `IdentityHome.tsx`, `IdentityResults.tsx`, `IdentitySettings.tsx`, `IdentityRecovery.tsx` | Identity screen content and recovery presentation. Session ownership stays in the workspace hook. |
+| `ui/Page.tsx` | One container for every screen and recovery sheet: branding, heading, Back/Cancel, safe areas, scrolling and keyboard insets. Camera mode fills the viewport below the same header. |
+| `ui/Action.tsx`, `ui/styles.ts`, `ui/List.tsx`, `ui/NativeSheet.tsx` | Shared buttons, content styles, inset grouped rows and system modal presentation. Features do not import another feature for UI primitives. |
 | `ui/tokens.jsonc`, `locales/en.jsonc`, `generate-ui-resources.py` | Design tokens (iOS system colors, Dynamic Type styles, spacing, radii) and every UI string, compiled into `ui/tokens.generated.ts` and `locales/strings.generated.ts`; screens read text through `t()` in `locales/i18n.ts`. Edit the JSONC and rerun the generator; `--check` fails when the modules are stale |
-| `brand/`, `ui/Wordmark.tsx` | The Kenshiki Pulse brand from pulse-ios: app icon, launch screen and its assets, which `create-host.py` installs in the generated iOS app, and the wordmark above the Identity tab's title |
+| `brand/`, `ui/Wordmark.tsx` | The Kenshiki Pulse brand from pulse-ios: app icon, launch screen and its assets, which `create-host.py` installs in the generated iOS app, and the wordmark in every page's shared header |
 
 The brand lives in three places only: the tint and wordmark tokens in `ui/tokens.jsonc`, `brand` in `locales/en.jsonc`, and the `brand/` folder; to sign the app under another brand, replace those and regenerate the host.
 
-Results and sensor detail pages are pushed screens with the native back button and edge swipe.
-Each capture or check is a full-screen modal whose navigation bar Cancel leaves it the way the
+Results and sensor detail pages are pushed screens. Page’s Back button uses the native navigation stack; the native edge swipe remains available.
+Each capture or check is a full-screen modal whose shared Page Cancel leaves it the way the
 check's own exit does. Recovery prompts are UIKit page sheets, never alerts; destructive choices
 are iOS action sheets. Apple's permission, NFC and message composer interfaces remain
 system-owned. Active work cancels and drains on backgrounding; the user

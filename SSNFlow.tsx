@@ -1,27 +1,25 @@
 import type { Configuration, SSNVerificationReceipt } from '@kenshiki/identity-capture';
 import { IdentityCaptureSession } from '@kenshiki/identity-capture';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Keyboard, ScrollView, Text, TextInput, View } from 'react-native';
+import { AppState, Keyboard, Text, TextInput, View } from 'react-native';
 import { formatCalendarDate, formatMoment } from './HolderText';
-import { Action, styles } from './IdentityCaptureFlow';
 import { t } from './locales/i18n';
 import { type SavedSSNCheck, SSNFlowController, type SSNFlowState } from './SSNFlowController';
-import { type CancelHandle, useCancel } from './ui/ModalCancel';
+import { Action } from './ui/Action';
 import { NativeSheet, useConfirmation } from './ui/NativeSheet';
+import { Page } from './ui/Page';
+import { styles } from './ui/styles';
 
 export function SSNFlow({
   configuration,
   saved,
   onComplete,
   onExit,
-  cancelRef,
 }: {
   configuration: Configuration;
   saved?: SavedSSNCheck | undefined;
   onComplete: (value: SavedSSNCheck) => void;
   onExit: () => void;
-  /** Filled in with this check's own way out, for the navigation bar's Cancel button. */
-  cancelRef?: CancelHandle | undefined;
 }) {
   const [controller, setController] = useState<SSNFlowController>();
   const [state, setState] = useState<SSNFlowState>({ digits: '', busy: false, editing: false });
@@ -62,7 +60,7 @@ export function SSNFlow({
       if (!controller.state.sheet) controller.fail(error);
     }
   };
-  useCancel(cancelRef, finish, (error) => controller?.fail(error));
+  const dismiss = () => finish().catch((error: unknown) => controller?.fail(error));
   useConfirmation(
     controller && state.sheet?.kind === 'erase'
       ? {
@@ -78,7 +76,7 @@ export function SSNFlow({
         }
       : undefined,
   );
-  if (!controller) return <View style={styles.root} />;
+  if (!controller) return <Page title={t('common.socialSecurityNumber')} onClose={dismiss} />;
   const activeController = controller;
   const busy = state.busy || finishing;
   const snapshot = state.snapshot;
@@ -190,7 +188,14 @@ export function SSNFlow({
   function renderSSNSheet() {
     if (!state.sheet || state.sheet.kind === 'erase') return null;
     return (
-      <NativeSheet testID="ssn-bottom-sheet">
+      <NativeSheet
+        title={
+          state.sheet.kind === 'confirmation'
+            ? t('ssn.confirm.title')
+            : (recovery?.title ?? t('common.checkNeedsAttention'))
+        }
+        testID="ssn-bottom-sheet"
+      >
         {renderSheetActions()}
         {close}
       </NativeSheet>
@@ -201,9 +206,6 @@ export function SSNFlow({
     if (state.sheet.kind === 'confirmation' && confirmation) {
       return (
         <>
-          <Text accessibilityRole="header" style={styles.sheetTitle}>
-            {t('ssn.confirm.title')}
-          </Text>
           <Text style={styles.body}>{t('ssn.confirm.body')}</Text>
           {confirmation.purpose === 'replacementAfterUnknownOutcome' && (
             <Text style={styles.body} testID="ssn-replacement-warning">
@@ -232,9 +234,6 @@ export function SSNFlow({
     if (recovery) {
       return (
         <>
-          <Text accessibilityRole="header" style={styles.sheetTitle}>
-            {recovery.title}
-          </Text>
           <Text style={styles.body}>{recovery.message}</Text>
           {recovery.recovery !== 'exit' && (
             <Action
@@ -260,45 +259,42 @@ export function SSNFlow({
     return t('common.tryAgain');
   }
   return (
-    <View style={styles.root}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        accessibilityElementsHidden={!!state.sheet}
-        importantForAccessibility={state.sheet ? 'no-hide-descendants' : 'auto'}
-      >
-        <Text style={styles.body}>{t('ssn.intro')}</Text>
-        {renderSSNStage()}
-        {receipt && (
-          <>
-            {needsRecovery && <Text style={styles.eyebrow}>{t('common.previousCheck')}</Text>}
-            <SSNResultDetails receipt={receipt} />
-            {!needsRecovery && !state.editing && (
-              <>
-                <Action label={t('common.done')} testID="finish-ssn" onPress={finish} disabled={busy} />
-                <Action
-                  label={t('common.runNewCheck')}
-                  secondary
-                  testID="ssn-check-again"
-                  onPress={activeController.edit}
-                  disabled={busy}
-                />
-              </>
-            )}
-          </>
-        )}
-        {snapshot && (
-          <Action
-            label={t('ssn.erase')}
-            destructive
-            testID="ssn-erase"
-            onPress={activeController.askErase}
-            disabled={busy}
-          />
-        )}
-      </ScrollView>
-      {renderSSNSheet()}
-    </View>
+    <Page
+      title={t('common.socialSecurityNumber')}
+      onClose={dismiss}
+      covered={!!state.sheet}
+      overlay={renderSSNSheet()}
+    >
+      <Text style={styles.body}>{t('ssn.intro')}</Text>
+      {renderSSNStage()}
+      {receipt && (
+        <>
+          {needsRecovery && <Text style={styles.eyebrow}>{t('common.previousCheck')}</Text>}
+          <SSNResultDetails receipt={receipt} />
+          {!needsRecovery && !state.editing && (
+            <>
+              <Action label={t('common.done')} testID="finish-ssn" onPress={finish} disabled={busy} />
+              <Action
+                label={t('common.runNewCheck')}
+                secondary
+                testID="ssn-check-again"
+                onPress={activeController.edit}
+                disabled={busy}
+              />
+            </>
+          )}
+        </>
+      )}
+      {snapshot && (
+        <Action
+          label={t('ssn.erase')}
+          destructive
+          testID="ssn-erase"
+          onPress={activeController.askErase}
+          disabled={busy}
+        />
+      )}
+    </Page>
   );
 }
 

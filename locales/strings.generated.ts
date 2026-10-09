@@ -37,6 +37,7 @@ export type MessageValues = {
   readonly "common.compared": undefined;
   readonly "common.actionFailed": undefined;
   readonly "common.cancel": undefined;
+  readonly "common.back": undefined;
   readonly "common.labelAndStatus": {readonly label: string | number; readonly status: string | number};
   readonly "common.checkmark": undefined;
   readonly "format.timeNotRecorded": undefined;
@@ -677,8 +678,6 @@ export type MessageValues = {
   readonly "settings.nothingSaved": undefined;
   readonly "settings.developer": undefined;
   readonly "sensors.opening": undefined;
-  readonly "sensors.pause": undefined;
-  readonly "sensors.resume": undefined;
   readonly "sensors.resumeCollection": undefined;
   readonly "sensors.about": {readonly title: string | number};
   readonly "sensors.waitingForReading": undefined;
@@ -834,6 +833,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "common.compared": "Compared",
       "common.actionFailed": "This action could not finish. Try again.",
       "common.cancel": "Cancel",
+      "common.back": "Back",
       "common.labelAndStatus": [["arg", "label"], ", ", ["arg", "status"]],
       "common.checkmark": "✓",
       "format.timeNotRecorded": "Time not recorded",
@@ -1474,8 +1474,6 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "settings.nothingSaved": "No passport, face or license results are saved on this phone.",
       "settings.developer": "Developer",
       "sensors.opening": "Opening sensors…",
-      "sensors.pause": "Pause sensors",
-      "sensors.resume": "Resume sensors",
       "sensors.resumeCollection": "Resume collection",
       "sensors.about": ["About ", ["arg", "title"]],
       "sensors.waitingForReading": "Waiting for a reading.",

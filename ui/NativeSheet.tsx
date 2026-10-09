@@ -1,15 +1,18 @@
 import { type ReactNode, useEffect, useRef } from 'react';
-import { ActionSheetIOS, Modal, ScrollView, StyleSheet, View } from 'react-native';
-import { color, spacing } from './tokens.generated';
+import { ActionSheetIOS, Modal } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Page } from './Page';
 
 /** A UIKit page sheet: the system presents it, dims what is behind it and keeps VoiceOver inside it.
  * Without `onDismiss` it can only be left through its own actions, as a recovery prompt must be;
  * with it, a downward swipe calls `onDismiss`. */
 export function NativeSheet({
+  title,
   testID,
   onDismiss,
   children,
 }: {
+  title: string;
   testID?: string | undefined;
   onDismiss?: (() => void) | undefined;
   children: ReactNode;
@@ -22,9 +25,11 @@ export function NativeSheet({
       allowSwipeDismissal={!!onDismiss}
       onRequestClose={onDismiss}
     >
-      <View style={sheetStyles.surface} testID={testID} accessibilityViewIsModal>
-        <ScrollView contentContainerStyle={sheetStyles.content}>{children}</ScrollView>
-      </View>
+      <SafeAreaProvider>
+        <Page title={title} mode="sheet" testID={testID} onClose={onDismiss}>
+          {children}
+        </Page>
+      </SafeAreaProvider>
     </Modal>
   );
 }
@@ -83,8 +88,3 @@ export function confirmDestructive(question: Omit<Confirmation, 'key' | 'onKeep'
     },
   );
 }
-
-const sheetStyles = StyleSheet.create({
-  surface: { flex: 1, backgroundColor: color.sheet },
-  content: { padding: spacing.xxl, paddingBottom: spacing.xxxl, gap: spacing.xl },
-});

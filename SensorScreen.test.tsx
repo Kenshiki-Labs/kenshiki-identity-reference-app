@@ -6,13 +6,7 @@ import { sensorBoardFixture } from './__tests__/SensorBoardFixtures';
 import { actionSheets, invoke, required } from './__tests__/support';
 import type { SensorBoardPresentation } from './SensorBoardController';
 import type { SensorPage } from './SensorPresentation';
-import {
-  SensorBoardScreen,
-  SensorCollectionButton,
-  SensorDetailScreen,
-  SensorSession,
-  SensorSettingsScreen,
-} from './SensorScreen';
+import { SensorBoardScreen, SensorDetailScreen, SensorSession, SensorSettingsScreen } from './SensorScreen';
 import { BarButton, ButtonRow, CheckRow, ListRow } from './ui/List';
 
 const mockPerform = jest.fn(async () => {});
@@ -53,7 +47,6 @@ function Screens({ initial }: { initial: 'board' | 'settings' }) {
   const [page, setPage] = useState<SensorPage | null>(null);
   return (
     <SensorSession configuration={configuration} open>
-      <SensorCollectionButton />
       {initial === 'settings' ? (
         <SensorSettingsScreen />
       ) : page ? (
@@ -141,7 +134,7 @@ test('permission switch requests once or opens OS Settings; destructive erase re
   sheets.spy.mockRestore();
 });
 
-test('units are a checkmark list; Pause is the bar button and becomes Resume', async () => {
+test('units stay selectable without a Pause or Resume sensors CTA', async () => {
   const view = await render('settings');
   const choices = view.root.findAllByType(CheckRow);
   const rows = choices.map((node): { label: unknown; selected: unknown } => ({
@@ -157,18 +150,9 @@ test('units are a checkmark list; Pause is the bar button and becomes Resume', a
     invoke(required(choices[1]), 'onPress');
   });
   expect(mockPerform).toHaveBeenCalledWith({ action: 'units', units: 'metric' });
-  await act(async () => {
-    invoke(button(view, 'Pause sensors'), 'onPress');
-  });
-  expect(mockPerform).toHaveBeenCalledWith({ action: 'pause' });
+  expect(JSON.stringify(view.toJSON())).not.toContain('Pause sensors');
+  expect(JSON.stringify(view.toJSON())).not.toContain('Resume sensors');
   await act(async () => view.unmount());
-  mockBoard.collection.paused = true;
-  const paused = await render('settings');
-  await act(async () => {
-    invoke(button(paused, 'Resume sensors'), 'onPress');
-  });
-  expect(mockPerform).toHaveBeenCalledWith({ action: 'resume', consent: true });
-  await act(async () => paused.unmount());
 });
 
 test('the tamper row is a Debug-only control: a Release bundle does not render it', async () => {
