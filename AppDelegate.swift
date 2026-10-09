@@ -213,7 +213,13 @@ class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
   override func sourceURL(for bridge: RCTBridge) -> URL? { bundleURL() }
   override func bundleURL() -> URL? {
     #if DEBUG
-    RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
+    // The UI tests run Debug with the bundle FORCE_BUNDLING embeds, and no Metro server. Asking for
+    // one would raise React Native's packager warning, whose banner covers the tab bar. Without the
+    // embedded bundle the app fails to load rather than falling back to Metro.
+    if ProcessInfo.processInfo.environment["IDENTITY_HOST_EMBEDDED_JAVASCRIPT"] == "1" {
+      return Bundle.main.url(forResource: "main", withExtension: "jsbundle")
+    }
+    return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
     #else
     Bundle.main.url(forResource: "main", withExtension: "jsbundle")
     #endif

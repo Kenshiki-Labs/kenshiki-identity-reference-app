@@ -9,6 +9,11 @@
 // The app is drawn the way iOS draws Settings and Health: inset grouped lists on the grouped
 // background, system colors, Dynamic Type text styles, SF Symbols. Each token says what it is for
 // and, where it replaced a hand-written value, which one.
+//
+// The brand is Kenshiki Pulse, taken from pulse-ios (Samples/KenshikiDeviceDemo). Its values live in
+// three places only: the brand colors and the wordmark's type here, the wordmark's words in
+// locales/en.jsonc (`brand`), and the icon and launch screen in brand/. An app that signs this host
+// under its own brand replaces those three and nothing else.
 {
   // Color roles. Every adaptive role names an iOS system color, resolved through React Native's
   // `PlatformColor`, so light, dark and increased-contrast appearances all come from this one set.
@@ -19,6 +24,10 @@
   // Camera app) and text on a filled tint button. They name the UIKit fixed color they stand for
   // (`UIColor.white`, `UIColor.black`) under "fixed"; React Native 0.87's `PlatformColor` cannot
   // resolve either one, so the generator writes these few as fixed values.
+  //
+  // A brand color is not a system color, so it gives its "light" and "dark" values as a pair. The
+  // generator writes it as `DynamicColorIOS`, so it still follows the appearance as a system color
+  // does.
   "color": {
     // Screen background: the grouped-list background. Replaces #f4f5f8.
     "background": {"ios": "systemGroupedBackground"},
@@ -31,9 +40,15 @@
     // Secondary text: field labels, section notes and row status lines. Replaces #4d576a and
     // #233c69.
     "secondaryText": {"ios": "secondaryLabel"},
-    // The tint: prominent buttons, plain buttons and links. UIKit's default tint is systemBlue;
-    // React Native 0.87 does not resolve `tintColor`. Replaces #173965.
-    "tint": {"ios": "systemBlue"},
+    // The tint: prominent buttons, plain buttons, links, the selected tab and the back button.
+    // Brand: pulse-ios `KTheme.accent` (KenshikiTheme.swift, `Color(light: 0x0D2958, dark:
+    // 0x8FB3E6)`), the navy identity ink. Replaces systemBlue, which replaced #173965.
+    "tint": {"light": "#0D2958", "dark": "#8FB3E6"},
+    // The "Kenshiki Pulse" wordmark above the Identity tab's title. Brand: pulse-ios `KTheme.text`
+    // (`Color(light: 0x1D1D1F, dark: 0xF5F5F7)`), the ink pulse-ios gives its h1 role
+    // (`TextRole.defaultColor`), which reads on the light and the dark grouped background. The
+    // launch screen's wordmark keeps pulse-ios's fixed 0.96 white: its background is always dark.
+    "wordmark": {"light": "#1D1D1F", "dark": "#F5F5F7"},
     // Text on a filled tint button. Replaces #fff.
     "onTint": {"fixed": "white"},
     // Camera screen background, behind the live preview. Replaces #152032.
@@ -131,7 +146,11 @@
     // A list row's second line: the check's status.
     "rowStatus": {"style": "subheadline", "fontWeight": "400"},
     // A grouped list's section header and footer.
-    "listFooter": {"style": "footnote", "fontWeight": "400"}
+    "listFooter": {"style": "footnote", "fontWeight": "400"},
+    // The wordmark in the Identity tab's navigation bar. Brand: pulse-ios sets its wordmark in the
+    // h1 role, bold and in the system serif (`TextRole.h1`); here it takes the title3 step so it
+    // sits inside the bar's row, above the large title it must not cover.
+    "wordmark": {"style": "title3", "fontWeight": "700", "design": "serif"}
   },
 
   // Spacing, in points. One scale for padding, margins and gaps.

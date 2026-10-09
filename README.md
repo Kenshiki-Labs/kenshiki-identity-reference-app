@@ -189,6 +189,9 @@ Supplier non-retention requires independent qualification.
 | `SensorScreen.tsx` and `SensorBoard*.tsx` | The Sensors tab's board and detail pages, and the Settings tab's sensor settings, sharing one sensor session while either tab is in front |
 | `ui/List.tsx`, `ui/NativeSheet.tsx`, `ui/ModalCancel.ts` | Inset grouped rows with SF Symbol tiles, UIKit page sheets and action sheets, and the navigation bar's Cancel for a full-screen check |
 | `ui/tokens.jsonc`, `locales/en.jsonc`, `generate-ui-resources.py` | Design tokens (iOS system colors, Dynamic Type styles, spacing, radii) and every UI string, compiled into `ui/tokens.generated.ts` and `locales/strings.generated.ts`; screens read text through `t()` in `locales/i18n.ts`. Edit the JSONC and rerun the generator; `--check` fails when the modules are stale |
+| `brand/`, `ui/Wordmark.tsx` | The Kenshiki Pulse brand from pulse-ios: app icon, launch screen and its assets, which `create-host.py` installs in the generated iOS app, and the wordmark above the Identity tab's title |
+
+The brand lives in three places only: the tint and wordmark tokens in `ui/tokens.jsonc`, `brand` in `locales/en.jsonc`, and the `brand/` folder; to sign the app under another brand, replace those and regenerate the host.
 
 Results and sensor detail pages are pushed screens with the native back button and edge swipe.
 Each capture or check is a full-screen modal whose navigation bar Cancel leaves it the way the

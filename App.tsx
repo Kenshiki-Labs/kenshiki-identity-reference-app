@@ -15,7 +15,7 @@ import {
   type NativeStackNavigationProp,
 } from '@react-navigation/native-stack';
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, Text, useColorScheme } from 'react-native';
+import { Platform, ScrollView, Text, useColorScheme } from 'react-native';
 import { CaptureFlowController, type CompletedCapture } from './CaptureFlowController';
 import { DocumentCheckPanel } from './DocumentCheckPanel';
 import { isCompleteDocument, type SavedDocumentCapture } from './DocumentFlowController';
@@ -34,7 +34,8 @@ import type { SavedSSNCheck } from './SSNFlowController';
 import { BarButton, ListRow, ListSection } from './ui/List';
 import type { CancelHandle } from './ui/ModalCancel';
 import { NativeSheet, useConfirmation } from './ui/NativeSheet';
-import { color, symbol } from './ui/tokens.generated';
+import { appearanceColor, color, symbol } from './ui/tokens.generated';
+import { Wordmark } from './ui/Wordmark';
 
 const clearErrors: ErrorText = {
   busy: t('hub.clearError.busy'),
@@ -71,12 +72,19 @@ const SensorStack = createNativeStackNavigator<SensorRoutes>();
 const SettingsStack = createNativeStackNavigator<SettingsRoutes>();
 type IdentityNavigation = NativeStackNavigationProp<IdentityRoutes>;
 type ClearTarget = 'passport' | 'document';
+/** iOS 26 draws its own scroll edge effect under a transparent navigation bar. A blur added on top
+ * of it overlaps it and covers the large title, so the bar's blur is only for earlier iOS. */
+const scrollEdgeEffects = Platform.OS === 'ios' && Number.parseInt(String(Platform.Version), 10) >= 26;
 const pushed: NativeStackNavigationOptions = {
   headerTransparent: true,
-  headerBlurEffect: 'systemChromeMaterial',
+  ...(scrollEdgeEffects ? {} : { headerBlurEffect: 'systemChromeMaterial' as const }),
   contentStyle: { backgroundColor: color.background },
 };
 const large: NativeStackNavigationOptions = { headerLargeTitle: true, headerLargeTitleShadowVisible: false };
+/** The brand's wordmark in the bar row above the Identity tab's large title. */
+const branded: NativeStackNavigationOptions = {
+  unstable_headerLeftItems: () => [{ type: 'custom', element: <Wordmark />, hidesSharedBackground: true }],
+};
 
 /** The sensor session runs while the Sensors or the Settings tab is in front. */
 function sensorTabFocused(state: NavigationState | undefined): boolean {
@@ -84,6 +92,12 @@ function sensorTabFocused(state: NavigationState | undefined): boolean {
   if (!tabs || typeof tabs.index !== 'number') return false;
   const focused = tabs.routes[tabs.index]?.name;
   return focused === 'SensorsTab' || focused === 'SettingsTab';
+}
+
+/** React Navigation's theme in the brand's tint: the selected tab, the back button and bar buttons. */
+function navigationTheme(appearance: 'light' | 'dark') {
+  const base = appearance === 'dark' ? DarkTheme : DefaultTheme;
+  return { ...base, colors: { ...base.colors, primary: appearanceColor.tint[appearance] } };
 }
 
 const emptyConfiguration: Configuration = {};
@@ -594,7 +608,7 @@ export default function App({
   function renderIdentityTab() {
     return (
       <IdentityStack.Navigator screenOptions={pushed}>
-        <IdentityStack.Screen name="IdentityHome" options={{ ...large, title: t('hub.title') }}>
+        <IdentityStack.Screen name="IdentityHome" options={{ ...large, ...branded, title: t('hub.title') }}>
           {renderIdentity}
         </IdentityStack.Screen>
         <IdentityStack.Screen name="PassportResult" options={{ title: t('hub.resultsTitle') }}>
@@ -671,7 +685,7 @@ export default function App({
     <SensorSession configuration={configuration} open={sensorsOpen}>
       <NavigationContainer
         ref={navigation}
-        theme={scheme === 'dark' ? DarkTheme : DefaultTheme}
+        theme={navigationTheme(scheme === 'dark' ? 'dark' : 'light')}
         onStateChange={(state) => setSensorsOpen(sensorTabFocused(state))}
       >
         <Root.Navigator screenOptions={{ headerShown: false }}>

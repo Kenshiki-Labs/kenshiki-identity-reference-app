@@ -1,12 +1,14 @@
 require 'xcodeproj'
 require 'fileutils'
 host = File.expand_path(ARGV.fetch(0))
+# The name under the app icon: brand.appName in locales/en.jsonc, which create-host.py passes.
+app_name = ARGV.fetch(1)
 project = Xcodeproj::Project.open(File.join(host, 'ios/IdentitySDKHost.xcodeproj'))
 app = project.targets.find { |target| target.name == 'IdentitySDKHost' }
 FileUtils.cp(File.join(__dir__, 'AppDelegate.swift'), File.join(host, 'ios/IdentitySDKHost/AppDelegate.swift'))
 info_path = File.join(host, 'ios/IdentitySDKHost/Info.plist')
 info = Xcodeproj::Plist.read_from_path(info_path)
-info['CFBundleDisplayName'] = 'Kenshiki SDK'
+info['CFBundleDisplayName'] = app_name
 info['NSCameraUsageDescription'] = 'Scan your ID or passport and take a selfie when you start an identity check.'
 info['NSMotionUsageDescription'] = 'Read motion and air pressure when you choose to collect sensor readings.'
 info['NSLocationWhenInUseUsageDescription'] = 'Show your position and its accuracy when you choose Get one fix.'
@@ -64,11 +66,15 @@ tests.build_configurations.each do |config|
     config.build_settings['SWIFT_VERSION'] = '6.0'
     config.build_settings['TEST_TARGET_NAME'] = 'IdentitySDKHost'
 end
-# Apple Icon Composer source supplies the layered icon and appearance variants.
-icon_name = 'KenshikiID'
+# The brand, from the host's brand/ folder (create-host.py copies it there). The one Icon Composer
+# source supplies the layered icon and its appearance variants, named after its folder.
+brand = File.join(host, 'brand')
+icons = Dir.glob(File.join(brand, '*.icon'))
+raise "brand/ must hold exactly one .icon, found #{icons.length}" unless icons.length == 1
+icon_name = File.basename(icons.first, '.icon')
 icon_path = File.join(host, 'ios', icon_name + '.icon')
 FileUtils.rm_rf(icon_path)
-FileUtils.cp_r(File.join(__dir__, icon_name + '.icon'), icon_path)
+FileUtils.cp_r(icons.first, icon_path)
 icon_ref = project.files.find { |ref| ref.path == icon_name + '.icon' }
 unless icon_ref
   icon_ref = project.main_group.new_file(icon_name + '.icon')
@@ -77,6 +83,15 @@ unless icon_ref
 end
 app.build_configurations.each do |config|
   config.build_settings['ASSETCATALOG_COMPILER_APPICON_NAME'] = icon_name
+end
+# The launch screen replaces the template's, and the images and colors it names join the app's
+# asset catalog, which the template already builds.
+FileUtils.cp(File.join(brand, 'LaunchScreen.storyboard'), File.join(host, 'ios/IdentitySDKHost/LaunchScreen.storyboard'))
+catalog = File.join(host, 'ios/IdentitySDKHost/Images.xcassets')
+Dir.glob(File.join(brand, '*.{imageset,colorset}')).each do |asset|
+  target = File.join(catalog, File.basename(asset))
+  FileUtils.rm_rf(target)
+  FileUtils.cp_r(asset, target)
 end
 project.save
 scheme_path = File.join(host, 'ios/IdentitySDKHost.xcodeproj/xcshareddata/xcschemes/IdentitySDKHost.xcscheme')

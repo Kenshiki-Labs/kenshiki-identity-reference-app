@@ -5,6 +5,7 @@ Usage: python3 create-host.py /absolute/new/host /absolute/package.tgz
 from pathlib import Path
 import argparse
 import hashlib
+import importlib.util
 import re
 import shutil
 import ssl
@@ -91,6 +92,19 @@ generator = Path(__file__).with_name('generate-ui-resources.py')
 if subprocess.run([sys.executable, str(generator), '--check']).returncode != 0:
     raise SystemExit('The generated UI modules differ from their JSONC sources. Run ' + str(generator) +
                      ' and try again.')
+# The brand: the app's name under its icon comes from the English catalog, read with the generator's
+# own JSONC reader; the icon and the launch screen come from brand/. Both are checked before anything
+# is created.
+specification = importlib.util.spec_from_file_location('generate_ui_resources', generator)
+ui_resources = importlib.util.module_from_spec(specification)
+specification.loader.exec_module(ui_resources)
+app_name = ui_resources.load_jsonc(ui_resources.LOCALES / 'en.jsonc').get('brand', {}).get('appName')
+if not isinstance(app_name, str) or not app_name.strip():
+    raise SystemExit('locales/en.jsonc has no brand.appName, the name shown under the app icon')
+brand = Path(__file__).with_name('brand')
+icons = sorted(brand.glob('*.icon'))
+if len(icons) != 1 or not (brand / 'LaunchScreen.storyboard').is_file():
+    raise SystemExit('brand/ must hold exactly one Icon Composer .icon and a LaunchScreen.storyboard: ' + str(brand))
 subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'IdentitySDKHost',
                 '--version', '0.87.1', '--directory', str(host), '--skip-install', '--skip-git-init'], check=True)
 for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
@@ -121,6 +135,8 @@ for name in ['config.json', 'copy.json', 'pages.json']:
 # test, and the generator, so the new host can change its look and words and regenerate.
 for folder in ['ui', 'locales']:
     shutil.copytree(Path(__file__).with_name(folder), host / folder)
+# The brand's icon, launch screen and launch assets. configure-host.rb installs them in the iOS app.
+shutil.copytree(brand, host / 'brand')
 shutil.copyfile(generator, host / generator.name)
 # Replace the CLI's starter-screen test with this example's actual controller tests.
 (host / '__tests__/App.test.tsx').unlink(missing_ok=True)
@@ -161,6 +177,6 @@ jest_config.write_text(
     "module.exports = {\n  preset: '" + preset.group(1) + "',\n  transformIgnorePatterns: [\n"
     "    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-navigation"
     "|react-native-screens|react-native-safe-area-context)/)',\n  ],\n};\n")
-subprocess.run(['ruby', str(Path(__file__).with_name('configure-host.rb')), str(host)], check=True)
+subprocess.run(['ruby', str(Path(__file__).with_name('configure-host.rb')), str(host), app_name], check=True)
 subprocess.run(['pod', 'install'], cwd=host / 'ios', check=True)
 print('Independent host ready:', host)

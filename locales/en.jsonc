@@ -19,6 +19,17 @@
     "formatLocale": "en-US"
   },
 
+  // The brand. An app that signs this host under its own brand replaces these words, the brand
+  // values in ui/tokens.jsonc and the files in brand/.
+  "brand": {
+    // The wordmark above the Identity tab's title. The launch screen in brand/ draws the same
+    // words, set by pulse-ios's scripts/generate-launch-wordmark.swift.
+    "wordmark": "Kenshiki Pulse",
+    // The name under the app's icon on the Home Screen. create-host.py writes it into the
+    // generated app's Info.plist as CFBundleDisplayName.
+    "appName": "Kenshiki Pulse"
+  },
+
   // Words several screens share, with the same meaning everywhere.
   "common": {
     // Button that leaves a check and returns to the hub screen named "Identity".

@@ -1,6 +1,15 @@
 import XCTest
 
 final class ArtifactIntegrationTests: XCTestCase {
+  /// The app under test, loading the JavaScript bundle its Debug build embeds. Without this, the
+  /// Debug build first asks for a Metro server that these tests never run; React Native reports the
+  /// failed request as a warning, and the warning's banner covers the tab bar.
+  static func hostApp() -> XCUIApplication {
+    let app = XCUIApplication()
+    app.launchEnvironment["IDENTITY_HOST_EMBEDDED_JAVASCRIPT"] = "1"
+    return app
+  }
+
   /// Exercises the real packaged sensor bridge without granting permissions or requesting a fix.
   /// The board and its detail pages are the Sensors tab's stack and its settings are the Settings
   /// tab; both tabs share one session. Leaving them releases it, and returning must establish a
@@ -10,7 +19,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     #if !targetEnvironment(simulator)
     throw XCTSkip("This navigation check avoids acquiring personal device observations")
     #endif
-    let app = XCUIApplication()
+    let app = Self.hostApp()
     app.launchArguments = ["--reference-holder=" + UUID().uuidString]
     app.launch()
 
@@ -99,7 +108,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     #if !targetEnvironment(simulator)
     throw XCTSkip("The synthetic SSN provider and holder argument exist only in the simulator host")
     #endif
-    let app = XCUIApplication()
+    let app = Self.hostApp()
     app.launchArguments = ["--ssn-artifact-fixture", "--reference-holder=" + UUID().uuidString]
     app.launch()
     addTeardownBlock { XCUIDevice.shared.appearance = .light }
@@ -126,6 +135,12 @@ final class ArtifactIntegrationTests: XCTestCase {
       tabs.buttons["Identity"].tap()
       XCTAssertTrue(identity.waitForExistence(timeout: 10), "Identity is a large-title list")
       XCTAssertTrue(license.waitForExistence(timeout: 10))
+      // The brand's wordmark sits in the bar's row, wholly above the large title it must not cover.
+      let title = identity.staticTexts["Identity"]
+      let wordmark = app.staticTexts["Kenshiki Pulse"]
+      XCTAssertTrue(title.exists, "The large title stays")
+      XCTAssertTrue(wordmark.exists, "The wordmark is at the top of the Identity tab")
+      XCTAssertLessThanOrEqual(wordmark.frame.maxY, title.frame.minY, "The wordmark is above the title")
       screenshot("identity-root-\(suffix)")
 
       // A pushed detail keeps its place when another tab is chosen, and leaves by the edge swipe.
@@ -179,7 +194,7 @@ final class ArtifactIntegrationTests: XCTestCase {
 
   @MainActor
   func testUnavailablePhoneUsesBottomSheetAndReturnsToIdentity() {
-    let app = XCUIApplication()
+    let app = Self.hostApp()
     app.launch()
     let open = app.buttons["open-phone"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
@@ -196,7 +211,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     #if !targetEnvironment(simulator)
     throw XCTSkip("This test requires unavailable simulator text messaging")
     #endif
-    let app = XCUIApplication()
+    let app = Self.hostApp()
     app.launchArguments = ["--phone-artifact-fixture"]
     app.launch()
     let open = app.buttons["open-phone"]
@@ -215,7 +230,7 @@ final class ArtifactIntegrationTests: XCTestCase {
   }
   @MainActor
   func testUnavailableSSNProviderHasABottomSheetAndReturnToIdentity() {
-    let app = XCUIApplication()
+    let app = Self.hostApp()
     app.launch()
     let open = app.buttons["open-ssn"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
@@ -236,7 +251,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     #if !targetEnvironment(simulator)
     throw XCTSkip("The synthetic provider is compiled only into the simulator host")
     #endif
-    let app = XCUIApplication()
+    let app = Self.hostApp()
     app.launchArguments = ["--ssn-artifact-fixture", "--reference-holder=" + UUID().uuidString]
     app.launch()
     let open = completeSyntheticSSN(app)
@@ -282,7 +297,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     #endif
     let first = "--reference-holder=" + UUID().uuidString
     let second = "--reference-holder=" + UUID().uuidString
-    let app = XCUIApplication()
+    let app = Self.hostApp()
     app.launchArguments = ["--ssn-artifact-fixture", first]
     app.launch()
     _ = completeSyntheticSSN(app)
@@ -307,7 +322,7 @@ final class ArtifactIntegrationTests: XCTestCase {
 
   @MainActor
   func testBackgroundingCoversPersonalDataAndForegroundRemovesTheCover() {
-    let app = XCUIApplication()
+    let app = Self.hostApp()
     app.launch()
     let open = app.buttons["open-ssn"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
@@ -326,7 +341,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     #if !targetEnvironment(simulator)
     throw XCTSkip("This test exercises unavailable simulator camera hardware")
     #endif
-    let app = XCUIApplication()
+    let app = Self.hostApp()
     app.launch()
     let open = app.buttons["open-driver-license"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
@@ -350,7 +365,7 @@ final class ArtifactIntegrationTests: XCTestCase {
   /// The generated simulator host has no passport trust anchors or face models.
   @MainActor
   func testMissingTrustAnchorsAndModelsDisableTheirCards() throws {
-    let app = XCUIApplication()
+    let app = Self.hostApp()
     app.launchArguments = ["--reference-holder=" + UUID().uuidString]
     app.launch()
     let passport = app.buttons["open-capture-flow"]
@@ -363,7 +378,7 @@ final class ArtifactIntegrationTests: XCTestCase {
   }
   @MainActor
   func testNativeDocumentProviderAndDurableResultCommandsThroughInstalledPackage() throws {
-    let app = XCUIApplication()
+    let app = Self.hostApp()
     app.launchArguments = ["--document-check-artifact-fixture"]
     app.launch()
     let settings = app.tabBars.buttons["Settings"]
@@ -384,7 +399,7 @@ final class ArtifactIntegrationTests: XCTestCase {
 
   @MainActor
   func testInstalledPackageAcrossJavaScriptAndNativeBoundaries() throws {
-    let app = XCUIApplication()
+    let app = Self.hostApp()
     app.launch()
     let settings = app.tabBars.buttons["Settings"]
     XCTAssertTrue(settings.waitForExistence(timeout: 30))

@@ -11,8 +11,11 @@ Usage: python3 generate-ui-resources.py [--check]
 What is refused, and why each refusal fails generation instead of being skipped:
   * A color role that names a color React Native 0.87's `PlatformColor` does not resolve. An
     unknown name renders as clear on iOS, which no screenshot of a light-mode default would show.
-  * A text style that names a step missing from the type ramp, and any token group or field this
-    script does not know. A typo must not become a style that silently does nothing.
+  * A brand color that is not a light and a dark `#RRGGBB` pair. A brand color with one value
+    would stop following the appearance, which is the thing a system color never does.
+  * A text style that names a step missing from the type ramp or a font design iOS does not have,
+    and any token group or field this script does not know. A typo must not become a style that
+    silently does nothing.
   * A symbol that is not written as an SF Symbol name. The generated module types each name as a
     literal, so the tab bar's typed SF Symbol option refuses one iOS does not have.
   * A message whose ICU syntax does not parse, a plural or select without an `other` branch, `#`
@@ -56,6 +59,10 @@ FIXED_COLORS = {"white": (255, 255, 255), "black": (0, 0, 0)}
 TEXT_STYLES = {"largeTitle", "title1", "title2", "title3", "headline", "body", "callout",
                "subheadline", "footnote", "caption1", "caption2"}
 FONT_WEIGHTS = {"100", "200", "300", "400", "500", "600", "700", "800", "900"}
+# The system font designs, as SwiftUI's `Font.Design` names them, and the family name React Native
+# 0.87 resolves each to (`RCTGetFontDescriptorSystemDesign` in RCTFontUtils.mm).
+FONT_DESIGNS = {"serif": "ui-serif", "rounded": "ui-rounded", "monospaced": "ui-monospace"}
+BRAND_HEX = re.compile(r"#[0-9A-F]{6}\Z")
 NUMBER_GROUPS = ("spacing", "radius", "border", "opacity")
 TOKEN_GROUPS = ("color", "typeRamp", "text") + NUMBER_GROUPS + ("size", "symbol", "symbolTint")
 SYMBOL_NAME = re.compile(r"[a-z0-9]+(?:\.[a-z0-9]+)*\Z")
@@ -163,15 +170,24 @@ def generate_tokens() -> str:
             fail(f"ui/tokens.jsonc: {group} is not a non-empty object")
     opacities = tokens["opacity"]
     lines = [HEADER.format(source="ui/tokens.jsonc"), "",
-             "import {PlatformColor} from 'react-native';", ""]
+             "import {DynamicColorIOS, PlatformColor} from 'react-native';", ""]
 
-    lines.append("/** Color roles. Adaptive roles resolve iOS system colors; see ui/tokens.jsonc. */")
+    pairs: dict[str, tuple[str, str]] = {}
+    lines.append("/** Color roles. Adaptive roles resolve iOS system colors or a brand's light and dark")
+    lines.append(" * pair; see ui/tokens.jsonc. */")
     lines.append("export const color = {")
     for role, spec in tokens["color"].items():
         where = f"color.{name(role, 'color')}"
         if not isinstance(spec, dict):
             fail(f"{where}: expected an object")
-        if set(spec) == {"ios"}:
+        if set(spec) == {"light", "dark"}:
+            for appearance in ("light", "dark"):
+                if not isinstance(spec[appearance], str) or not BRAND_HEX.match(spec[appearance]):
+                    fail(f"{where}: {appearance} {spec[appearance]!r} is not written #RRGGBB in capitals")
+            pairs[role] = (spec["light"], spec["dark"])
+            value = (f"DynamicColorIOS({{light: {ts_string(spec['light'])}, "
+                     f"dark: {ts_string(spec['dark'])}}})")
+        elif set(spec) == {"ios"}:
             if spec["ios"] not in PLATFORM_COLORS:
                 fail(f"{where}: {spec['ios']!r} is not a color React Native 0.87's PlatformColor resolves")
             value = f"PlatformColor({ts_string(spec['ios'])})"
@@ -187,8 +203,17 @@ def generate_tokens() -> str:
             else:
                 value = ts_string(f"#{red:02X}{green:02X}{blue:02X}")
         else:
-            fail(f"{where}: give exactly one of \"ios\" or \"fixed\" (with an optional \"opacity\")")
+            fail(f"{where}: give exactly one of \"ios\", \"fixed\" (with an optional \"opacity\") "
+                 f"or a \"light\" and \"dark\" pair")
         lines.append(f"  {role}: {value},")
+    lines += ["} as const;", ""]
+    if not pairs:
+        fail("ui/tokens.jsonc: no color is a light and dark pair, so appearanceColor would be empty")
+    lines.append("/** The brand colors' two values, for an API that takes one string per appearance, such as")
+    lines.append(" * the navigation theme. Screens use `color`. */")
+    lines.append("export const appearanceColor = {")
+    for role, (light, dark) in pairs.items():
+        lines.append(f"  {role}: {{light: {ts_string(light)}, dark: {ts_string(dark)}}},")
     lines += ["} as const;", ""]
 
     ramp: dict[str, tuple[str, str]] = {}
@@ -204,8 +229,8 @@ def generate_tokens() -> str:
     for role, spec in tokens["text"].items():
         where = f"text.{name(role, 'text')}"
         if not isinstance(spec, dict) or not {"style", "fontWeight"} <= set(spec) <= {
-                "style", "fontWeight", "letterSpacing"}:
-            fail(f"{where}: expected style, fontWeight and an optional letterSpacing")
+                "style", "fontWeight", "letterSpacing", "design"}:
+            fail(f"{where}: expected style, fontWeight, and an optional letterSpacing and design")
         if spec["style"] not in ramp:
             fail(f"{where}: style {spec['style']!r} is not in typeRamp")
         if spec["fontWeight"] not in FONT_WEIGHTS:
@@ -215,6 +240,10 @@ def generate_tokens() -> str:
                   f"fontWeight: {ts_string(spec['fontWeight'])}"]
         if "letterSpacing" in spec:
             fields.append(f"letterSpacing: {number(spec['letterSpacing'], where)}")
+        if "design" in spec:
+            if spec["design"] not in FONT_DESIGNS:
+                fail(f"{where}: design {spec['design']!r} is not one of {sorted(FONT_DESIGNS)}")
+            fields.append(f"fontFamily: {ts_string(FONT_DESIGNS[spec['design']])}")
         lines.append(f"  {role}: {{{', '.join(fields)}}},")
     lines += ["} as const;", ""]
 

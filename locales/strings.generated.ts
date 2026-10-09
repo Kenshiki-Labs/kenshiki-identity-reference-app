@@ -7,6 +7,8 @@ export type Part = string | readonly ['#'] | readonly ['arg', string]
 
 /** Every message key, with the values its message needs (undefined: none). */
 export type MessageValues = {
+  readonly "brand.wordmark": undefined;
+  readonly "brand.appName": undefined;
   readonly "common.backToIdentity": undefined;
   readonly "common.backToResults": undefined;
   readonly "common.done": undefined;
@@ -808,6 +810,8 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
     formatLocale: "en-US",
     plural: (count) => (count === 1 ? 'one' : 'other'),
     messages: {
+      "brand.wordmark": "Kenshiki Pulse",
+      "brand.appName": "Kenshiki Pulse",
       "common.backToIdentity": "Back to Identity",
       "common.backToResults": "Back to results",
       "common.done": "Done",
