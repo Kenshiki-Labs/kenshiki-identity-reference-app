@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AppState, ScrollView, Text, View } from 'react-native';
 import { formatMoment } from './HolderText';
 import { Action, styles } from './IdentityCaptureFlow';
+import { t } from './locales/i18n';
 import { PhoneFlowController, type PhoneFlowState, type SavedPhoneCheck } from './PhoneFlowController';
 import { phoneCheckStopped } from './PhonePolicy';
 import { SubscriberResultDetails } from './SubscriberResultDetails';
@@ -70,11 +71,14 @@ export function PhoneFlow({
     if (saving) {
       return (
         <View style={styles.card}>
-          <Text style={styles.sheetTitle}>Save your result</Text>
-          <Text style={styles.body}>
-            The answer arrived. Saving again will not send another text or run another comparison.
-          </Text>
-          <Action label="Save result" onPress={activeController.save} disabled={busy} testID="phone-save" />
+          <Text style={styles.sheetTitle}>{t('common.saveYourResult')}</Text>
+          <Text style={styles.body}>{t('phone.saveBody')}</Text>
+          <Action
+            label={t('common.saveResult')}
+            onPress={activeController.save}
+            disabled={busy}
+            testID="phone-save"
+          />
         </View>
       );
     }
@@ -82,14 +86,12 @@ export function PhoneFlow({
       return (
         <View style={styles.card}>
           <Text accessibilityRole="header" style={styles.sheetTitle}>
-            {state.paused ? 'Check paused' : 'Waiting for your text'}
+            {state.paused ? t('common.checkPaused') : t('phone.waitingTitle')}
           </Text>
-          <Text style={styles.body}>
-            We are checking for the text from your number. Sending it alone does not complete this check.
-          </Text>
+          <Text style={styles.body}>{t('phone.waitingBody')}</Text>
           {(state.paused || snapshot?.failure) && (
             <Action
-              label="Resume check"
+              label={t('phone.resume')}
               onPress={activeController.resume}
               disabled={busy}
               testID="phone-resume"
@@ -97,12 +99,11 @@ export function PhoneFlow({
           )}
           {snapshot?.sendAgainAt && (
             <Text style={styles.label}>
-              Another send is available after {formatMoment(snapshot.sendAgainAt)}. It uses the same
-              challenge.
+              {t('phone.sendAgainAfter', { moment: formatMoment(snapshot.sendAgainAt) })}
             </Text>
           )}
           <Action
-            label="Send text again"
+            label={t('phone.sendAgain')}
             secondary
             onPress={activeController.send}
             disabled={busy || (!!snapshot?.sendAgainAt && now < Date.parse(snapshot.sendAgainAt))}
@@ -115,25 +116,19 @@ export function PhoneFlow({
       return (
         <View style={styles.card}>
           <Text accessibilityRole="header" style={styles.sheetTitle}>
-            Send one text from this phone
+            {t('phone.startTitle')}
           </Text>
-          <Text style={styles.body}>
-            A message opens here with the number and code filled in. Tap Send, then return here for the
-            result.
-          </Text>
-          <Text style={styles.body}>
-            By continuing, you agree to have the sending number checked and its subscriber details compared
-            with your checked ID. Your carrier may charge for the text.
-          </Text>
+          <Text style={styles.body}>{t('phone.startBody')}</Text>
+          <Text style={styles.body}>{t('phone.consent')}</Text>
           <Action
-            label="Send text"
+            label={t('phone.send')}
             onPress={activeController.send}
             disabled={busy || !snapshot}
             testID="phone-send"
           />
           {snapshot?.challengeReserved && (
             <Action
-              label="Check for existing text"
+              label={t('phone.checkExisting')}
               secondary
               onPress={activeController.resume}
               disabled={busy}
@@ -149,13 +144,13 @@ export function PhoneFlow({
     if (!snapshot?.receipt) return null;
     return (
       <>
-        {snapshot.pending && <Text style={styles.eyebrow}>PREVIOUS CHECK</Text>}
+        {snapshot.pending && <Text style={styles.eyebrow}>{t('common.previousCheck')}</Text>}
         <PhoneResultDetails receipt={snapshot.receipt} />
         {stopped ? (
           !snapshot.pending && (
-            <View testID="phone-stopped" style={{ gap: 12 }}>
+            <View testID="phone-stopped" style={styles.group}>
               <Action
-                label="Try again"
+                label={t('common.tryAgain')}
                 onPress={() => activeController.ask('restart')}
                 disabled={busy}
                 testID="phone-retry"
@@ -164,10 +159,10 @@ export function PhoneFlow({
           )
         ) : (
           <>
-            <Action label="Done" onPress={finish} disabled={leaving} testID="phone-done" />
+            <Action label={t('common.done')} onPress={finish} disabled={leaving} testID="phone-done" />
             {!snapshot.pending && (
               <Action
-                label="Run a new check"
+                label={t('common.runNewCheck')}
                 secondary
                 onPress={() => activeController.ask('restart')}
                 disabled={busy}
@@ -187,34 +182,36 @@ export function PhoneFlow({
           <ScrollView contentContainerStyle={styles.sheetContent}>
             <Text accessibilityRole="header" style={styles.sheetTitle}>
               {state.sheet.kind === 'error'
-                ? 'Check needs attention'
+                ? t('common.checkNeedsAttention')
                 : state.sheet.kind === 'erase'
-                  ? 'Erase saved phone checks?'
-                  : 'Start a new phone check?'}
+                  ? t('phone.sheet.eraseTitle')
+                  : t('phone.sheet.restartTitle')}
             </Text>
             <Text style={styles.body}>
               {state.sheet.kind === 'error'
                 ? state.sheet.message
                 : state.sheet.kind === 'erase'
-                  ? 'This removes saved phone receipts and pending checks from this app. It does not recall a text already sent.'
-                  : 'Your previous result stays available until the new check completes. You will choose when to send the next text.'}
+                  ? t('phone.sheet.eraseBody')
+                  : t('phone.sheet.restartBody')}
             </Text>
             {state.sheet.kind !== 'error' && (
               <Action
-                label={state.sheet.kind === 'erase' ? 'Erase checks' : 'Start new check'}
+                label={state.sheet.kind === 'erase' ? t('common.eraseChecks') : t('phone.sheet.startNew')}
                 onPress={activeController.confirm}
                 disabled={busy}
                 testID="phone-confirm"
               />
             )}
             <Action
-              label={state.sheet.kind === 'error' ? 'Back to check' : 'Keep current check'}
+              label={
+                state.sheet.kind === 'error' ? t('phone.sheet.backToCheck') : t('phone.sheet.keepCurrent')
+              }
               secondary
               onPress={activeController.dismiss}
               disabled={busy}
             />
             <Action
-              label="Back to Identity"
+              label={t('common.backToIdentity')}
               secondary
               onPress={finish}
               disabled={leaving}
@@ -232,24 +229,34 @@ export function PhoneFlow({
         accessibilityElementsHidden={!!state.sheet}
         importantForAccessibility={state.sheet ? 'no-hide-descendants' : 'auto'}
       >
-        <Text style={styles.eyebrow}>IDENTITY</Text>
+        <Text style={styles.eyebrow}>{t('common.eyebrow')}</Text>
         <Text accessibilityRole="header" style={styles.title}>
-          Phone
+          {t('phone.title')}
         </Text>
         {renderPhoneStage()}
         {busy && (
           <Text accessibilityLiveRegion="polite" style={styles.body}>
-            Please wait…
+            {t('common.pleaseWait')}
           </Text>
         )}
         {terminal && (
-          <Action label="Start a new check" onPress={() => activeController.ask('restart')} disabled={busy} />
+          <Action
+            label={t('phone.startNew')}
+            onPress={() => activeController.ask('restart')}
+            disabled={busy}
+          />
         )}
         {renderReceipt()}
-        <Action label="Back to Identity" secondary onPress={finish} disabled={leaving} testID="phone-back" />
+        <Action
+          label={t('common.backToIdentity')}
+          secondary
+          onPress={finish}
+          disabled={leaving}
+          testID="phone-back"
+        />
         {snapshot && (
           <Action
-            label="Erase saved phone checks"
+            label={t('phone.erase')}
             secondary
             onPress={() => activeController.ask('erase')}
             disabled={busy}
@@ -270,50 +277,37 @@ export function PhoneResultDetails({ receipt }: { receipt: PhoneCheckReceipt }) 
   return (
     <View testID="phone-result" style={styles.card}>
       <Text accessibilityRole="header" style={styles.sheetTitle}>
-        {stopped ? 'Subscriber details differ from your ID' : 'Phone possession confirmed'}
+        {stopped ? t('phone.result.stoppedTitle') : t('phone.result.confirmedTitle')}
       </Text>
-      {stopped && (
-        <Text style={styles.body}>
-          Your text was received, but the subscriber details held for this number do not match your checked
-          ID. This check stops here and its result cannot be used. You can start a new check.
-        </Text>
-      )}
-      <Row label={stopped ? 'Number that sent the text' : 'Confirmed number'} value={'+' + receipt.sender} />
-      <Row label="Text received" value={formatMoment(receipt.receivedAt)} />
-      <Row label="Check completed" value={formatMoment(receipt.completedAt)} />
-      {!stopped && (
-        <Text style={styles.body}>
-          The service received a text from this number. Subscriber agreement is a separate finding.
-        </Text>
-      )}
+      {stopped && <Text style={styles.body}>{t('phone.result.stoppedBody')}</Text>}
+      <Row
+        label={stopped ? t('phone.result.senderStopped') : t('phone.result.senderConfirmed')}
+        value={`+${receipt.sender}`}
+      />
+      <Row label={t('phone.result.received')} value={formatMoment(receipt.receivedAt)} />
+      <Row label={t('phone.result.completed')} value={formatMoment(receipt.completedAt)} />
+      {!stopped && <Text style={styles.body}>{t('phone.result.possessionOnly')}</Text>}
       <Text accessibilityRole="header" style={styles.sheetTitle}>
-        Comparison with your ID
+        {t('phone.result.comparisonTitle')}
       </Text>
       {receipt.subscriberComparison || receipt.subscriberFailure ? (
         <SubscriberResultDetails result={receipt.subscriberComparison} failure={receipt.subscriberFailure} />
       ) : (
         <>
           <Row
-            label="Reported outcome"
-            value={
-              comparison
-                ? {
-                    agreed: 'Subscriber details agree',
-                    singleSource: 'One source reports agreement',
-                    contradicted: 'Subscriber details differ',
-                    unavailable: 'Comparison unavailable',
-                    notCompared: 'Not compared',
-                  }[comparison.status]
-                : 'No comparison returned'
-            }
+            label={t('common.reportedOutcome')}
+            value={comparison ? comparisonStatus[comparison.status] : t('phone.result.noComparison')}
           />
           {comparison && (
             <>
               <Row
-                label="Fields counted"
-                value={comparison.fieldsCompared.map(fieldLabel).join(', ') || 'None reported'}
+                label={t('phone.result.fieldsCounted')}
+                value={
+                  comparison.fieldsCompared.map(fieldLabel).join(t('common.listSeparator')) ||
+                  t('common.noneReported')
+                }
               />
-              <Row label="Compared" value={formatMoment(comparison.checkedAt)} />
+              <Row label={t('common.compared')} value={formatMoment(comparison.checkedAt)} />
             </>
           )}
           {evidence ? (
@@ -325,38 +319,44 @@ export function PhoneResultDetails({ receipt }: { receipt: PhoneCheckReceipt }) 
                   value={gradeLabel(field.grade)}
                 />
               ))}
-              {!evidence.fields.length && (
-                <Text style={styles.body}>No individual field grades were returned.</Text>
+              {!evidence.fields.length && <Text style={styles.body}>{t('phone.result.noFieldGrades')}</Text>}
+              {!evidence.providers.length && (
+                <Text style={styles.body}>{t('phone.result.noNumberChecks')}</Text>
               )}
-              {!evidence.providers.length && <Text style={styles.body}>No number checks were returned.</Text>}
               {evidence.providers.map((provider, index) => (
                 <NumberCheck key={provider.source} index={index} provider={provider} />
               ))}
             </>
           ) : (
-            <Text style={styles.body}>
-              Number check details are not present in this saved receipt. Opening it does not run another
-              check.
-            </Text>
+            <Text style={styles.body}>{t('phone.result.noEvidence')}</Text>
           )}
         </>
       )}
       <Action
-        label={showReceipt ? 'Hide receipt details' : 'Show receipt details'}
+        label={showReceipt ? t('phone.result.hideReceipt') : t('phone.result.showReceipt')}
         secondary
         onPress={() => setShowReceipt((value) => !value)}
         testID="phone-receipt-details"
       />
       {showReceipt && (
         <>
-          <Row label="Challenge reference" value={receipt.challengeID} />
-          <Row label="Message digest" value={receipt.messageHash} />
-          <Row label="Number check request reference" value={evidence?.requestID} />
+          <Row label={t('phone.result.challenge')} value={receipt.challengeID} />
+          <Row label={t('phone.result.messageDigest')} value={receipt.messageHash} />
+          <Row label={t('phone.result.requestReference')} value={evidence?.requestID} />
           {receipt.subscriberComparison && (
             <>
-              <Row label="Comparison reference" value={receipt.subscriberComparison.operationID} />
-              <Row label="Policy version" value={receipt.subscriberComparison.evaluation.policyVersion} />
-              <Row label="Profile version" value={receipt.subscriberComparison.profileVersion} />
+              <Row
+                label={t('phone.result.comparisonReference')}
+                value={receipt.subscriberComparison.operationID}
+              />
+              <Row
+                label={t('phone.result.policyVersion')}
+                value={receipt.subscriberComparison.evaluation.policyVersion}
+              />
+              <Row
+                label={t('phone.result.profileVersion')}
+                value={receipt.subscriberComparison.profileVersion}
+              />
             </>
           )}
         </>
@@ -368,35 +368,43 @@ export function PhoneResultDetails({ receipt }: { receipt: PhoneCheckReceipt }) 
 function NumberCheck({ provider, index }: { provider: PhoneProviderObservation; index: number }) {
   return (
     <View style={styles.card}>
-      <Text accessibilityRole="header" style={styles.sheetTitle}>{`Number check ${index + 1}`}</Text>
-      <Row label="Answered" value={provider.answered} />
-      {provider.failure != null && <Row label="Reported a failure" value={true} />}
-      {provider.carrier != null && <Row label="Carrier" value={provider.carrier} />}
-      {provider.lineType != null && <Row label="Line type" value={provider.lineType} />}
-      {provider.originalCarrier != null && <Row label="Original carrier" value={provider.originalCarrier} />}
-      {provider.carrierChanged != null && (
-        <Row label="Carrier change reported" value={provider.carrierChanged} />
+      <Text accessibilityRole="header" style={styles.sheetTitle}>
+        {t('phone.numberCheck.title', { number: index + 1 })}
+      </Text>
+      <Row label={t('phone.numberCheck.answered')} value={provider.answered} />
+      {provider.failure != null && <Row label={t('phone.numberCheck.failure')} value={true} />}
+      {provider.carrier != null && <Row label={t('phone.numberCheck.carrier')} value={provider.carrier} />}
+      {provider.lineType != null && <Row label={t('phone.numberCheck.lineType')} value={provider.lineType} />}
+      {provider.originalCarrier != null && (
+        <Row label={t('phone.numberCheck.originalCarrier')} value={provider.originalCarrier} />
       )}
-      {provider.risk != null && <Row label="Reported risk" value={provider.risk} />}
+      {provider.carrierChanged != null && (
+        <Row label={t('phone.numberCheck.carrierChanged')} value={provider.carrierChanged} />
+      )}
+      {provider.risk != null && <Row label={t('phone.numberCheck.risk')} value={provider.risk} />}
       {provider.smsFraudRiskScore != null && (
-        <Row label="Message fraud risk score" value={provider.smsFraudRiskScore} />
+        <Row label={t('phone.numberCheck.messageFraudScore')} value={provider.smsFraudRiskScore} />
       )}
       {provider.riskAdvisorScore != null && (
-        <Row label="Number risk score" value={provider.riskAdvisorScore} />
+        <Row label={t('phone.numberCheck.numberRiskScore')} value={provider.riskAdvisorScore} />
       )}
-      {provider.numberValid != null && <Row label="Number valid" value={provider.numberValid} />}
-      {provider.formatValid != null && <Row label="Number format valid" value={provider.formatValid} />}
+      {provider.numberValid != null && (
+        <Row label={t('phone.numberCheck.numberValid')} value={provider.numberValid} />
+      )}
+      {provider.formatValid != null && (
+        <Row label={t('phone.numberCheck.formatValid')} value={provider.formatValid} />
+      )}
     </View>
   );
 }
 function Row({ label, value }: { label: string; value?: (string | number | boolean | null) | undefined }) {
   const text =
     value == null || value === ''
-      ? 'Not returned'
+      ? t('common.notReturned')
       : typeof value === 'boolean'
         ? value
-          ? 'Yes'
-          : 'No'
+          ? t('common.yes')
+          : t('common.no')
         : String(value);
   return (
     <View style={styles.detail}>
@@ -405,30 +413,37 @@ function Row({ label, value }: { label: string; value?: (string | number | boole
     </View>
   );
 }
+const comparisonStatus = {
+  agreed: t('phone.comparison.agreed'),
+  singleSource: t('phone.comparison.singleSource'),
+  contradicted: t('phone.comparison.contradicted'),
+  unavailable: t('phone.comparison.unavailable'),
+  notCompared: t('phone.comparison.notCompared'),
+};
 const fieldNames: Record<string, string> = {
-  givenName: 'Given name',
-  given_name: 'Given name',
-  familyName: 'Family name',
-  family_name: 'Family name',
-  birthdate: 'Date of birth',
-  address: 'Street address',
-  locality: 'City',
-  region: 'State or region',
-  postalCode: 'Postal code',
-  postal_code: 'Postal code',
-  country: 'Country',
-  idDocument: 'ID document',
+  givenName: t('phone.field.givenName'),
+  given_name: t('phone.field.givenName'),
+  familyName: t('phone.field.familyName'),
+  family_name: t('phone.field.familyName'),
+  birthdate: t('phone.field.birthdate'),
+  address: t('phone.field.address'),
+  locality: t('phone.field.locality'),
+  region: t('phone.field.region'),
+  postalCode: t('phone.field.postalCode'),
+  postal_code: t('phone.field.postalCode'),
+  country: t('phone.field.country'),
+  idDocument: t('phone.field.idDocument'),
 };
 const grades: Record<string, string> = {
-  match: 'Matches',
-  no_match: 'Does not match',
-  partial: 'Partial result',
-  no_data: 'No data',
-  unknown: 'Unrecognized result',
+  match: t('phone.grade.match'),
+  no_match: t('phone.grade.noMatch'),
+  partial: t('phone.grade.partial'),
+  no_data: t('phone.grade.noData'),
+  unknown: t('phone.grade.unknown'),
 };
 function fieldLabel(value: string) {
-  return fieldNames[value] ?? 'Other detail';
+  return fieldNames[value] ?? t('common.otherDetail');
 }
 function gradeLabel(value: string) {
-  return grades[value] ?? 'Unrecognized result';
+  return grades[value] ?? t('phone.grade.unknown');
 }

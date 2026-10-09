@@ -10,6 +10,7 @@ import shutil
 import ssl
 import subprocess
 import json
+import sys
 import tarfile
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -84,6 +85,12 @@ if args.trust_anchors is not None:
             raise ValueError
     except ValueError:
         raise SystemExit('Trust anchors must be PEM certificates (BEGIN CERTIFICATE blocks): ' + str(args.trust_anchors))
+# The screens import typed modules compiled from ui/tokens.jsonc and locales/*.jsonc. Refuse to
+# copy modules that differ from their sources, before anything is created.
+generator = Path(__file__).with_name('generate-ui-resources.py')
+if subprocess.run([sys.executable, str(generator), '--check']).returncode != 0:
+    raise SystemExit('The generated UI modules differ from their JSONC sources. Run ' + str(generator) +
+                     ' and try again.')
 subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'IdentitySDKHost',
                 '--version', '0.87.1', '--directory', str(host), '--skip-install', '--skip-git-init'], check=True)
 for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
@@ -100,6 +107,11 @@ for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts
 (host / 'CaptureFlowController.test.ts').write_text(Path(__file__).with_name('CaptureFlowController.test.ts').read_text().replace('../../ReactNative/identity-capture/src/codes', '@kenshiki/identity-capture/src/codes'))
 (host / 'IdentityCaptureFlow.test.tsx').write_text(Path(__file__).with_name('IdentityCaptureFlow.test.tsx').read_text().replace('../../ReactNative/identity-capture/src/codes', '@kenshiki/identity-capture/src/codes'))
 shutil.copyfile(Path(__file__).parent / '__tests__/support.ts', host / '__tests__/support.ts')
+# Design tokens and UI text: the JSONC sources, their generated modules, the t() runtime and its
+# test, and the generator, so the new host can change its look and words and regenerate.
+for folder in ['ui', 'locales']:
+    shutil.copytree(Path(__file__).with_name(folder), host / folder)
+shutil.copyfile(generator, host / generator.name)
 # Replace the CLI's starter-screen test with this example's actual controller tests.
 (host / '__tests__/App.test.tsx').unlink(missing_ok=True)
 for source, filename in [(args.trust_anchors, 'masterList.pem'), (args.embedder, 'embedder.mlmodelc'),

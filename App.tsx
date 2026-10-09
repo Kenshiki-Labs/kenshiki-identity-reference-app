@@ -10,6 +10,7 @@ import { type ErrorText, errorCode, errorText } from './HolderText';
 import { Action, CaptureResultDetails, IdentityCaptureFlow, styles } from './IdentityCaptureFlow';
 import { IdentitySheetHost } from './IdentitySheetHost';
 import { IntegrationChecks } from './IntegrationChecks';
+import { t } from './locales/i18n';
 import { PhoneFlow } from './PhoneFlow';
 import type { SavedPhoneCheck } from './PhoneFlowController';
 import { phoneCheckStopped } from './PhonePolicy';
@@ -18,19 +19,16 @@ import { SSNFlow, ssnSummary } from './SSNFlow';
 import type { SavedSSNCheck } from './SSNFlowController';
 
 const clearErrors: ErrorText = {
-  busy: 'Another check is still finishing. Wait a moment, then try again. Nothing has been deleted yet.',
-  sessionUnavailable: 'This screen closed before deletion finished. Try again. Nothing has been deleted yet.',
-  resultsNotConfigured: 'Saved results are not set up in this app, so there is nothing to delete here.',
-  resultIntegrityFailure:
-    'This phone could not open its secure storage to delete them. Try again. Your saved results are unchanged.',
-  documentCustodyFailed:
-    'This phone could not open its secure storage to delete them. Try again. Your saved scans are unchanged.',
-  storageUnavailable:
-    'This phone could not open its secure storage to delete them. Try again. Nothing has been deleted yet.',
+  busy: t('hub.clearError.busy'),
+  sessionUnavailable: t('hub.clearError.sessionUnavailable'),
+  resultsNotConfigured: t('hub.clearError.resultsNotConfigured'),
+  resultIntegrityFailure: t('hub.clearError.resultIntegrityFailure'),
+  documentCustodyFailed: t('hub.clearError.documentCustodyFailed'),
+  storageUnavailable: t('hub.clearError.storageUnavailable'),
 };
 const restoreErrors: ErrorText = {
-  sessionUnavailable: 'The saved results closed before they finished opening. Try reopening them.',
-  busy: 'Another check is still finishing. Wait a moment, then reopen your saved results.',
+  sessionUnavailable: t('hub.restoreError.sessionUnavailable'),
+  busy: t('hub.restoreError.busy'),
 };
 
 const emptyConfiguration: Configuration = {};
@@ -112,9 +110,7 @@ export default function App({
     setScreen('identity');
     setOpeningResults(!!configuration.results);
     releasing.current = Promise.all(previous.flatMap((session) => (session ? [session.release()] : [])));
-    releasing.current.catch(() =>
-      setRestoreFailure('The previous checks could not be closed. Reopen this screen.'),
-    );
+    releasing.current.catch(() => setRestoreFailure(t('hub.closeFailed.previous')));
   }, [configuration]);
   useEffect(() => {
     if (!configuration.results) {
@@ -129,13 +125,7 @@ export default function App({
     setOpeningResults(true);
     const reportRestoreFailure = (error: unknown) => {
       if (isActive())
-        setRestoreFailure(
-          errorText(
-            errorCode(error),
-            restoreErrors,
-            'Your saved results could not be opened. Try reopening them.',
-          ),
-        );
+        setRestoreFailure(errorText(errorCode(error), restoreErrors, t('hub.restoreError.other')));
     };
     async function adoptRestoredResult() {
       if (controller.state.passport) {
@@ -177,18 +167,10 @@ export default function App({
   }, [configuration, restoreAttempt]);
   useEffect(
     () => () => {
-      owned.current?.session
-        .release()
-        .catch(() => setRestoreFailure('A check could not be closed. Reopen this screen.'));
-      ownedDocument.current?.session
-        .release()
-        .catch(() => setRestoreFailure('A check could not be closed. Reopen this screen.'));
-      ownedSSN.current?.session
-        .release()
-        .catch(() => setRestoreFailure('A check could not be closed. Reopen this screen.'));
-      ownedPhone.current?.session
-        .release()
-        .catch(() => setRestoreFailure('A check could not be closed. Reopen this screen.'));
+      owned.current?.session.release().catch(() => setRestoreFailure(t('hub.closeFailed.check')));
+      ownedDocument.current?.session.release().catch(() => setRestoreFailure(t('hub.closeFailed.check')));
+      ownedSSN.current?.session.release().catch(() => setRestoreFailure(t('hub.closeFailed.check')));
+      ownedPhone.current?.session.release().catch(() => setRestoreFailure(t('hub.closeFailed.check')));
     },
     [],
   );
@@ -287,13 +269,7 @@ export default function App({
       setClearSheet(undefined);
       setScreen('identity');
     } catch (error) {
-      setClearError(
-        errorText(
-          errorCode(error),
-          clearErrors,
-          'The saved results could not be deleted. They have not been removed from this screen. Try again.',
-        ),
-      );
+      setClearError(errorText(errorCode(error), clearErrors, t('hub.clearError.other')));
     } finally {
       setClearing(false);
     }
@@ -364,7 +340,7 @@ export default function App({
     if (screen === 'checks' && developerChecks && __DEV__) {
       return (
         <View style={{ flex: 1 }}>
-          <Action label="Back to Identity" onPress={() => setScreen('identity')} />
+          <Action label={t('common.backToIdentity')} onPress={() => setScreen('identity')} />
           <IntegrationChecks configuration={configuration} />
         </View>
       );
@@ -378,10 +354,10 @@ export default function App({
       >
         <Text accessibilityRole="header" style={styles.title}>
           {screen === 'result'
-            ? 'Your results'
+            ? t('hub.resultsTitle')
             : screen === 'documentResult'
-              ? 'Your driver’s license'
-              : 'Identity'}
+              ? t('hub.licenseTitle')
+              : t('hub.title')}
         </Text>
         {renderIdentityContent()}
       </ScrollView>
@@ -394,17 +370,17 @@ export default function App({
         <View style={styles.sheet} accessibilityViewIsModal testID="restore-bottom-sheet">
           <View style={styles.sheetContent}>
             <Text accessibilityRole="header" style={styles.sheetTitle}>
-              Saved results could not be opened
+              {t('hub.restore.title')}
             </Text>
-            <Text style={styles.body}>{restoreFailure} Nothing has been erased.</Text>
+            <Text style={styles.body}>{t('hub.restore.body', { reason: restoreFailure })}</Text>
             <Action
-              label="Reopen saved results"
+              label={t('hub.restore.reopen')}
               disabled={openingResults}
               onPress={() => setRestoreAttempt((value) => value + 1)}
             />
             {configuration.results && (
               <Action
-                label="Erase saved passport and face results"
+                label={t('hub.restore.erase')}
                 secondary
                 disabled={openingResults}
                 testID="erase-unreadable-results"
@@ -424,30 +400,28 @@ export default function App({
           <View style={styles.sheetContent}>
             <Text accessibilityRole="header" style={styles.sheetTitle}>
               {clearError
-                ? 'Deletion could not finish'
+                ? t('hub.clear.failedTitle')
                 : clearSheet === 'document'
-                  ? 'Delete all saved license scans?'
-                  : 'Erase all passport and face results?'}
+                  ? t('hub.clear.licenseTitle')
+                  : t('hub.clear.passportTitle')}
             </Text>
             <Text style={styles.body}>
               {clearError ??
-                (clearSheet === 'document'
-                  ? 'This deletes every saved driver’s license scan from this app, including its photos and read details.'
-                  : 'This deletes all saved passport and face results from this app, including their photos.')}
+                (clearSheet === 'document' ? t('hub.clear.licenseBody') : t('hub.clear.passportBody'))}
             </Text>
             <Action
               label={
                 clearError
-                  ? 'Try again'
+                  ? t('common.tryAgain')
                   : clearSheet === 'document'
-                    ? 'Delete all license scans'
-                    : 'Clear results'
+                    ? t('hub.clear.deleteLicenseScans')
+                    : t('hub.action.clearResults')
               }
               onPress={clear}
               disabled={clearing}
             />
             <Action
-              label="Keep results"
+              label={t('hub.clear.keep')}
               secondary
               onPress={() => setClearSheet(undefined)}
               disabled={clearing}
@@ -461,11 +435,10 @@ export default function App({
     if (screen === 'identity') {
       return (
         <>
-          <Text style={styles.body}>Your identity checks, together in one place.</Text>
+          <Text style={styles.body}>{t('hub.intro')}</Text>
           {configurationIssue === 'holderScopeUnreadable' && (
             <Text style={styles.body} testID="configuration-issue">
-              Saved checks are unavailable because this app’s local holder record could not be read. New
-              checks are not saved.
+              {t('hub.configurationIssue')}
             </Text>
           )}
           {renderLicenseCard()}
@@ -473,33 +446,29 @@ export default function App({
           {renderFaceCard()}
           {renderSSNCard()}
           {renderPhoneCard()}
-          <Action label="Phone sensors" secondary onPress={() => setScreen('sensors')} />
+          <Action label={t('hub.action.phoneSensors')} secondary onPress={() => setScreen('sensors')} />
           {configuration.results && result && (
             <Action
-              label="Open saved passport checks"
+              label={t('hub.action.openSavedPassportChecks')}
               secondary
               disabled={openingResults}
               onPress={openSavedResults}
             />
           )}
-          {configuration.results && result && (
-            <Text style={styles.label}>
-              Saved passport and face results stay on this phone until you erase them.
-            </Text>
-          )}
+          {configuration.results && result && <Text style={styles.label}>{t('hub.action.savedNotice')}</Text>}
           {result && (
-            <Action
-              label="Erase all passport and face results"
-              secondary
-              onPress={() => requestClear('passport')}
-            />
+            <Action label={t('hub.action.eraseAll')} secondary onPress={() => requestClear('passport')} />
           )}
           {document && (
-            <Action label="Delete saved license scans" secondary onPress={() => requestClear('document')} />
+            <Action
+              label={t('hub.action.deleteLicenseScans')}
+              secondary
+              onPress={() => requestClear('document')}
+            />
           )}
           {developerChecks && __DEV__ && (
             <Action
-              label="Developer checks"
+              label={t('hub.action.developerChecks')}
               secondary
               onPress={() => setScreen('checks')}
               testID="open-sdk-checks"
@@ -518,17 +487,21 @@ export default function App({
             configured={!!configuration.document?.check}
           />
           <Action
-            label="Back to Identity"
+            label={t('common.backToIdentity')}
             testID="document-result-back"
             onPress={() => setScreen('identity')}
           />
           <Action
-            label="Retake this license"
+            label={t('license.retake')}
             secondary
             testID="retake-saved-document"
             onPress={() => startDocument('front')}
           />
-          <Action label="Delete saved license scans" secondary onPress={() => requestClear('document')} />
+          <Action
+            label={t('hub.action.deleteLicenseScans')}
+            secondary
+            onPress={() => requestClear('document')}
+          />
         </>
       );
     }
@@ -536,16 +509,21 @@ export default function App({
     return (
       <>
         <CaptureResultDetails result={result} focus={focus} />
-        <Action label="Back to Identity" onPress={() => setScreen('identity')} />
+        <Action label={t('common.backToIdentity')} onPress={() => setScreen('identity')} />
         <Action
-          label={result.comparison ? 'Retake selfie' : 'Compare with a selfie'}
+          label={result.comparison ? t('passport.action.retakeSelfie') : t('passport.action.compareSelfie')}
           secondary
           disabled={!result.passport.portraitAvailable || !faceReady}
           onPress={() => start('selfie')}
         />
-        {!faceReady && <Text style={styles.body}>Face comparison is not set up in this app.</Text>}
-        <Action label="Read chip again" secondary disabled={!passportReady} onPress={() => start('read')} />
-        <Action label="Clear results" secondary onPress={() => requestClear('passport')} />
+        {!faceReady && <Text style={styles.body}>{t('hub.face.notSetUp')}</Text>}
+        <Action
+          label={t('passport.action.readChipAgain')}
+          secondary
+          disabled={!passportReady}
+          onPress={() => start('read')}
+        />
+        <Action label={t('hub.action.clearResults')} secondary onPress={() => requestClear('passport')} />
       </>
     );
   }
@@ -559,13 +537,13 @@ export default function App({
           document && isCompleteDocument(document.document) ? setScreen('documentResult') : startDocument()
         }
       >
-        <Text style={styles.sheetTitle}>Driver’s license</Text>
+        <Text style={styles.sheetTitle}>{t('hub.license.title')}</Text>
         <Text style={styles.body}>
           {document
             ? isCompleteDocument(document.document)
-              ? `${documentName(document.document)} · View results`
-              : 'Front saved · Continue with the back'
-            : 'Scan your license or open a saved scan'}
+              ? t('hub.license.viewResults', { name: documentName(document.document) })
+              : t('hub.license.continueBack')
+            : t('hub.license.start')}
         </Text>
       </Pressable>
     );
@@ -584,7 +562,7 @@ export default function App({
           else start();
         }}
       >
-        <Text style={styles.sheetTitle}>Passport</Text>
+        <Text style={styles.sheetTitle}>{t('hub.passport.title')}</Text>
         <Text style={styles.body}>{passportSummary()}</Text>
       </Pressable>
     );
@@ -603,7 +581,7 @@ export default function App({
           else start(result ? 'selfie' : undefined);
         }}
       >
-        <Text style={styles.sheetTitle}>Face match</Text>
+        <Text style={styles.sheetTitle}>{t('hub.face.title')}</Text>
         <Text style={styles.body}>{faceSummary()}</Text>
       </Pressable>
     );
@@ -611,13 +589,13 @@ export default function App({
   function renderSSNCard() {
     return (
       <Pressable accessibilityRole="button" style={styles.card} testID="open-ssn" onPress={openSSN}>
-        <Text style={styles.sheetTitle}>Social Security number</Text>
+        <Text style={styles.sheetTitle}>{t('common.socialSecurityNumber')}</Text>
         <Text style={styles.body}>
           {ssn?.snapshot.recoveryNeeded
-            ? 'Check needs attention · Open'
+            ? t('hub.ssn.needsAttention')
             : ssn?.snapshot.receipt
-              ? `${ssnSummary(ssn.snapshot.receipt)} · View result`
-              : 'Check whether your number was issued'}
+              ? t('hub.ssn.viewResult', { summary: ssnSummary(ssn.snapshot.receipt) })
+              : t('hub.ssn.start')}
         </Text>
       </Pressable>
     );
@@ -625,48 +603,51 @@ export default function App({
   function renderPhoneCard() {
     return (
       <Pressable accessibilityRole="button" style={styles.card} testID="open-phone" onPress={openPhone}>
-        <Text style={styles.sheetTitle}>Phone</Text>
+        <Text style={styles.sheetTitle}>{t('hub.phone.title')}</Text>
         <Text style={styles.body}>
           {phone?.snapshot.pending
-            ? 'Check in progress · Resume'
+            ? t('hub.phone.resume')
             : phone?.snapshot.receipt
               ? phoneCheckStopped(phone.snapshot.receipt)
-                ? 'Check stopped · Subscriber details differ from your ID'
-                : 'Result available · View receipt and comparison'
-              : 'Send a text and compare subscriber details with your checked ID'}
+                ? t('hub.phone.stopped')
+                : t('hub.phone.viewResult')
+              : t('hub.phone.start')}
         </Text>
       </Pressable>
     );
   }
   function passportSummary() {
     if (result) {
-      return `${result.passport.givenNames} ${result.passport.surname} · View results`;
+      return t('hub.passport.viewResults', {
+        givenNames: result.passport.givenNames,
+        surname: result.passport.surname,
+      });
     }
     if (openingResults) {
-      return 'Opening saved results…';
+      return t('common.openingSavedResults');
     }
     if (savedCount) {
-      return 'Open saved passport results';
+      return t('hub.passport.openSaved');
     }
     if (passportReady) {
-      return 'Scan and read your passport';
+      return t('hub.passport.start');
     }
-    return 'Passport chip checking is not set up in this app. Your other identity checks remain available.';
+    return t('hub.passport.notSetUp');
   }
   function faceSummary() {
     if (result?.comparison) {
-      return 'Comparison complete · View results';
+      return t('hub.face.viewResults');
     }
     if (!result && savedCount) {
-      return 'Choose a saved passport to view its face check';
+      return t('hub.face.chooseSaved');
     }
     if (!faceReady) {
-      return 'Face comparison is not set up in this app.';
+      return t('hub.face.notSetUp');
     }
     if (result) {
-      return 'Compare a selfie with your passport photo';
+      return t('hub.face.start');
     }
-    return 'Read a passport to add its photo first';
+    return t('hub.face.needsPassport');
   }
   return (
     <IdentitySheetHost>

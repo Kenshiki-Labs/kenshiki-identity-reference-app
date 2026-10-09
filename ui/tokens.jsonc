@@ -1,0 +1,163 @@
+// Design tokens for the React Native reference app. This file is the only place the app's look is
+// written down. `generate-ui-resources.py` compiles it into `ui/tokens.generated.ts`; screens import
+// that module and never spell a color, font size, radius or spacing value themselves. The boundary
+// gate's React Native host scan refuses one that does.
+//
+// After editing, run `python3 generate-ui-resources.py` beside this app's sources. Its `--check`
+// mode fails when the generated module is stale.
+//
+// Each token names the value it replaced in the hand-written stylesheet that preceded this file.
+{
+  // Color roles. Every adaptive role names an iOS system color, resolved through React Native's
+  // `PlatformColor`, so light, dark and increased-contrast appearances all come from this one set.
+  // The names are the ones React Native 0.87 resolves (`RCTSemanticColorsMap` in RCTConvert.mm);
+  // the generator refuses any other name.
+  //
+  // Three surfaces are non-adaptive on iOS by design: the camera (dark in both appearances, as in
+  // the Camera app), text on a filled tint button, and the dimming behind a sheet. They name the
+  // UIKit fixed color they stand for (`UIColor.white`, `UIColor.black`) under "fixed". React
+  // Native 0.87's `PlatformColor` cannot resolve either one, and a system role nested inside
+  // `DynamicColorIOS` is flattened to the current appearance when the style is parsed, so the
+  // generator writes these few as fixed values.
+  "color": {
+    // Screen background. iOS grouped-list background. Replaces #f4f5f8.
+    "background": {"ios": "systemGroupedBackground"},
+    // Card surface on the screen background. Replaces #fff.
+    "card": {"ios": "secondarySystemGroupedBackground"},
+    // Bottom-sheet surface. White in light; in dark, the same raised gray UIKit gives a presented
+    // sheet's systemBackground. Replaces #fff.
+    "sheet": {"ios": "secondarySystemGroupedBackground"},
+    // Primary text: titles, body, sheet titles and the SSN entry. Replaces #122b54 (titles),
+    // #252c39 (body) and #112f59 (SSN entry).
+    "text": {"ios": "label"},
+    // Secondary text: field labels and the small uppercase eyebrow. Replaces #4d576a (labels)
+    // and #233c69 (eyebrow).
+    "secondaryText": {"ios": "secondaryLabel"},
+    // Filled action background and secondary action text. UIKit's default tint is systemBlue;
+    // React Native 0.87 does not resolve `tintColor`. Replaces #173965.
+    "tint": {"ios": "systemBlue"},
+    // Secondary action background, as UIKit's gray button. Replaces #e5eaf3.
+    "secondaryFill": {"ios": "tertiarySystemFill"},
+    // Text on a filled tint button. Replaces #fff.
+    "onTint": {"fixed": "white"},
+    // Camera screen background, behind the live preview. Replaces #152032.
+    "cameraBackground": {"fixed": "black"},
+    // Text and the selfie guide drawn over the camera preview. Replaces #fff.
+    "onCamera": {"fixed": "white"},
+    // Dimming layer behind a bottom sheet; its opacity is elevation.sheetDimming. Replaces #0008.
+    "scrim": {"fixed": "black", "opacity": "sheetDimming"}
+  },
+
+  // The iOS Dynamic Type ramp at the default ("Large") content size, in points, from Apple's
+  // Human Interface Guidelines. Text keeps React Native's default `allowFontScaling`, so the
+  // holder's text-size setting scales every style.
+  "typeRamp": {
+    "largeTitle": {"fontSize": 34, "lineHeight": 41},
+    "title1": {"fontSize": 28, "lineHeight": 34},
+    "title2": {"fontSize": 22, "lineHeight": 28},
+    "title3": {"fontSize": 20, "lineHeight": 25},
+    "headline": {"fontSize": 17, "lineHeight": 22},
+    "body": {"fontSize": 17, "lineHeight": 22},
+    "callout": {"fontSize": 16, "lineHeight": 21},
+    "subheadline": {"fontSize": 15, "lineHeight": 20},
+    "footnote": {"fontSize": 13, "lineHeight": 18},
+    "caption1": {"fontSize": 12, "lineHeight": 16},
+    "caption2": {"fontSize": 11, "lineHeight": 13}
+  },
+
+  // Text styles. Each names the nearest iOS text style and keeps the weight the app already used.
+  "text": {
+    // Screen titles. Replaces fontSize 32, weight 700.
+    "screenTitle": {"style": "largeTitle", "fontWeight": "700"},
+    // Card and sheet titles. Replaces fontSize 26, weight 700.
+    "sectionTitle": {"style": "title1", "fontWeight": "700"},
+    // Body text. Replaces fontSize 18, lineHeight 26.
+    "body": {"style": "body", "fontWeight": "400"},
+    // Field labels above a value. Replaces fontSize 14, weight 700.
+    "label": {"style": "subheadline", "fontWeight": "700"},
+    // The small uppercase line above a screen title. Replaces the default size 14, weight 700,
+    // letterSpacing 2.
+    "eyebrow": {"style": "footnote", "fontWeight": "700", "letterSpacing": 2},
+    // Button labels. iOS buttons use the headline style. Replaces fontSize 18, weight 600.
+    "action": {"style": "headline", "fontWeight": "600"},
+    // The SSN digits while they are entered. Replaces fontSize 28.
+    "entry": {"style": "title1", "fontWeight": "400"},
+    // The developer checks screen title. Replaces fontSize 24, weight bold.
+    "developerTitle": {"style": "title2", "fontWeight": "700"}
+  },
+
+  // Spacing, in points. One scale for padding, margins and gaps.
+  "spacing": {
+    // Between a field label and its value. Replaces 4.
+    "xxs": 4,
+    // Between a portrait and its caption. Replaces 8.
+    "xs": 8,
+    // Camera overlay gaps, the portrait row and the phone retry group. Replaces 12.
+    "sm": 12,
+    // Card gap, action padding, the saved-scan list and the developer list. Replaces 16.
+    "md": 16,
+    // Screen section gap, card padding and the camera's bottom inset. Replaces 20.
+    "lg": 20,
+    // Screen and camera insets, and the gap between sheet sections. Replaces 24, and 22 for the
+    // sheet gap, which joins this step of the scale.
+    "xl": 24,
+    // Sheet padding. Replaces 28.
+    "xxl": 28,
+    // Below a sheet's last action. Replaces 40.
+    "xxxl": 40,
+    // Below a screen's last action. Replaces 48.
+    "xxxxl": 48
+  },
+
+  // Corner radii, in points.
+  "radius": {
+    // Cards. Replaces 20.
+    "card": 20,
+    // Buttons. Replaces 14.
+    "control": 14,
+    // A bottom sheet's top corners. Replaces 28.
+    "sheet": 28,
+    // Fully rounded: the selfie oval. Replaces 1000.
+    "full": 1000
+  },
+
+  // Fixed sizes and proportions.
+  "size": {
+    // Minimum button height; above the 44-point iOS minimum touch target. Replaces 52.
+    "actionMinHeight": 52,
+    // The captured front shown while the back is still needed. Replaces 220.
+    "documentPreviewHeight": 220,
+    // Each side of a saved license on its results card. Replaces 200.
+    "documentImageHeight": 200,
+    // The native preview on the developer checks screen. Replaces 180.
+    "developerPreviewHeight": 180,
+    // The tallest a bottom sheet grows, as a share of the screen. Replaces 85%.
+    "sheetMaxHeight": "85%",
+    // Passport portrait, width over height. Replaces 3 / 4.
+    "portraitAspectRatio": 0.75,
+    // Selfie guide width, as a share of the camera width. Replaces .68.
+    "selfieGuideWidth": 0.68,
+    // Selfie guide height over its width. Replaces 1.3.
+    "selfieGuideAspect": 1.3
+  },
+
+  // Border widths, in points.
+  "border": {
+    // The selfie guide outline. Replaces 3.
+    "guide": 3
+  },
+
+  // Opacities.
+  "opacity": {
+    // A disabled button. Replaces .45.
+    "disabled": 0.45
+  },
+
+  // Elevation. No layer in this app draws a shadow: a raised layer is told apart by its surface
+  // color (color.card, color.sheet) and a modal sheet also by dimming the screen behind it.
+  "elevation": {
+    // Opacity of the dimming layer behind a bottom sheet. Replaces the alpha of #0008
+    // (0x88 / 0xff).
+    "sheetDimming": 0.53
+  }
+}

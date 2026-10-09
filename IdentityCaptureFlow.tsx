@@ -8,6 +8,8 @@ import { useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CaptureFlowController, type CompletedCapture, type FlowState } from './CaptureFlowController';
 import { formatMoment } from './HolderText';
+import { t } from './locales/i18n';
+import { border, color, opacity, radius, size, spacing, text } from './ui/tokens.generated';
 
 /** Completion transfers the session to the adopter. Cancellation releases it. */
 export function IdentityCaptureFlow({
@@ -85,7 +87,7 @@ export function IdentityCaptureFlow({
       : undefined;
   const close = (
     <Action
-      label={state.passport ? 'Back to Identity' : 'Close check'}
+      label={state.passport ? t('common.backToIdentity') : t('passport.closeCheck')}
       secondary
       disabled={finishing || (!!state.passport && state.busy)}
       onPress={async () => {
@@ -107,56 +109,50 @@ export function IdentityCaptureFlow({
         importantForAccessibility={sheet ? 'no-hide-descendants' : 'auto'}
         contentContainerStyle={styles.content}
       >
-        <Text style={styles.eyebrow}>IDENTITY</Text>
+        <Text style={styles.eyebrow}>{t('common.eyebrow')}</Text>
         <Text accessibilityRole="header" style={styles.title}>
           {title}
         </Text>
-        {phase === 'loading' && <Text style={styles.body}>Opening saved results…</Text>}
+        {phase === 'loading' && <Text style={styles.body}>{t('common.openingSavedResults')}</Text>}
         {phase === 'saved' && (
           <>
-            <Text style={styles.body}>Choose a saved passport check.</Text>
+            <Text style={styles.body}>{t('passport.saved.choose')}</Text>
             {state.saved?.map((record, index) => (
               <View key={record.workflowID} style={styles.card}>
-                <Text style={styles.body}>{`Saved ${formatMoment(record.recordedAt)}`}</Text>
+                <Text style={styles.body}>
+                  {t('passport.saved.savedAt', { moment: formatMoment(record.recordedAt) })}
+                </Text>
                 {action(
-                  'Open saved results',
+                  t('passport.saved.open'),
                   () => activeController.recoverSaved(record.workflowID),
                   false,
                   `saved-passport-${index}`,
                 )}
               </View>
             ))}
-            {action('Scan another passport', activeController.restart, false, 'new-passport', true)}
+            {action(t('passport.saved.scanAnother'), activeController.restart, false, 'new-passport', true)}
           </>
         )}
         {phase === 'intro' && (
           <>
-            <Text style={styles.body}>
-              Scan the photo page, then hold your phone against the passport to read its chip. You can review
-              the passport and compare its photo with a selfie.
-            </Text>
-            <Text style={styles.body}>
-              Your captures stay on this phone. Starting allows camera capture; reading the chip begins when
-              you choose to continue.
-            </Text>
-            {action('Start passport scan', activeController.scan, false, 'start-passport-scan')}
+            <Text style={styles.body}>{t('passport.intro.body')}</Text>
+            <Text style={styles.body}>{t('passport.intro.privacy')}</Text>
+            {action(t('passport.intro.start'), activeController.scan, false, 'start-passport-scan')}
           </>
         )}
         {phase === 'review' && state.mrz && (
           <>
-            <Text style={styles.body}>Check these details against your passport.</Text>
+            <Text style={styles.body}>{t('passport.review.body')}</Text>
             <Details
-              label="Name"
+              label={t('passport.field.name')}
               value={`${state.mrz.givenNames} ${state.mrz.surname}`.replace(/<+/g, ' ')}
             />
-            <Details label="Passport number" value={state.mrz.documentNumber} />
-            <Details label="Date of birth" value={displayDate(state.mrz.birthDateYYMMDD)} />
-            <Details label="Expiry date" value={displayDate(state.mrz.expiryDateYYMMDD)} />
-            <Text style={styles.body}>
-              Next, hold the top of your phone against the passport and keep it still.
-            </Text>
-            {action('Read passport chip', activeController.read, false, 'read-passport')}
-            {action('Scan again', activeController.scan, false, undefined, true)}
+            <Details label={t('passport.field.documentNumber')} value={state.mrz.documentNumber} />
+            <Details label={t('passport.field.birthDate')} value={displayDate(state.mrz.birthDateYYMMDD)} />
+            <Details label={t('passport.field.expiryDate')} value={displayDate(state.mrz.expiryDateYYMMDD)} />
+            <Text style={styles.body}>{t('passport.review.next')}</Text>
+            {action(t('passport.review.read'), activeController.read, false, 'read-passport')}
+            {action(t('passport.review.scanAgain'), activeController.scan, false, undefined, true)}
           </>
         )}
         {phase === 'reading' && (
@@ -167,30 +163,36 @@ export function IdentityCaptureFlow({
         {(phase === 'passport' || phase === 'result') && result && (
           <>
             <CaptureResultDetails result={result} focus={phase === 'result' ? 'face' : 'passport'} />
-            {action('Done', finish, false, 'finish-capture')}
+            {action(t('common.done'), finish, false, 'finish-capture')}
             {action(
-              state.comparison ? 'Retake selfie' : 'Compare with a selfie',
+              state.comparison ? t('passport.action.retakeSelfie') : t('passport.action.compareSelfie'),
               activeController.selfie,
               !state.passport?.portraitAvailable || !configuration.embedderURL || !configuration.detectorURL,
               'retake-selfie',
               true,
             )}
-            {action('Read chip again', activeController.read, false, 'reread-passport', true)}
+            {action(
+              t('passport.action.readChipAgain'),
+              activeController.read,
+              false,
+              'reread-passport',
+              true,
+            )}
           </>
         )}
         {(phase === 'captured' || phase === 'comparing') && (
           <Text style={styles.body} accessibilityLiveRegion="polite">
-            Your selfie was captured. Comparing it with the passport photo…
+            {t('passport.comparing')}
           </Text>
         )}
         {state.busy && phase !== 'comparing' && (
           <Text accessibilityLiveRegion="polite" style={styles.body}>
-            Please wait…
+            {t('common.pleaseWait')}
           </Text>
         )}
         {phase !== 'intro' && (
           <Action
-            label="Scan a different passport"
+            label={t('passport.scanDifferent')}
             onPress={activeController.requestRestart}
             secondary
             testID="restart-check"
@@ -207,7 +209,7 @@ export function IdentityCaptureFlow({
         <View accessibilityViewIsModal style={styles.sheet} testID="capture-bottom-sheet">
           <ScrollView contentContainerStyle={styles.sheetContent}>
             <Text accessibilityRole="header" style={styles.sheetTitle}>
-              {sheet.kind === 'restart' ? 'Start a new passport check?' : 'Let’s try that again'}
+              {sheet.kind === 'restart' ? t('passport.sheet.restartTitle') : t('common.letsTryAgain')}
             </Text>
             <Text style={styles.body}>{sheet.message}</Text>
             {renderRecoveryActions()}
@@ -234,7 +236,15 @@ export function IdentityCaptureFlow({
         )}
         {phase === 'selfie' && (
           <View pointerEvents="none" style={styles.guideCenter}>
-            <View style={[styles.oval, { width: width * 0.68, height: width * 0.68 * 1.3 }]} />
+            <View
+              style={[
+                styles.oval,
+                {
+                  width: width * size.selfieGuideWidth,
+                  height: width * size.selfieGuideWidth * size.selfieGuideAspect,
+                },
+              ]}
+            />
           </View>
         )}
         <View style={styles.cameraTop}>
@@ -242,9 +252,7 @@ export function IdentityCaptureFlow({
             {title}
           </Text>
           <Text style={[styles.body, styles.white]}>
-            {phase === 'scanning'
-              ? 'Put the two lines at the bottom of the photo page inside the clear band.'
-              : state.hint}
+            {phase === 'scanning' ? t('passport.camera.scanHint') : state.hint}
           </Text>
         </View>
         <View style={styles.cameraBottom}>
@@ -259,16 +267,16 @@ export function IdentityCaptureFlow({
     if (sheet.kind === 'restart') {
       return (
         <>
-          {action('Start over', activeController.restart, false, 'confirm-restart')}
-          {action('Keep this check', activeController.recover, false, undefined, true)}
+          {action(t('common.startOver'), activeController.restart, false, 'confirm-restart')}
+          {action(t('passport.sheet.keepCheck'), activeController.recover, false, undefined, true)}
         </>
       );
     }
     return (
       <>
         {renderRecoveryChoice()}
-        {state.passport && action('Keep passport results', finish, false, 'keep-passport', true)}
-        {action('Start over', activeController.restart, false, 'confirm-restart', true)}
+        {state.passport && action(t('passport.sheet.keepResults'), finish, false, 'keep-passport', true)}
+        {action(t('common.startOver'), activeController.restart, false, 'confirm-restart', true)}
       </>
     );
   }
@@ -278,13 +286,13 @@ export function IdentityCaptureFlow({
         <>
           <Text style={[styles.body, styles.white]} accessibilityLiveRegion="polite">
             {state.mrz?.completeness === 'complete'
-              ? 'Printed details found. Ready to capture.'
+              ? t('passport.camera.ready')
               : state.mrz
-                ? 'Keep both lines in view.'
-                : 'Hold the passport steady.'}
+                ? t('passport.camera.keepInView')
+                : t('passport.camera.holdSteady')}
           </Text>
           {action(
-            'Capture details',
+            t('passport.camera.captureDetails'),
             activeController.review,
             state.mrz?.completeness !== 'complete',
             'capture-mrz',
@@ -292,12 +300,12 @@ export function IdentityCaptureFlow({
         </>
       );
     }
-    return action('Capture selfie', activeController.capture, !state.ready);
+    return action(t('passport.camera.captureSelfie'), activeController.capture, !state.ready);
   }
   function backToDetailsLabel() {
-    if (state.passport) return 'Back to results';
-    if (state.mrz) return 'Back to passport details';
-    return 'Back to Identity';
+    if (state.passport) return t('common.backToResults');
+    if (state.mrz) return t('passport.sheet.backToDetails');
+    return t('common.backToIdentity');
   }
   function renderRecoveryChoice() {
     if (!sheet) return null;
@@ -317,13 +325,13 @@ export function IdentityCaptureFlow({
     return (
       <>
         {sheet.recovery === 'settings' &&
-          action('Open Settings', () => Linking.openSettings(), false, 'open-camera-settings')}
+          action(t('common.openSettings'), () => Linking.openSettings(), false, 'open-camera-settings')}
         {action(
           sheet.recovery === 'save'
-            ? 'Save completed result'
+            ? t('passport.sheet.saveCompleted')
             : sheet.recovery === 'settings'
-              ? 'Try camera again'
-              : 'Try again',
+              ? t('common.tryCameraAgain')
+              : t('common.tryAgain'),
           activeController.recover,
           false,
           'retry-capture',
@@ -340,34 +348,39 @@ export function IdentityCaptureFlow({
 }
 
 const protocolLabels: Record<keyof PassportObservation['protocols'], string> = {
-  countrySigningChain: 'Issuer signing chain (revocation and expiry are not checked)',
-  documentSignature: 'Chip data signature',
-  dataGroupHashes: 'Data integrity',
-  activeAuthentication: 'Active authentication',
-  chipAuthentication: 'Chip authentication',
-  pace: 'PACE connection',
-  basicAccessControl: 'BAC connection',
+  countrySigningChain: t('passport.protocol.countrySigningChain'),
+  documentSignature: t('passport.protocol.documentSignature'),
+  dataGroupHashes: t('passport.protocol.dataGroupHashes'),
+  activeAuthentication: t('passport.protocol.activeAuthentication'),
+  chipAuthentication: t('passport.protocol.chipAuthentication'),
+  pace: t('passport.protocol.pace'),
+  basicAccessControl: t('passport.protocol.basicAccessControl'),
 };
 const correspondenceLabels = {
-  documentNumber: 'Passport number',
-  birthDate: 'Date of birth',
-  expiryDate: 'Expiry date',
-  surname: 'Surname',
-  givenNames: 'Given names',
+  documentNumber: t('passport.field.documentNumber'),
+  birthDate: t('passport.field.birthDate'),
+  expiryDate: t('passport.field.expiryDate'),
+  surname: t('passport.field.surname'),
+  givenNames: t('passport.field.givenNames'),
 };
 const outcomeLabels: Record<string, string> = {
-  pass: 'Photos match',
-  fail: 'Photos did not match',
-  manual_review: 'Needs another look',
+  pass: t('face.outcome.pass'),
+  fail: t('face.outcome.fail'),
+  manual_review: t('face.outcome.manualReview'),
 };
 const failureLabels: Record<keyof PassportObservation['protocols'], string> = {
-  countrySigningChain: 'Issuer signing chain failed',
-  documentSignature: 'Chip data signature failed',
-  dataGroupHashes: 'Data integrity check failed',
-  activeAuthentication: 'Active authentication failed',
-  chipAuthentication: 'Chip authentication failed',
-  pace: 'PACE connection failed',
-  basicAccessControl: 'BAC connection failed',
+  countrySigningChain: t('passport.protocolFailed.countrySigningChain'),
+  documentSignature: t('passport.protocolFailed.documentSignature'),
+  dataGroupHashes: t('passport.protocolFailed.dataGroupHashes'),
+  activeAuthentication: t('passport.protocolFailed.activeAuthentication'),
+  chipAuthentication: t('passport.protocolFailed.chipAuthentication'),
+  pace: t('passport.protocolFailed.pace'),
+  basicAccessControl: t('passport.protocolFailed.basicAccessControl'),
+};
+const protocolStatus = {
+  succeeded: t('passport.protocolStatus.succeeded'),
+  failed: t('passport.protocolStatus.failed'),
+  notPerformed: t('passport.protocolStatus.notPerformed'),
 };
 
 export function CaptureResultDetails({
@@ -386,29 +399,22 @@ export function CaptureResultDetails({
     return (
       <View style={styles.card} testID="face-result">
         <Text accessibilityRole="header" style={styles.sheetTitle}>
-          Face comparison
+          {t('face.title')}
         </Text>
         {!comparison ? (
-          <Text style={styles.body}>Not taken yet</Text>
+          <Text style={styles.body}>{t('face.notTaken')}</Text>
         ) : !depth ? (
-          <Text style={styles.body}>
-            This comparison has no depth record, so its result is not shown. Take a new selfie to compare
-            again.
-          </Text>
+          <Text style={styles.body}>{t('face.noDepth')}</Text>
         ) : (
           <>
-            <Text style={styles.body}>
-              {outcomeLabels[comparison.outcome] ?? 'Unrecognized comparison result'}
-            </Text>
+            <Text style={styles.body}>{outcomeLabels[comparison.outcome] ?? t('face.outcome.other')}</Text>
             {comparison.savedResult && (
-              <Details label="Checked at" value={formatMoment(comparison.savedResult.recordedAt)} />
+              <Details label={t('face.checkedAt')} value={formatMoment(comparison.savedResult.recordedAt)} />
             )}
-            <Details label="Face depth (TrueDepth camera)" value="Face depth measured with this selfie" />
+            <Details label={t('face.depth')} value={t('face.depthMeasured')} />
             <Details
-              label="Expression"
-              value={
-                comparison.admissionReceipt.eyesOpen ? 'Blink completed; eyes reopened' : 'Not available'
-              }
+              label={t('face.expression')}
+              value={comparison.admissionReceipt.eyesOpen ? t('face.blinkCompleted') : t('face.notAvailable')}
             />
           </>
         )}
@@ -421,64 +427,79 @@ export function CaptureResultDetails({
     return (
       <View style={styles.card}>
         <Text accessibilityRole="header" style={styles.sheetTitle}>
-          Check details
+          {t('passport.details.title')}
         </Text>
-        <Details label="Sex recorded on the chip" value={passport.sex} />
-        {passport.personalNumber && <Details label="Personal number" value={passport.personalNumber} />}
+        <Details label={t('passport.field.sex')} value={passport.sex} />
+        {passport.personalNumber && (
+          <Details label={t('passport.field.personalNumber')} value={passport.personalNumber} />
+        )}
         {protocolKeys.map((key) => (
-          <Details
-            key={key}
-            label={protocolLabels[key]}
-            value={
-              { succeeded: 'Succeeded', failed: 'Failed', notPerformed: 'Not performed' }[
-                passport.protocols[key]
-              ]
-            }
-          />
+          <Details key={key} label={protocolLabels[key]} value={protocolStatus[passport.protocols[key]]} />
         ))}
         {comparison && depth && (
           <>
-            <Details label="Similarity" value={String(comparison.similarity)} />
-            <Details label="Comparison route" value={comparison.route} />
+            <Details label={t('face.technical.similarity')} value={String(comparison.similarity)} />
+            <Details label={t('face.technical.route')} value={comparison.route} />
             {depth && (
               <>
                 <Details
-                  label="Face relief (RMS, metres)"
+                  label={t('face.technical.relief')}
                   value={
                     depth.measurement.residualRMS == null
-                      ? 'Unavailable'
+                      ? t('face.technical.unavailable')
                       : String(depth.measurement.residualRMS)
                   }
                 />
-                <Details label="Depth samples" value={String(depth.measurement.sampleCount)} />
-                <Details label="Depth age (seconds)" value={String(depth.ageAtAdmission)} />
-                <Details label="Depth smoothing" value={depth.filtered ? 'Filtered' : 'Unfiltered'} />
-                <Details label="Depth policy" value={depth.measurement.policy.identifier} />
+                <Details label={t('face.technical.samples')} value={String(depth.measurement.sampleCount)} />
+                <Details label={t('face.technical.age')} value={String(depth.ageAtAdmission)} />
                 <Details
-                  label="Minimum relief (metres)"
+                  label={t('face.technical.smoothing')}
+                  value={depth.filtered ? t('face.technical.filtered') : t('face.technical.unfiltered')}
+                />
+                <Details label={t('face.technical.policy')} value={depth.measurement.policy.identifier} />
+                <Details
+                  label={t('face.technical.minimumRelief')}
                   value={String(depth.measurement.policy.minimumResidualRMS)}
                 />
-                <Details label="Minimum samples" value={String(depth.measurement.policy.minimumSamples)} />
                 <Details
-                  label="Maximum depth age (seconds)"
+                  label={t('face.technical.minimumSamples')}
+                  value={String(depth.measurement.policy.minimumSamples)}
+                />
+                <Details
+                  label={t('face.technical.maximumAge')}
                   value={String(depth.measurement.policy.maximumDepthAge)}
                 />
                 <Details
-                  label="Depth window (metres)"
-                  value={`${depth.measurement.policy.nearLimit}–${depth.measurement.policy.farLimit}`}
+                  label={t('face.technical.window')}
+                  value={t('face.technical.windowRange', {
+                    near: depth.measurement.policy.nearLimit,
+                    far: depth.measurement.policy.farLimit,
+                  })}
                 />
-                <Details label="Samples per axis" value={String(depth.measurement.policy.samplesPerAxis)} />
+                <Details
+                  label={t('face.technical.samplesPerAxis')}
+                  value={String(depth.measurement.policy.samplesPerAxis)}
+                />
               </>
             )}
-            <Details label="Blink age (seconds)" value={String(comparison.admissionReceipt.blinkAge)} />
             <Details
-              label="Steady hold (seconds)"
+              label={t('face.technical.blinkAge')}
+              value={String(comparison.admissionReceipt.blinkAge)}
+            />
+            <Details
+              label={t('face.technical.steadyHold')}
               value={String(comparison.admissionReceipt.steadyHoldDuration)}
             />
-            <Details label="Model loading (seconds)" value={String(comparison.modelLoadingSeconds)} />
-            <Details label="Comparison time (seconds)" value={String(comparison.comparisonSeconds)} />
-            <Details label="Reference SHA-256" value={comparison.referenceSHA256} />
-            <Details label="Selfie SHA-256" value={comparison.selfieSHA256} />
+            <Details
+              label={t('face.technical.modelLoading')}
+              value={String(comparison.modelLoadingSeconds)}
+            />
+            <Details
+              label={t('face.technical.comparisonTime')}
+              value={String(comparison.comparisonSeconds)}
+            />
+            <Details label={t('face.technical.referenceDigest')} value={comparison.referenceSHA256} />
+            <Details label={t('face.technical.selfieDigest')} value={comparison.selfieSHA256} />
           </>
         )}
       </View>
@@ -489,16 +510,21 @@ export function CaptureResultDetails({
       {focus === 'face' && renderFaceCard()}
       <View style={styles.card} testID="passport-result">
         <Text accessibilityRole="header" style={styles.sheetTitle}>
-          Passport
+          {t('passport.result.title')}
         </Text>
         {passport.protocolVerdicts.source === 'recorded' ? (
           <Details
-            label="Chip checks recorded"
-            value={`${formatMoment(passport.protocolVerdicts.recordedAt)}. Opening saved results does not repeat them.`}
+            label={t('passport.result.chipChecksRecorded')}
+            value={t('passport.result.chipChecksRecordedAt', {
+              moment: formatMoment(passport.protocolVerdicts.recordedAt),
+            })}
           />
         ) : (
           passport.savedResult && (
-            <Details label="Read at" value={formatMoment(passport.savedResult.recordedAt)} />
+            <Details
+              label={t('passport.result.readAt')}
+              value={formatMoment(passport.savedResult.recordedAt)}
+            />
           )
         )}
         {!!failed.length && (
@@ -508,10 +534,7 @@ export function CaptureResultDetails({
                 {failureLabels[key]}
               </Text>
             ))}
-            <Text style={styles.body}>
-              A failed chip check means this passport read should not be relied on. Read the chip again, or
-              use another document.
-            </Text>
+            <Text style={styles.body}>{t('passport.result.failedNotice')}</Text>
           </View>
         )}
         <View style={styles.portraits}>
@@ -522,10 +545,10 @@ export function CaptureResultDetails({
                 session={session}
                 image="reference"
                 sha256={referenceSHA}
-                accessibilityLabel="Passport chip photo"
+                accessibilityLabel={t('passport.result.chipPhoto')}
                 style={styles.image}
               />
-              <Text style={styles.label}>Passport photo</Text>
+              <Text style={styles.label}>{t('passport.result.passportPhoto')}</Text>
             </View>
           )}
           {comparison && (
@@ -535,29 +558,34 @@ export function CaptureResultDetails({
                 session={session}
                 image="selfie"
                 sha256={comparison.selfieSHA256}
-                accessibilityLabel="Compared selfie"
+                accessibilityLabel={t('passport.result.comparedSelfie')}
                 style={styles.image}
               />
-              <Text style={styles.label}>Your selfie</Text>
+              <Text style={styles.label}>{t('passport.result.yourSelfie')}</Text>
             </View>
           )}
         </View>
-        <Details label="Name" value={`${passport.givenNames} ${passport.surname}`.replace(/<+/g, ' ')} />
-        <Details label="Passport number" value={passport.documentNumber} />
-        <Details label="Date of birth" value={displayDate(passport.birthDateYYMMDD)} />
-        <Details label="Expiry date" value={displayDate(passport.expiryDateYYMMDD)} />
-        <Details label="Nationality" value={passport.nationality} />
-        <Details label="Issued by" value={passport.issuingState} />
-        {passport.placeOfBirth && <Details label="Place of birth" value={passport.placeOfBirth} />}
-        {passport.issuingAuthority && <Details label="Issuing authority" value={passport.issuingAuthority} />}
-        {passport.dateOfIssue && <Details label="Date of issue" value={passport.dateOfIssue} />}
-        {!passport.portraitAvailable && (
-          <Text style={styles.body}>
-            No usable chip photo was available. Read the chip again to try for a photo.
-          </Text>
+        <Details
+          label={t('passport.field.name')}
+          value={`${passport.givenNames} ${passport.surname}`.replace(/<+/g, ' ')}
+        />
+        <Details label={t('passport.field.documentNumber')} value={passport.documentNumber} />
+        <Details label={t('passport.field.birthDate')} value={displayDate(passport.birthDateYYMMDD)} />
+        <Details label={t('passport.field.expiryDate')} value={displayDate(passport.expiryDateYYMMDD)} />
+        <Details label={t('passport.field.nationality')} value={passport.nationality} />
+        <Details label={t('passport.field.issuedBy')} value={passport.issuingState} />
+        {passport.placeOfBirth && (
+          <Details label={t('passport.field.placeOfBirth')} value={passport.placeOfBirth} />
         )}
+        {passport.issuingAuthority && (
+          <Details label={t('passport.field.issuingAuthority')} value={passport.issuingAuthority} />
+        )}
+        {passport.dateOfIssue && (
+          <Details label={t('passport.field.dateOfIssue')} value={passport.dateOfIssue} />
+        )}
+        {!passport.portraitAvailable && <Text style={styles.body}>{t('passport.result.noPortrait')}</Text>}
         <Text accessibilityRole="header" style={styles.label}>
-          PRINTED DETAILS AND CHIP
+          {t('passport.result.correspondenceHeading')}
         </Text>
         {Object.entries(passport.correspondence).map(([field, observation]) => (
           <Details
@@ -565,32 +593,34 @@ export function CaptureResultDetails({
             label={correspondenceLabel(field)}
             value={
               observation === 'matches'
-                ? 'Matches'
+                ? t('passport.result.matches')
                 : observation === 'differs'
-                  ? 'Different — review this field'
-                  : 'Not compared'
+                  ? t('passport.result.differs')
+                  : t('passport.result.notCompared')
             }
           />
         ))}
         {!Object.keys(passport.correspondence).length && (
-          <Text style={styles.body}>Printed details were not compared with the chip.</Text>
+          <Text style={styles.body}>{t('passport.result.noCorrespondence')}</Text>
         )}
       </View>
       {focus === 'passport' && renderFaceCard()}
       <Action
         secondary
-        label={technical ? 'Hide check details' : 'View check details'}
+        label={technical ? t('passport.details.hide') : t('passport.details.show')}
         onPress={() => setTechnical(!technical)}
       />
       {renderTechnicalDetails()}
     </>
   );
 }
+/** A machine-readable-zone date (YYMMDD) as day, month and two-digit year; the century is unknown. */
 function displayDate(raw: string): string {
   if (!/^\d{6}$/.test(raw)) return raw;
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const month = months[Number(raw.slice(2, 4)) - 1];
-  return month ? `${Number(raw.slice(4))} ${month} ’${raw.slice(0, 2)}` : raw;
+  const month = Number(raw.slice(2, 4));
+  return month >= 1 && month <= 12
+    ? t('format.mrzDate', { day: Number(raw.slice(4)), month: `m${raw.slice(2, 4)}`, year: raw.slice(0, 2) })
+    : raw;
 }
 function Details({ label, value }: { label: string; value: string }) {
   return (
@@ -636,28 +666,28 @@ export function Action({
       </Pressable>
       {failure && (
         <Text accessibilityRole="alert" style={styles.body}>
-          This action could not finish. Try again.
+          {t('common.actionFailed')}
         </Text>
       )}
     </>
   );
 }
 export const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f4f5f8' },
-  content: { padding: 24, gap: 20, paddingBottom: 48 },
-  eyebrow: { color: '#233c69', fontWeight: '700', letterSpacing: 2 },
-  title: { fontSize: 32, fontWeight: '700', color: '#122b54' },
-  body: { fontSize: 18, lineHeight: 26, color: '#252c39' },
-  label: { fontSize: 14, fontWeight: '700', color: '#4d576a' },
-  detail: { gap: 4 },
-  card: { padding: 20, gap: 16, backgroundColor: '#fff', borderRadius: 20 },
-  portraits: { flexDirection: 'row', gap: 12 },
-  portrait: { flex: 1, gap: 8 },
-  image: { aspectRatio: 3 / 4, width: '100%' },
-  camera: { flex: 1, backgroundColor: '#152032', justifyContent: 'space-between' },
-  cameraTop: { padding: 24, gap: 12 },
-  cameraBottom: { paddingHorizontal: 24, paddingBottom: 20, gap: 12 },
-  white: { color: '#fff' },
+  root: { flex: 1, backgroundColor: color.background },
+  content: { padding: spacing.xl, gap: spacing.lg, paddingBottom: spacing.xxxxl },
+  eyebrow: { ...text.eyebrow, color: color.secondaryText },
+  title: { ...text.screenTitle, color: color.text },
+  body: { ...text.body, color: color.text },
+  label: { ...text.label, color: color.secondaryText },
+  detail: { gap: spacing.xxs },
+  card: { padding: spacing.lg, gap: spacing.md, backgroundColor: color.card, borderRadius: radius.card },
+  portraits: { flexDirection: 'row', gap: spacing.sm },
+  portrait: { flex: 1, gap: spacing.xs },
+  image: { aspectRatio: size.portraitAspectRatio, width: '100%' },
+  camera: { flex: 1, backgroundColor: color.cameraBackground, justifyContent: 'space-between' },
+  cameraTop: { padding: spacing.xl, gap: spacing.sm },
+  cameraBottom: { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.sm },
+  white: { color: color.onCamera },
   guideCenter: {
     position: 'absolute',
     top: 0,
@@ -667,24 +697,43 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  oval: { borderWidth: 3, borderColor: '#fff', borderRadius: 1000 },
-  action: { backgroundColor: '#173965', padding: 16, minHeight: 52, borderRadius: 14, alignItems: 'center' },
-  actionText: { color: '#fff', fontSize: 18, fontWeight: '600', textAlign: 'center' },
-  disabled: { opacity: 0.45 },
-  secondary: { backgroundColor: '#e5eaf3' },
-  secondaryText: { color: '#173965' },
+  oval: { borderWidth: border.guide, borderColor: color.onCamera, borderRadius: radius.full },
+  action: {
+    backgroundColor: color.tint,
+    padding: spacing.md,
+    minHeight: size.actionMinHeight,
+    borderRadius: radius.control,
+    alignItems: 'center',
+  },
+  actionText: { ...text.action, color: color.onTint, textAlign: 'center' },
+  disabled: { opacity: opacity.disabled },
+  secondary: { backgroundColor: color.secondaryFill },
+  secondaryText: { color: color.tint },
   scrim: {
     position: 'absolute',
     top: 0,
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#0008',
+    backgroundColor: color.scrim,
     justifyContent: 'flex-end',
   },
-  sheet: { backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '85%' },
-  sheetContent: { padding: 28, paddingBottom: 40, gap: 22 },
-  sheetTitle: { fontSize: 26, fontWeight: '700', color: '#122b54' },
+  sheet: {
+    backgroundColor: color.sheet,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
+    maxHeight: size.sheetMaxHeight,
+  },
+  sheetContent: { padding: spacing.xxl, paddingBottom: spacing.xxxl, gap: spacing.xl },
+  sheetTitle: { ...text.sectionTitle, color: color.text },
+  entry: { ...text.entry, color: color.text },
+  list: { gap: spacing.md },
+  group: { gap: spacing.sm },
+  documentPreview: { height: size.documentPreviewHeight },
+  documentImage: { height: size.documentImageHeight },
+  developerContent: { padding: spacing.xl, gap: spacing.md },
+  developerTitle: { ...text.developerTitle, color: color.text },
+  developerPreview: { height: size.developerPreviewHeight },
 });
 
 const protocolKeys = [
@@ -702,15 +751,15 @@ function correspondenceLabel(field: string): string {
 }
 
 const phaseTitles: Record<FlowState['phase'], string> = {
-  intro: 'Your passport',
-  loading: 'Opening saved checks',
-  saved: 'Saved passport checks',
-  scanning: 'Scan your passport',
-  review: 'Check the printed details',
-  reading: 'Reading your passport',
-  passport: 'Your results',
-  result: 'Your results',
-  comparing: 'Comparing your photos',
-  captured: 'Comparing your photos',
-  selfie: 'Take a selfie',
+  intro: t('passport.title.intro'),
+  loading: t('passport.title.loading'),
+  saved: t('passport.title.saved'),
+  scanning: t('passport.title.scanning'),
+  review: t('passport.title.review'),
+  reading: t('passport.title.reading'),
+  passport: t('passport.title.results'),
+  result: t('passport.title.results'),
+  comparing: t('passport.title.comparing'),
+  captured: t('passport.title.comparing'),
+  selfie: t('passport.title.selfie'),
 };

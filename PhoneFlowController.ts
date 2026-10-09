@@ -5,6 +5,7 @@ import type {
   PhoneCheckSnapshot,
 } from '@kenshiki/identity-capture';
 import { type ErrorText, errorCode, errorText } from './HolderText';
+import { t } from './locales/i18n';
 
 export type SavedPhoneCheck = { session: CaptureSession; snapshot: PhoneCheckSnapshot };
 export type PhoneFlowState = {
@@ -16,29 +17,25 @@ export type PhoneFlowState = {
 
 // Wording follows the SDK's native phone copy (Hosts/SensorHost/Sources/PhoneCheckCopy.swift).
 const setupErrors: ErrorText = {
-  compositionUnavailable: 'Text messaging is unavailable. Use an iPhone with text messaging enabled.',
-  phoneNotConfigured:
-    'The phone check is not set up in this app. Return to Identity; your other checks remain available.',
-  notConfigured: 'The phone verification service is not available for this check. Return to Identity.',
-  invalidConfiguration:
-    'The phone check is not set up in this app. Return to Identity; your other checks remain available.',
-  unauthorized: 'The phone verification service is not available for this check. Return to Identity.',
-  contextChanged: 'The checked ID or installation changed. Return to Identity and review your ID check.',
-  recoveryRequired:
-    'Resume the existing check before starting another one. Your text may already have arrived.',
-  messageNotSent: 'The text was not sent. You can send the same message again.',
+  compositionUnavailable: t('phone.setupError.compositionUnavailable'),
+  phoneNotConfigured: t('phone.setupError.phoneNotConfigured'),
+  notConfigured: t('phone.setupError.notConfigured'),
+  invalidConfiguration: t('phone.setupError.invalidConfiguration'),
+  unauthorized: t('phone.setupError.unauthorized'),
+  contextChanged: t('phone.setupError.contextChanged'),
+  recoveryRequired: t('phone.setupError.recoveryRequired'),
+  messageNotSent: t('phone.setupError.messageNotSent'),
 };
 const checkErrors: ErrorText = {
-  expired: 'This text challenge can no longer complete. Start a new check when you are ready.',
-  unknownChallenge: 'This text challenge can no longer complete. Start a new check when you are ready.',
-  conflict: 'The service could not bind this text to one sender. Start a new check when you are ready.',
-  refused: 'The phone verification service declined this check. Start a new check when you are ready.',
-  invalidResponse: 'The service returned a result that could not be verified. No new result was accepted.',
-  rateLimited: 'The service asked us to wait. Resume this check in a moment.',
-  timedOut: 'The service did not answer in time. Resume the check to look for the same text.',
-  storageUnavailable:
-    'The check could not be saved or opened on this phone. Your previous result has not been replaced.',
-  busy: 'The previous request is still finishing. Wait a moment, then try again.',
+  expired: t('phone.checkError.expired'),
+  unknownChallenge: t('phone.checkError.unknownChallenge'),
+  conflict: t('phone.checkError.conflict'),
+  refused: t('phone.checkError.refused'),
+  invalidResponse: t('phone.checkError.invalidResponse'),
+  rateLimited: t('phone.checkError.rateLimited'),
+  timedOut: t('phone.checkError.timedOut'),
+  storageUnavailable: t('phone.checkError.storageUnavailable'),
+  busy: t('phone.checkError.busy'),
 };
 
 /** Native SDK owns challenge identity, polling and encrypted receipts. JS only presents them. */
@@ -90,12 +87,8 @@ export class PhoneFlowController {
       code !== undefined && setupErrors[code]
         ? setupErrors[code]
         : finishing
-          ? 'The answer arrived but could not be saved. Save it again without sending another text.'
-          : errorText(
-              code,
-              checkErrors,
-              'The check could not finish. Resume it to look for the same text. Your previous result is retained.',
-            );
+          ? t('phone.checkError.finishing')
+          : errorText(code, checkErrors, t('phone.checkError.other'));
     const revoked = code === 'contextChanged' || code === 'unauthorized';
     this.update({ ...(revoked ? { snapshot: undefined } : {}), sheet: { kind: 'error', message } });
   }

@@ -1,4 +1,5 @@
 import { type CaptureErrorCode, isCaptureErrorCode } from '@kenshiki/identity-capture';
+import { formatLocale, t } from './locales/i18n';
 
 /** React Native rejects a native command with `{code}`; the bridge maps every native failure to
  * one CaptureErrorCode. Capture failure events carry the same vocabulary. */
@@ -16,18 +17,18 @@ export function errorText(code: CaptureErrorCode | undefined, texts: ErrorText, 
   return (code === undefined ? undefined : texts[code]) ?? otherwise;
 }
 
-const moment = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' });
-const calendar = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' });
+const moment = new Intl.DateTimeFormat(formatLocale, { dateStyle: 'medium', timeStyle: 'short' });
+const calendar = new Intl.DateTimeFormat(formatLocale, { dateStyle: 'medium', timeZone: 'UTC' });
 
 /** Native timestamps are ISO-8601 instants. Shown in the device's time zone. */
 export function formatMoment(iso: string): string {
   const value = new Date(iso);
-  return Number.isNaN(value.getTime()) ? 'Time not recorded' : moment.format(value);
+  return Number.isNaN(value.getTime()) ? t('format.timeNotRecorded') : moment.format(value);
 }
 
 /** Date-only YYYY-MM-DD values keep their calendar day; no time-zone conversion. */
 export function formatCalendarDate(day: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
-  if (!match) return 'Date not recorded';
+  if (!match) return t('format.dateNotRecorded');
   return calendar.format(new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))));
 }
