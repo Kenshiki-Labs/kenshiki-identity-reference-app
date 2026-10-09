@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {AppState, Linking, ScrollView, Text, View} from 'react-native';
 import {IdentityCaptureImage, IdentityCapturePreview, IdentityCaptureSession} from '@kenshiki/identity-capture';
-import type {Configuration, DocumentObservation} from '@kenshiki/identity-capture';
+import type {Configuration, DocumentObservation, DocumentSideObservation} from '@kenshiki/identity-capture';
 import {DocumentCheckPanel} from './DocumentCheckPanel';
 import {Action, styles} from './IdentityCaptureFlow';
 import {DocumentFlowController, type DocumentFlowState, type SavedDocumentCapture} from './DocumentFlowController';
@@ -33,9 +33,10 @@ export function DriverLicenseFlow({configuration, saved, resume, onComplete, onE
     try {
       const result = await controller.handoff();
       if (result) onComplete(result); else onExit();
-    } catch {
-      // The controller renders the failed settlement in its bottom sheet. Keep ownership here.
+    } catch (error) {
+      // Ownership stays here; the failed settlement is shown in this screen's bottom sheet.
       finishingRef.current = false; setFinishing(false);
+      if (!controller.state.sheet) controller.fail(error);
     }
   };
   const exit = async () => {
@@ -127,6 +128,7 @@ function documentHint(state: DocumentFlowState): string {
     locationRequired: 'Location access is needed for this capture.',
     captureFailed: 'The photo could not be completed. Try again.',
     cameraUnavailable: 'The camera is not available.',
+    nativeControlsPaused: 'The camera paused. Continue when you are ready.',
   };
   return hints[state.issue ?? ''] ?? 'Keep all four corners in view and hold the card still.';
 }
@@ -141,7 +143,6 @@ export function DocumentResultDetails({result}: {result: SavedDocumentCapture}) 
   const barcode = document.back?.pdf417;
   const fields = barcode?.fields ?? {};
   const address = [fields.DAG, fields.DAH, fields.DAI, fields.DAJ, fields.DAK].filter(Boolean).join('\n');
-  const readable = document.back?.pdf417Status === 'readable' && barcode?.status === 'readable';
   return <>
     <View style={styles.card} testID="document-result">
       <Text accessibilityRole="header" style={styles.sheetTitle}>Your photos</Text>
@@ -158,9 +159,7 @@ export function DocumentResultDetails({result}: {result: SavedDocumentCapture}) 
     </View>
     {document.back && <View style={styles.card} testID="document-barcode-details">
       <Text accessibilityRole="header" style={styles.sheetTitle}>Details from the barcode</Text>
-      <Text style={styles.body}>{readable ? 'Read from the back of your license.' :
-        Object.keys(fields).length ? 'Some details were read. Review them against the card.' :
-          'The barcode details could not be read. You can retake the license photos.'}</Text>
+      <Text style={styles.body} testID="document-barcode-status">{barcodeStatus(document.back)}</Text>
       {(fields.DAA || fields.DCS || fields.DAC) && <Detail label="Name" value={documentName(document)} />}
       {fields.DAQ && <Detail label="License number" value={fields.DAQ} />}
       {fields.DBB && <Detail label="Date of birth, as read" value={fields.DBB} />}
@@ -181,6 +180,23 @@ const fieldLabels: Record<string, string> = {
   DAY: 'Eye color', DAU: 'Height', DAW: 'Weight', DCA: 'Vehicle class', DCB: 'Restrictions',
   DCD: 'Endorsements', DCF: 'Document reference', DDA: 'Compliance field', DDB: 'Revision date',
 };
+/** Each decoder and parser state has its own text; none of them is issuer validation. */
+function barcodeStatus(back: DocumentSideObservation): string {
+  switch (back.pdf417Status) {
+    case 'notFound': return 'No barcode was found in the photo of the back. Retake the back with the whole barcode in view.';
+    case 'ambiguous': return 'More than one barcode was found in the photo of the back. Retake it with only this license in view.';
+    case 'failed': return 'The barcode could not be decoded. Retake the back, holding it still and avoiding glare.';
+    case 'notRequested': return 'The barcode was not read from this photo.';
+    case 'readable': switch (back.pdf417?.status) {
+      case 'readable': return back.pdf417.missingRequiredElements.length
+        ? 'Read from the back of your license. Some required details were missing; review them against the card.'
+        : 'Read from the back of your license.';
+      case 'malformed': return 'The barcode was read, but its contents do not follow the license barcode standard. Review any details below against the card.';
+      case 'unsupported': return 'The barcode was read, but this license’s barcode version is not supported. Review any details below against the card.';
+      case undefined: return 'The barcode was found, but its details could not be read. You can retake the license photos.';
+    }
+  }
+}
 function Detail({label, value}: {label: string; value: string}) {
-  return <View style={styles.detail}><Text style={styles.label}>{label}</Text><Text selectable style={styles.body}>{value}</Text></View>;
+  return <View style={styles.detail}><Text style={styles.label}>{label}</Text><Text style={styles.body}>{value}</Text></View>;
 }

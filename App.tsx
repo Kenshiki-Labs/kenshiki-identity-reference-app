@@ -10,8 +10,9 @@ import {SSNFlow, ssnSummary} from './SSNFlow';
 import type {SavedSSNCheck} from './SSNFlowController';
 import {DocumentCheckPanel} from './DocumentCheckPanel';
 import {IdentitySheetHost} from './IdentitySheetHost';
-import {PhoneFlow} from './PhoneFlow';
+import {PhoneFlow, phoneCheckStopped} from './PhoneFlow';
 import type {SavedPhoneCheck} from './PhoneFlowController';
+import {errorCode, errorText, type ErrorText} from './HolderText';
 
 const rows = [
   ['P<UTOSPECIMEN<<SYNTHETIC<<<<<<<<<<<<<<<<<<<<'],
@@ -25,9 +26,25 @@ const messages = {
   transportFinishing: 'Read complete.',
   failure: 'The passport could not be read. Try again.',
 };
+const clearErrors: ErrorText = {
+  busy: 'Another check is still finishing. Wait a moment, then try again. Nothing has been deleted yet.',
+  sessionUnavailable: 'This screen closed before deletion finished. Try again. Nothing has been deleted yet.',
+  resultsNotConfigured: 'Saved results are not set up in this app, so there is nothing to delete here.',
+  resultIntegrityFailure: 'This phone could not open its secure storage to delete them. Try again. Your saved results are unchanged.',
+  documentCustodyFailed: 'This phone could not open its secure storage to delete them. Try again. Your saved scans are unchanged.',
+  storageUnavailable: 'This phone could not open its secure storage to delete them. Try again. Nothing has been deleted yet.',
+};
+const restoreErrors: ErrorText = {
+  sessionUnavailable: 'The saved results closed before they finished opening. Try reopening them.',
+  busy: 'Another check is still finishing. Wait a moment, then reopen your saved results.',
+};
 
 const emptyConfiguration: Configuration = {};
-export default function App({configuration = emptyConfiguration}: {configuration?: Configuration}) {
+/** `developerChecks` is passed only by the simulator Debug AppDelegate. `configurationIssue` names
+ * a native configuration step that failed before React mounted. */
+export default function App({configuration = emptyConfiguration, developerChecks = false, configurationIssue}: {
+  configuration?: Configuration; developerChecks?: boolean; configurationIssue?: 'holderScopeUnreadable';
+}) {
   const [screen, setScreen] = useState<'identity' | 'result' | 'capture' | 'checks' | 'documentCapture' | 'documentResult' | 'ssn' | 'phone'>('identity');
   const [result, setResult] = useState<CompletedCapture>();
   const [focus, setFocus] = useState<'passport' | 'face'>('passport');
@@ -47,8 +64,19 @@ export default function App({configuration = emptyConfiguration}: {configuration
   const [clearing, setClearing] = useState(false);
   const [openingResults, setOpeningResults] = useState(!!configuration.results);
   const [savedCount, setSavedCount] = useState(0);
-  const [restoreError, setRestoreError] = useState(false);
+  const [restoreFailure, setRestoreFailure] = useState<string>();
   const [restoreAttempt, setRestoreAttempt] = useState(0);
+  const releasing = useRef<Promise<unknown>>(Promise.resolve());
+  // One configuration is one holder's custody. Before the next holder's saved results open,
+  // release every session the previous holder's screens own and clear their personal state.
+  useEffect(() => {
+    const previous = [owned.current?.session, ownedDocument.current?.session, ownedSSN.current?.session, ownedPhone.current?.session];
+    owned.current = undefined; ownedDocument.current = undefined; ownedSSN.current = undefined; ownedPhone.current = undefined;
+    setResult(undefined); setDocument(undefined); setSSN(undefined); setPhone(undefined);
+    setInput({}); setDocumentInput({}); setSSNInput(undefined); setPhoneInput(undefined);
+    setClearSheet(undefined); setClearError(undefined); setSavedCount(0); setRestoreFailure(undefined); setScreen('identity');
+    releasing.current = Promise.all(previous.map(session => session?.release()));
+  }, [configuration]);
   useEffect(() => {
     if (!configuration.results) { setOpeningResults(false); return; }
     let active = true;
@@ -56,18 +84,22 @@ export default function App({configuration = emptyConfiguration}: {configuration
     setOpeningResults(true);
     void (async () => {
       try {
+        await releasing.current;
+        if (!active) return;
         await controller.open();
         if (!active) return;
-        if (controller.state.sheet) { setRestoreError(true); return; }
+        const sheet = controller.state.sheet;
+        if (sheet) { setRestoreFailure(sheet.message); return; }
         setSavedCount(controller.state.saved?.length ?? (controller.state.passport ? 1 : 0));
         if (controller.state.passport) {
           const restored = await controller.handoff();
           if (!active) { await restored.session.release(); return; }
           owned.current = restored; setResult(restored);
         }
-        setRestoreError(false);
-      } catch { if (active) setRestoreError(true); }
-      finally { await controller.dispose(); if (active) setOpeningResults(false); }
+        setRestoreFailure(undefined);
+      } catch (error) {
+        if (active) setRestoreFailure(errorText(errorCode(error), restoreErrors, 'Your saved results could not be opened. Try reopening them.'));
+      } finally { await controller.dispose(); if (active) setOpeningResults(false); }
     })();
     return () => { active = false; void controller.dispose(); };
   }, [configuration, restoreAttempt]);
@@ -121,13 +153,25 @@ export default function App({configuration = emptyConfiguration}: {configuration
         await ownedDocument.current?.session.release();
         ownedDocument.current = undefined; setDocument(undefined);
       } else {
-        if (configuration.results) await owned.current?.session.eraseResults();
-        await owned.current?.session.release(); owned.current = undefined; setResult(undefined); setSavedCount(0);
+        // An unreadable store has no review session; erase it through a session of its own.
+        const review = owned.current?.session;
+        const session = review ?? await IdentityCaptureSession.create(configuration);
+        try { if (configuration.results) await session.eraseResults(); }
+        catch (error) { if (!review) await session.release(); throw error; }
+        await session.release(); owned.current = undefined; setResult(undefined); setSavedCount(0); setRestoreFailure(undefined);
       }
       setClearSheet(undefined); setScreen('identity');
-    } catch { setClearError('The saved scans could not be deleted. They have not been removed from this screen. Try again.'); }
-    finally { setClearing(false); }
+    } catch (error) {
+      setClearError(errorText(errorCode(error), clearErrors,
+        'The saved results could not be deleted. They have not been removed from this screen. Try again.'));
+    } finally { setClearing(false); }
   }
+  const passportReady = !!configuration.trustAnchorsURL;
+  const faceReady = !!configuration.embedderURL && !!configuration.detectorURL;
+  const blocked = openingResults || !!restoreFailure;
+  const passportDisabled = blocked || (!passportReady && !result && !savedCount);
+  const faceDisabled = blocked || !(result?.comparison || (faceReady && result?.passport.portraitAvailable) || (!result && savedCount > 0));
+  const covered = !!clearSheet || !!restoreFailure;
   return <IdentitySheetHost><SafeAreaView style={styles.root}>
     {screen === 'capture' ? <IdentityCaptureFlow configuration={configuration} {...input}
       onComplete={accept} onExit={() => { setInput({}); setScreen('identity'); }} /> :
@@ -137,27 +181,34 @@ export default function App({configuration = emptyConfiguration}: {configuration
       onComplete={acceptSSN} onExit={() => { setSSNInput(undefined); setScreen('identity'); }} /> :
     screen === 'phone' ? <PhoneFlow configuration={configuration} saved={phoneInput}
       onComplete={acceptPhone} onExit={() => { setPhoneInput(undefined); setScreen('identity'); }} /> :
-    screen === 'checks' ? <View style={{flex: 1}}><Action label="Back to Identity" onPress={() => setScreen('identity')} /><IntegrationChecks configuration={configuration} /></View> :
-    <ScrollView contentContainerStyle={styles.content} accessibilityElementsHidden={!!clearSheet}>
+    screen === 'checks' && developerChecks && __DEV__ ? <View style={{flex: 1}}><Action label="Back to Identity" onPress={() => setScreen('identity')} /><IntegrationChecks configuration={configuration} /></View> :
+    <ScrollView contentContainerStyle={styles.content} testID="identity-hub" accessibilityElementsHidden={covered}
+      importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}>
       <Text accessibilityRole="header" style={styles.title}>{screen === 'result' ? 'Your results' : screen === 'documentResult' ? 'Your driver’s license' : 'Identity'}</Text>
       {screen === 'identity' ? <>
         <Text style={styles.body}>Your identity checks, together in one place.</Text>
+        {configurationIssue === 'holderScopeUnreadable' && <Text style={styles.body} testID="configuration-issue">
+          Saved checks are unavailable because this app’s local holder record could not be read. New checks are not saved.</Text>}
         <Pressable accessibilityRole="button" style={styles.card} testID="open-driver-license"
           onPress={() => document && isCompleteDocument(document.document) ? setScreen('documentResult') : startDocument()}>
           <Text style={styles.sheetTitle}>Driver’s license</Text>
           <Text style={styles.body}>{document ? isCompleteDocument(document.document)
             ? `${documentName(document.document)} · View results` : 'Front saved · Continue with the back' : 'Scan your license or open a saved scan'}</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" style={styles.card} testID="open-capture-flow" disabled={openingResults || restoreError}
+        <Pressable accessibilityRole="button" accessibilityState={{disabled: passportDisabled}} disabled={passportDisabled}
+          style={[styles.card, passportDisabled && styles.disabled]} testID="open-capture-flow"
           onPress={() => { setFocus('passport'); if (result) setScreen('result'); else start(); }}>
           <Text style={styles.sheetTitle}>Passport</Text>
-          <Text style={styles.body}>{result ? `${result.passport.givenNames} ${result.passport.surname} · View results` : openingResults ? 'Opening saved results…' : savedCount ? 'Open saved passport results' : 'Scan and read your passport'}</Text>
+          <Text style={styles.body}>{result ? `${result.passport.givenNames} ${result.passport.surname} · View results` : openingResults ? 'Opening saved results…'
+            : savedCount ? 'Open saved passport results' : passportReady ? 'Scan and read your passport'
+              : 'Passport chip checking is not set up in this app. Your other identity checks remain available.'}</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityState={{disabled: openingResults || restoreError || (!result?.passport.portraitAvailable && !savedCount)}}
-          disabled={openingResults || restoreError || (!result?.passport.portraitAvailable && !savedCount)} style={[styles.card, (openingResults || restoreError || (!result?.passport.portraitAvailable && !savedCount)) && styles.disabled]}
+        <Pressable accessibilityRole="button" accessibilityState={{disabled: faceDisabled}} disabled={faceDisabled}
+          style={[styles.card, faceDisabled && styles.disabled]}
           testID="face-match-card" onPress={() => { setFocus('face'); if (result?.comparison) setScreen('result'); else start(result ? 'selfie' : undefined); }}>
           <Text style={styles.sheetTitle}>Face match</Text>
-          <Text style={styles.body}>{result?.comparison ? 'Comparison complete · View results' : result ? 'Compare a selfie with your passport photo' : savedCount ? 'Choose a saved passport to view its face check' : 'Read a passport to add its photo first'}</Text>
+          <Text style={styles.body}>{result?.comparison ? 'Comparison complete · View results' : !result && savedCount ? 'Choose a saved passport to view its face check'
+            : !faceReady ? 'Face comparison is not set up in this app.' : result ? 'Compare a selfie with your passport photo' : 'Read a passport to add its photo first'}</Text>
         </Pressable>
         <Pressable accessibilityRole="button" style={styles.card} testID="open-ssn" onPress={openSSN}>
           <Text style={styles.sheetTitle}>Social Security number</Text>
@@ -167,13 +218,14 @@ export default function App({configuration = emptyConfiguration}: {configuration
         <Pressable accessibilityRole="button" style={styles.card} testID="open-phone" onPress={openPhone}>
           <Text style={styles.sheetTitle}>Phone</Text>
           <Text style={styles.body}>{phone?.snapshot.pending ? 'Check in progress · Resume' : phone?.snapshot.receipt
-            ? 'Result available · View receipt and comparison' : 'Send a text and compare subscriber details with your checked ID'}</Text>
+            ? phoneCheckStopped(phone.snapshot.receipt) ? 'Check stopped · Subscriber details differ from your ID'
+              : 'Result available · View receipt and comparison' : 'Send a text and compare subscriber details with your checked ID'}</Text>
         </Pressable>
         {configuration.results && result && <Action label="Open saved passport checks" secondary disabled={openingResults} onPress={openSavedResults} />}
         {configuration.results && result && <Text style={styles.label}>Saved passport and face results stay on this phone until you erase them.</Text>}
         {result && <Action label="Erase all passport and face results" secondary onPress={() => requestClear('passport')} />}
         {document && <Action label="Delete saved license scans" secondary onPress={() => requestClear('document')} />}
-        <Action label="Developer checks" secondary onPress={() => setScreen('checks')} testID="open-sdk-checks" />
+        {developerChecks && __DEV__ && <Action label="Developer checks" secondary onPress={() => setScreen('checks')} testID="open-sdk-checks" />}
       </> : screen === 'documentResult' && document ? <>
         <DocumentResultDetails result={document} />
         <DocumentCheckPanel key={document.document.front?.captureID} session={document.session} configured={!!configuration.document?.check} />
@@ -184,15 +236,18 @@ export default function App({configuration = emptyConfiguration}: {configuration
         <CaptureResultDetails result={result} focus={focus} />
         <Action label="Back to Identity" onPress={() => setScreen('identity')} />
         <Action label={result.comparison ? 'Retake selfie' : 'Compare with a selfie'} secondary
-          disabled={!result.passport.portraitAvailable} onPress={() => start('selfie')} />
-        <Action label="Read chip again" secondary onPress={() => start('read')} />
+          disabled={!result.passport.portraitAvailable || !faceReady} onPress={() => start('selfie')} />
+        {!faceReady && <Text style={styles.body}>Face comparison is not set up in this app.</Text>}
+        <Action label="Read chip again" secondary disabled={!passportReady} onPress={() => start('read')} />
         <Action label="Clear results" secondary onPress={() => requestClear('passport')} />
       </>}
     </ScrollView>}
-    {restoreError && <View style={styles.scrim}><View style={styles.sheet} accessibilityViewIsModal>
-      <View style={styles.sheetContent}><Text style={styles.sheetTitle}>Saved results could not be opened</Text>
-        <Text style={styles.body}>Try reopening them. Nothing has been erased.</Text>
+    {restoreFailure && !clearSheet && <View style={styles.scrim}><View style={styles.sheet} accessibilityViewIsModal testID="restore-bottom-sheet">
+      <View style={styles.sheetContent}><Text accessibilityRole="header" style={styles.sheetTitle}>Saved results could not be opened</Text>
+        <Text style={styles.body}>{restoreFailure} Nothing has been erased.</Text>
         <Action label="Reopen saved results" disabled={openingResults} onPress={() => setRestoreAttempt(value => value + 1)} />
+        {configuration.results && <Action label="Erase saved passport and face results" secondary disabled={openingResults}
+          testID="erase-unreadable-results" onPress={() => requestClear('passport')} />}
       </View>
     </View></View>}
     {clearSheet && <View style={styles.scrim}><View style={styles.sheet} accessibilityViewIsModal>
@@ -208,6 +263,7 @@ export default function App({configuration = emptyConfiguration}: {configuration
   </SafeAreaView></IdentitySheetHost>;
 }
 
+/** Simulator Debug only (see AppDelegate). Uses its own isolated custody names, never the holder's stores. */
 function IntegrationChecks({configuration}: {configuration: Configuration}) {
   const [session, setSession] = useState<IdentityCaptureSession>();
   const [status, setStatus] = useState('Ready');
@@ -219,7 +275,7 @@ function IntegrationChecks({configuration}: {configuration: Configuration}) {
     IdentityCaptureSession.create().then(value => {
       active = value;
       if (alive) setSession(value); else void value.release();
-    }).catch(() => setStatus('Create failed'));
+    }, error => setStatus(`Create failed: ${errorCode(error) ?? 'no code returned'}`));
     return () => { alive = false; void active?.release(); };
   }, []);
 
@@ -235,7 +291,7 @@ function IntegrationChecks({configuration}: {configuration: Configuration}) {
     };
     async function rejects(operation: () => Promise<unknown>, code: string) {
       try { await operation(); } catch (error) {
-        check((error as {code?: string}).code === code, code); return;
+        check(errorCode(error) === code, code); return;
       }
       throw new Error(`Expected ${code}`);
     }
@@ -248,7 +304,7 @@ function IntegrationChecks({configuration}: {configuration: Configuration}) {
       second = await IdentityCaptureSession.create();
       check(first.id !== second.id, 'Independent native sessions');
       await rejects(() => second!.listResults(), 'resultsNotConfigured');
-      check((await first.listResults()).length === 0, 'Encrypted completed-result discovery');
+      check((await first.listResults()).length === 0, 'Isolated completed-result list starts empty');
       await rejects(() => first!.documentCheckRestore(), configuration.document?.check ? 'documentFrontRequired' : 'documentCheckNotConfigured');
       await first.eraseResults();
       check((await first.listResults()).length === 0, 'Completed-result custody erasure');

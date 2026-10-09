@@ -1,11 +1,27 @@
-import type {Configuration, IdentityCaptureSession, SSNSessionSnapshot} from '@kenshiki/identity-capture';
+import type {CaptureErrorCode, Configuration, IdentityCaptureSession, SSNSessionSnapshot} from '@kenshiki/identity-capture';
+import {errorCode, errorText, type ErrorText} from './HolderText';
 
 export type SavedSSNCheck = {session: IdentityCaptureSession; snapshot: SSNSessionSnapshot};
 type Recovery = 'localSave' | 'entry' | 'open' | 'exit' | 'fresh';
 export type SSNFlowState = {
   session?: IdentityCaptureSession; snapshot?: SSNSessionSnapshot;
   digits: string; busy: boolean; editing: boolean;
-  sheet?: {kind: 'confirmation'} | {kind: 'recovery'; title: string; message: string; recovery: Recovery};
+  sheet?: {kind: 'confirmation'} | {kind: 'erase'} | {kind: 'recovery'; title: string; message: string; recovery: Recovery};
+};
+/** Codes that mean the check cannot run in this app as configured; the holder can only leave. */
+const setupErrors: ErrorText = {
+  ssnNotConfigured: 'This check is not set up in this app. Return to Identity; your other identity checks remain available.',
+  invalidConfiguration: 'This check is not set up in this app. Return to Identity; your other identity checks remain available.',
+  notConfigured: 'The verification service is not set up for this app. Return to Identity; your other identity checks remain available.',
+  unauthorized: 'The verification service did not accept this app. Return to Identity; your other identity checks remain available.',
+  contextChanged: 'The sign-in this check belongs to has changed. Return to Identity and open the check again.',
+};
+const entryErrors: ErrorText = {
+  storageUnavailable: 'The saved check could not be opened. Try opening it again.',
+  rateLimited: 'The service asked us to wait. Enter your number again in a moment.',
+  confirmationRequired: 'Confirm every digit of your number before the check starts.',
+  invalidRequest: 'The number could not be sent as entered. Enter all nine digits again.',
+  busy: 'The previous request is still finishing. Wait a moment, then enter your number again.',
 };
 
 /** The native SDK owns exact confirmation, single dispatch and encrypted local recovery.
@@ -67,7 +83,7 @@ export class SSNFlowController {
             if (epoch === this.epoch && !this.closed) this.accept(snapshot, false);
           }
         } catch (readError) { failure = readError; }
-        if (epoch === this.epoch && !this.closed) this.showFailure((failure as {code?: string}).code);
+        if (epoch === this.epoch && !this.closed) this.showFailure(errorCode(failure));
       }
     } finally {
       if (this.active === pending) this.active = undefined;
@@ -121,17 +137,26 @@ export class SSNFlowController {
     if (sheet.recovery === 'entry' || sheet.recovery === 'fresh') this.beginEntry();
     return Promise.resolve();
   };
-  private showFailure(code?: string) {
-    const unavailable = ['ssnNotConfigured', 'notConfigured', 'invalidConfiguration', 'contextChanged', 'unauthorized'].includes(code ?? '');
+  /** Presents a rejected command in this screen's sheet. */
+  fail = (error: unknown) => this.showFailure(errorCode(error));
+  askErase = () => { if (!this.closed && !this.state.busy) this.update({sheet: {kind: 'erase'}}); };
+  dismiss = () => { if (!this.state.busy) this.update({sheet: undefined}); };
+  /** Revokes any confirmation, then erases this holder's SSN journal, receipts and custody key. */
+  erase = () => this.run(async session => {
+    await session.ssnCancel(); await session.ssnErase();
+    this.update({snapshot: undefined});
+    return session.ssnSnapshot();
+  });
+  private showFailure(code?: CaptureErrorCode) {
+    const unavailable = code !== undefined && setupErrors[code] !== undefined;
     const localSave = this.state.snapshot?.state === 'finishing';
     const unknown = this.state.snapshot?.recoveryNeeded && !localSave;
     this.update({digits: '', snapshot: this.state.snapshot && redact(this.state.snapshot), sheet: {
       kind: 'recovery', title: unavailable ? 'This check is not ready' : unknown ? 'The result was not received' : 'The check could not finish',
-      message: unavailable ? 'Return to Identity. The verification service must be reconnected before you can continue.' :
+      message: unavailable ? errorText(code, setupErrors, '') :
         localSave ? 'The answer arrived but could not be saved on this phone. Try saving it again; this will not send another check.' :
           unknown ? 'The previous check may have happened. Starting again sends a new request. You will review and confirm the number first.' :
-            code === 'storageUnavailable' ? 'The saved check could not be opened. Try opening it again.' :
-              'Enter your number again and confirm every digit before continuing.',
+            errorText(code, entryErrors, 'Enter your number again and confirm every digit before continuing.'),
       recovery: unavailable ? 'exit' : localSave ? 'localSave' : unknown ? 'fresh' :
         code === 'storageUnavailable' || !this.state.snapshot ? 'open' : 'entry',
     }});
@@ -159,7 +184,7 @@ export class SSNFlowController {
         else if (wasEditing && !this.state.snapshot?.receipt) this.update({sheet: {kind: 'recovery', title: 'Check paused',
           message: 'Enter your number again when you are ready.', recovery: 'entry'}});
       }
-    } catch (error) { if (epoch === this.epoch) this.showFailure((error as {code?: string}).code); }
+    } catch (error) { if (epoch === this.epoch) this.fail(error); }
     finally { this.pausing = false; if (epoch === this.epoch) this.update({busy: false}); }
   };
   handoff = async (): Promise<SavedSSNCheck | undefined> => {
@@ -167,7 +192,7 @@ export class SSNFlowController {
     ++this.epoch;
     this.update({digits: '', snapshot: this.state.snapshot && redact(this.state.snapshot), sheet: undefined, busy: true});
     try { await this.settle(); }
-    catch (error) { this.update({busy: false}); this.showFailure((error as {code?: string}).code); throw error; }
+    catch (error) { this.update({busy: false}); this.fail(error); throw error; }
     if (!this.current || !this.state.snapshot) { await this.dispose(); return undefined; }
     const result = {session: this.current, snapshot: redact(this.state.snapshot)};
     this.closed = true; this.current = undefined; return result;

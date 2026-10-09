@@ -61,7 +61,8 @@ for filename in ['App.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts
                  'DocumentCheckPanel.test.tsx',
                  'DriverLicenseFlow.test.tsx', 'DocumentFlowController.test.ts',
                  'PhoneFlow.tsx', 'SubscriberResultDetails.tsx', 'PhoneFlowController.ts', 'PhoneFlow.test.tsx', 'PhoneFlowController.test.ts',
-                 'SSNFlow.tsx', 'SSNFlowController.ts', 'SSNFlow.test.tsx', 'SSNFlowController.test.ts']:
+                 'SSNFlow.tsx', 'SSNFlowController.ts', 'SSNFlow.test.tsx', 'SSNFlowController.test.ts',
+                 'HolderText.ts', 'ReferenceFindings.test.tsx', 'HolderLifecycle.test.tsx']:
     shutil.copyfile(Path(__file__).with_name(filename), host / filename)
 shutil.copyfile(Path(__file__).with_name('CaptureFlowController.test.ts'), host / 'CaptureFlowController.test.ts')
 shutil.copyfile(Path(__file__).with_name('IdentityCaptureFlow.test.tsx'), host / 'IdentityCaptureFlow.test.tsx')

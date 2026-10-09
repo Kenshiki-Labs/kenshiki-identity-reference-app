@@ -29,7 +29,7 @@ async function setup() {
   });
   return {view, native, press};
 }
-test('reopening reads saved status without purchasing and corrections show complete returned details', async () => {
+test('reopening reads saved status without purchasing and corrections show the returned answer without raw provider keys', async () => {
   const f = await setup(); expect(f.native.documentCheck).not.toHaveBeenCalled();
   await f.press('Check license record'); expect(f.native.documentCheck).toHaveBeenCalledWith(true);
   await f.press('Review requested corrections');
@@ -38,11 +38,11 @@ test('reopening reads saved status without purchasing and corrections show compl
   await f.press('Submit corrections');
   expect(f.native.documentCheckCorrect).toHaveBeenCalledWith({givenName: 'SYNTHETIC'}, true);
   const rendered = JSON.stringify(f.view.toJSON());
-  expect(rendered).toContain('Issuing record matched'); expect(rendered).toContain('name and date agreed');
-  expect(rendered).toContain('name-first-match'); expect(rendered).toContain('full');
-  expect(rendered).toContain('false'); expect(rendered).toContain('test-contract-v1');
+  expect(rendered).toContain('Issuing record matched'); expect(rendered).toContain('The checking service returned 1 individual check.');
+  expect(rendered).toContain('test-contract-v1');
   expect(rendered).toContain('request-digest'); expect(rendered).toContain('observation-digest');
-  expect(rendered).toContain('SYNTHETIC'); expect(rendered).toContain('answered');
+  expect(rendered).toContain('Given name'); expect(rendered).toContain('SYNTHETIC');
+  for (const raw of ['name and date agreed', 'name-first-match', 'issuer', '"answered"']) expect(rendered).not.toContain(raw);
   await act(async () => f.view.unmount());
 });
 test('provider errors offer local restore and never automatically repeat a check', async () => {

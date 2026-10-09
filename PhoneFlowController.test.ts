@@ -8,7 +8,7 @@ const complete: PhoneCheckSnapshot = {...ready, stage: 'completed', receipt: {
   challengeID: 'synthetic', sender: '12025550123', messageHash: '0'.repeat(64),
   receivedAt: '2026-10-08T12:00:00Z', completedAt: '2026-10-08T12:00:01Z',
   subjectComparison: {status: 'contradicted', fieldsCompared: ['givenName'], checkedAt: '2026-10-08T12:00:01Z',
-    evidence: {requestID: 'synthetic', providers: [{source: 'twilio', answered: true, numberValid: false, smsFraudRiskScore: 0}],
+    evidence: {requestID: 'synthetic', providers: [{source: 'synthetic-source', answered: true, numberValid: false, smsFraudRiskScore: 0}],
       fields: [{field: 'newField', source: 'newSource', grade: 'newGrade'}]}},
 }};
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(done => { resolve = done; }); return {promise, resolve}; }

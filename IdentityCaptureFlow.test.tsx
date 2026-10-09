@@ -29,7 +29,7 @@ beforeEach(() => jest.clearAllMocks());
 
 test('passport completion returns to cards and results reopen without repeating capture or deleting evidence', async () => {
   let view!: renderer.ReactTestRenderer;
-  await act(async () => { view = renderer.create(<App />); });
+  await act(async () => { view = renderer.create(<App configuration={{trustAnchorsURL: 'file:///anchors.pem'}} />); });
   async function tap(id: string) {
     await act(async () => { await view.root.findByProps({testID: id}).props.onPress(); });
   }

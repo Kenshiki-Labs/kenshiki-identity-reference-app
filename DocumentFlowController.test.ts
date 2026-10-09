@@ -70,7 +70,7 @@ test('capture waits for readiness and repeated taps cannot start a second comman
   command.resolve(); await pending; captured(f, front); expect(f.controller.state.phase).toBe('frontReview');
 });
 test('a failed replacement keeps the completed pair and hands off its bound photos', async () => {
-  const f = fixture(complete); f.native.startDocument.mockRejectedValueOnce({code: 'back_camera_unavailable'});
+  const f = fixture(complete); f.native.startDocument.mockRejectedValueOnce({code: 'backCameraUnavailable'});
   await f.controller.startFront(); expect(f.controller.state.sheet?.recovery).toBe('details');
   const result = await f.controller.handoff(); expect(result?.document).toBe(complete);
   expect(f.native.release).not.toHaveBeenCalled();

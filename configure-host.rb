@@ -19,6 +19,14 @@ if File.directory?(resources) && !project.files.any? { |ref| ref.path == 'Captur
   app.resources_build_phase.add_file_reference(ref)
 end
 app.build_configurations.each { |config| config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '18.0' }
+# The UI tests run the Debug build: only simulator Debug offers the developer checks. Embed the
+# JavaScript bundle so those tests do not depend on a running Metro server.
+app.build_configurations.each { |config| config.build_settings['FORCE_BUNDLING'] = 'YES' if config.name == 'Debug' }
+# The UI-test bundle identifier follows the app's own identifier, so it stays in whatever App ID
+# namespace the adopting team signs the app with. Rerun this script after changing the app's ID.
+app_name = app.build_configurations.first.build_settings['PRODUCT_NAME'] || app.name
+app_id = app.build_configurations.first.build_settings['PRODUCT_BUNDLE_IDENTIFIER']
+  .gsub('$(PRODUCT_NAME:rfc1034identifier)', app_name.gsub('$(TARGET_NAME)', app.name).gsub(/[^A-Za-z0-9.-]/, '-'))
 tests = project.targets.find { |target| target.name == 'ArtifactIntegrationTests' }
 unless tests
   tests = project.new_target(:ui_test_bundle, 'ArtifactIntegrationTests', :ios, '18.0')
@@ -32,7 +40,7 @@ FileUtils.cp(File.join(__dir__, 'ArtifactIntegrationTests.swift'), File.join(hos
 tests.build_configurations.each do |config|
     config.build_settings['PRODUCT_NAME'] = '$(TARGET_NAME)'
     config.build_settings['GENERATE_INFOPLIST_FILE'] = 'YES'
-    config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'org.identity.capture.ArtifactIntegrationTests'
+    config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = app_id + '.ArtifactIntegrationTests'
     config.build_settings['SWIFT_VERSION'] = '6.0'
     config.build_settings['TEST_TARGET_NAME'] = 'IdentitySDKHost'
 end
@@ -41,5 +49,5 @@ scheme_path = File.join(host, 'ios/IdentitySDKHost.xcodeproj/xcshareddata/xcsche
 scheme = Xcodeproj::XCScheme.new(scheme_path)
 scheme.test_action.testables.each { |testable| testable.xml_element.remove }
 scheme.add_test_target(tests)
-scheme.test_action.build_configuration = 'Release'
+scheme.test_action.build_configuration = 'Debug'
 scheme.save_as(project.path, 'IdentitySDKHost', true)

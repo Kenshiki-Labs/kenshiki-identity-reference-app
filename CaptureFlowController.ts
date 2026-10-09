@@ -1,7 +1,8 @@
 import type {
-  CaptureEvent, Configuration, FaceComparison, IdentityCaptureSession,
+  CaptureErrorCode, CaptureEvent, Configuration, FaceComparison, IdentityCaptureSession,
   MRZObservation, PassportObservation, PassportReadOptions, CompletedResultDescriptor,
 } from '@kenshiki/identity-capture';
+import {errorCode, errorText, type ErrorText} from './HolderText';
 
 // Host orchestration only. All parsing, acquisition, liveness and comparison use public SDK APIs.
 export type Phase = 'loading' | 'saved' | 'intro' | 'scanning' | 'review' | 'reading' | 'passport' |
@@ -27,14 +28,17 @@ const messages: PassportReadOptions['messages'] = {
   activeAuthentication: 'Checking the chip.', transportFinishing: 'Read complete.',
   failure: 'We could not finish reading your passport. Please try again.',
 };
-const errors: Record<string, string> = {
+const errors: ErrorText = {
   unavailable: 'This device cannot start this camera check.',
   unsupported: 'This device cannot read a passport chip.',
   cameraPermissionDenied: 'Allow camera access in Settings, then try again.',
-  cameraPermissionRestricted: 'Camera access is restricted on this device.',
-  trustAnchorsUnavailable: 'Passport verification is not available. Please contact support.',
-  trustAnchorNotFound: 'We could not verify this passport’s issuer. Please contact support.',
-  invalidConfiguration: 'This check is not configured. Please contact support.',
+  cameraPermissionRestricted: 'Camera use is restricted on this iPhone, for example by Screen Time or a device management profile. Ask whoever manages this iPhone to allow it.',
+  trustAnchorsUnavailable: 'Passport chip checking is not set up in this app, so this passport cannot be checked here. Your other identity checks remain available.',
+  trustAnchorNotFound: 'This app has no trusted issuer key for this passport’s country, so its chip cannot be checked here. Your other identity checks remain available.',
+  invalidConfiguration: 'This check is not set up in this app. Return to Identity; your other identity checks remain available.',
+  modelUnavailable: 'Face comparison is not set up in this app. Your passport results are kept.',
+  resultIntegrityFailure: 'Your saved passport and face results could not be verified on this phone. Try reopening them, or erase them and scan again.',
+  depthEvidenceUnavailable: 'Your face depth could not be measured with that selfie. Take a new selfie looking straight at the camera.',
   connectionLost: 'The connection to your passport was lost. Hold the phone still and try again.',
   multipleTags: 'Move other contactless cards away and try again.',
   dataIntegrityFailure: 'We could not verify the passport data. Try reading the passport again.',
@@ -43,6 +47,10 @@ const errors: Record<string, string> = {
   depthUnavailable: 'We could not measure your face. Clear the front camera and try again.',
   busy: 'The previous camera request is still finishing. Wait a moment, then try again.',
 };
+/** Codes with no in-flow remedy; the holder returns to results or Identity. */
+const details: CaptureErrorCode[] = ['unavailable', 'unsupported', 'cameraPermissionRestricted', 'trustAnchorsUnavailable',
+  'trustAnchorNotFound', 'invalidConfiguration', 'modelUnavailable'];
+const newSelfie: CaptureErrorCode[] = ['invalidCapture', 'depthEvidenceUnavailable', 'selfieUnavailable', 'comparisonUnavailable'];
 const hints: Record<string, string> = {
   noFaceObserved: 'Place your face inside the oval.', outsideGuide: 'Move your face inside the oval.',
   multipleFacesObserved: 'Only one person should be in view.',
@@ -142,7 +150,7 @@ export class CaptureFlowController {
       }
     } catch (error) {
       if (epoch === this.epoch && !this.closed) {
-        const code = (error as {code?: string}).code ?? '';
+        const code = errorCode(error);
         if (code === 'cancelled' && phase === 'reading') {
           this.update({phase: this.resultsPhase(), mrz: this.state.passportMRZ ?? this.state.mrz,
             progress: undefined, sheet: undefined});
@@ -151,7 +159,8 @@ export class CaptureFlowController {
         const next = code === 'resultSaveFailed' ? 'save' : this.errorRecovery(code, recovery);
         this.update({ready: false, sheet: {kind: 'recovery',
           recovery: next,
-          message: code === 'resultSaveFailed' ? 'The check completed, but its result could not be saved. Try saving again without repeating the check.' : errors[code] ?? 'We could not finish this check. Please try again.'}});
+          message: code === 'resultSaveFailed' ? 'The check completed, but its result could not be saved. Try saving again without repeating the check.'
+            : errorText(code, errors, 'We could not finish this check. Please try again.')}});
       }
     } finally {
       if (this.activeWork === pending) this.activeWork = undefined;
@@ -209,13 +218,13 @@ export class CaptureFlowController {
   private resultsPhase(): Phase {
     return this.state.passport ? this.state.comparison ? 'result' : 'passport' : this.state.mrz ? 'review' : 'intro';
   }
-  private errorRecovery(code: string, fallback: Recovery): Recovery {
+  private errorRecovery(code: CaptureErrorCode | undefined, fallback: Recovery): Recovery {
+    if (code === undefined) return fallback;
     if (code === 'cameraPermissionDenied') return 'settings';
-    if (['unavailable', 'unsupported', 'cameraPermissionRestricted', 'trustAnchorsUnavailable',
-      'trustAnchorNotFound', 'invalidConfiguration'].includes(code)) return 'details';
+    if (details.includes(code)) return 'details';
     if (code === 'invalidAccessKey') return 'scan';
-    if (['invalidCapture', 'depthEvidenceUnavailable', 'selfieUnavailable', 'comparisonUnavailable'].includes(code)) return 'selfie';
-    if (['invalidReference', 'referenceUnavailable'].includes(code)) return 'read';
+    if (newSelfie.includes(code)) return 'selfie';
+    if (code === 'invalidReference' || code === 'referenceUnavailable') return 'read';
     return fallback;
   }
   private async interrupt(sheet: NonNullable<FlowState['sheet']>) {
@@ -290,8 +299,10 @@ export class CaptureFlowController {
     } else if (event.type === 'failure' &&
       ((event.capability === 'mrz' && this.state.phase === 'scanning') ||
        (event.capability === 'selfie' && this.state.phase === 'selfie'))) {
-      void this.interrupt({kind: 'recovery', recovery: this.errorRecovery(event.code, this.recovery()),
-        message: errors[event.code] ?? 'The camera stopped. Please try again.'});
+      // Capture failure events carry the same closed vocabulary as command rejections.
+      const code = event.code as CaptureErrorCode;
+      void this.interrupt({kind: 'recovery', recovery: this.errorRecovery(code, this.recovery()),
+        message: errorText(code, errors, 'The camera stopped. Please try again.')});
     }
   }
 }

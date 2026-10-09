@@ -4,6 +4,7 @@ import {IdentityCaptureSession} from '@kenshiki/identity-capture';
 import type {Configuration, SSNVerificationReceipt} from '@kenshiki/identity-capture';
 import {Action, styles} from './IdentityCaptureFlow';
 import {SSNFlowController, type SavedSSNCheck, type SSNFlowState} from './SSNFlowController';
+import {formatCalendarDate, formatMoment} from './HolderText';
 
 export function SSNFlow({configuration, saved, onComplete, onExit}: {
   configuration: Configuration; saved?: SavedSSNCheck;
@@ -26,7 +27,11 @@ export function SSNFlow({configuration, saved, onComplete, onExit}: {
     if (finishingRef.current) return;
     Keyboard.dismiss(); finishingRef.current = true; setFinishing(true);
     try { const result = await controller.handoff(); if (result) onComplete(result); else onExit(); }
-    catch { finishingRef.current = false; setFinishing(false); }
+    catch (error) {
+      // Ownership stays here; the failure is shown in this screen's sheet.
+      finishingRef.current = false; setFinishing(false);
+      if (!controller.state.sheet) controller.fail(error);
+    }
   };
   const busy = state.busy || finishing;
   const snapshot = state.snapshot;
@@ -68,6 +73,7 @@ export function SSNFlow({configuration, saved, onComplete, onExit}: {
           <Action label="Run a new check" secondary testID="ssn-check-again" onPress={controller.edit} disabled={busy} />
         </>}
       </>}
+      {snapshot && <Action label="Erase saved SSN checks" secondary testID="ssn-erase" onPress={controller.askErase} disabled={busy} />}
       {close}
     </ScrollView>
     {state.sheet && <View style={styles.scrim}><View style={styles.sheet} accessibilityViewIsModal testID="ssn-bottom-sheet">
@@ -81,6 +87,11 @@ export function SSNFlow({configuration, saved, onComplete, onExit}: {
           <Text style={styles.title} testID="ssn-confirmation-number">{formatNumber(confirmation.digits)}</Text>
           <Action label="Confirm and check" testID="ssn-confirm" onPress={controller.confirm} disabled={busy} />
           <Action label="Edit number" testID="ssn-edit" secondary onPress={controller.edit} disabled={busy} />
+        </> : state.sheet.kind === 'erase' ? <>
+          <Text accessibilityRole="header" style={styles.sheetTitle}>Erase saved SSN checks?</Text>
+          <Text style={styles.body}>This removes your saved Social Security number check and its result from this app. It does not recall a check that was already sent.</Text>
+          <Action label="Erase checks" testID="ssn-confirm-erase" onPress={controller.erase} disabled={busy} />
+          <Action label="Keep checks" secondary onPress={controller.dismiss} disabled={busy} />
         </> : recovery ? <>
           <Text accessibilityRole="header" style={styles.sheetTitle}>{recovery.title}</Text>
           <Text style={styles.body}>{recovery.message}</Text>
@@ -93,32 +104,33 @@ export function SSNFlow({configuration, saved, onComplete, onExit}: {
   </View>;
 }
 
+/** States what the checking service reported. Issuance is never presented as verification. */
 export function ssnSummary(receipt: SSNVerificationReceipt): string {
-  return receipt.issuance === 'issued' ? 'Issuance confirmed' : receipt.issuance === 'notIssued' ? 'Issuance not confirmed' : 'Issuance unavailable';
+  return receipt.issuance === 'issued' ? 'Reported as issued' : receipt.issuance === 'notIssued' ? 'Not reported as issued' : 'Issuance not available';
 }
 export function SSNResultDetails({receipt}: {receipt: SSNVerificationReceipt}) {
   const details = receipt.details;
   const reported = (value?: string | null) => value?.trim() || 'Not returned';
   return <View style={styles.card} testID="ssn-result">
     <Text accessibilityRole="header" style={styles.sheetTitle}>{ssnSummary(receipt)}</Text>
-    <ResultRow label="Was the number issued?" value={receipt.issuance === 'issued' ? 'Yes' : receipt.issuance === 'notIssued' ? 'No' : 'Unavailable'} />
+    <ResultRow label="What the checking service reported" value={receipt.issuance === 'issued' ? 'The number was issued'
+      : receipt.issuance === 'notIssued' ? 'The number was not issued' : 'No issuance answer was available'} />
     {details ? <>
       <Text accessibilityRole="header" style={styles.sheetTitle}>Returned findings</Text>
       <ResultRow label="Issuing state" value={reported(details.region)} />
-      <ResultRow label="Issuance period begins" value={reported(details.issueStart)} />
-      <ResultRow label="Issuance period ends" value={reported(details.issueEnd)} />
-      <ResultRow label="Provider classification" value={reported(details.codeDescription)} />
+      <ResultRow label="Issuance period begins" value={details.issueStart ? formatCalendarDate(details.issueStart) : 'Not returned'} />
+      <ResultRow label="Issuance period ends" value={details.issueEnd ? formatCalendarDate(details.issueEnd) : 'Not returned'} />
+      <ResultRow label="Reported classification" value={reported(details.codeDescription)} />
       <ResultRow label="Classification code" value={reported(details.code)} />
-      <ResultRow label="Source" value={reported(details.source)} />
       <ResultRow label="Reported status" value={reported(details.reportedStatus)} />
       <ResultRow label="Response code" value={details.responseCode == null ? 'Not returned' : String(details.responseCode)} />
-    </> : <Text style={styles.body}>This earlier check saved only the issuance result. Provider details were not retained. A new confirmed check is needed to obtain them.</Text>}
-    <ResultRow label="Checked" value={receipt.checkedAt} />
+    </> : <Text style={styles.body}>This earlier check saved only the issuance result. Its details were not retained. A new confirmed check is needed to obtain them.</Text>}
+    <ResultRow label="Checked" value={formatMoment(receipt.checkedAt)} />
     <Text style={styles.body}>This result does not establish that the number belongs to you.</Text>
   </View>;
 }
 function ResultRow({label, value}: {label: string; value: string}) {
-  return <View style={styles.detail}><Text style={styles.label}>{label}</Text><Text selectable style={styles.body}>{value}</Text></View>;
+  return <View style={styles.detail}><Text style={styles.label}>{label}</Text><Text style={styles.body}>{value}</Text></View>;
 }
 export function formatNumber(digits: string): string {
   return [digits.slice(0, 3), digits.slice(3, 5), digits.slice(5, 9)].filter(Boolean).join('-');

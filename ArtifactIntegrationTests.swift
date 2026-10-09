@@ -61,8 +61,19 @@ final class ArtifactIntegrationTests: XCTestCase {
     throw XCTSkip("The synthetic provider is compiled only into the simulator host")
     #endif
     let app = XCUIApplication()
-    app.launchArguments = ["--ssn-artifact-fixture"]
+    app.launchArguments = ["--ssn-artifact-fixture", "--reference-holder=" + UUID().uuidString]
     app.launch()
+    let open = completeSyntheticSSN(app)
+    app.buttons["finish-ssn"].tap()
+    XCTAssertTrue(open.waitForExistence(timeout: 5))
+    open.tap()
+    XCTAssertTrue(app.staticTexts["Not reported as issued"].waitForExistence(timeout: 5))
+    XCTAssertFalse(app.textFields["ssn-entry"].exists)
+  }
+
+  /// Enters the synthetic number for the simulator fixture, which reports area 000 as never issued.
+  @MainActor
+  private func completeSyntheticSSN(_ app: XCUIApplication) -> XCUIElement {
     let open = app.buttons["open-ssn"]
     XCTAssertTrue(open.waitForExistence(timeout: 30))
     for _ in 0..<3 where !open.isHittable { app.swipeUp() }
@@ -81,12 +92,57 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertEqual(app.staticTexts["ssn-confirmation-number"].label, "000-00-1234")
     XCTAssertEqual(app.alerts.count, 0)
     app.buttons["ssn-confirm"].tap()
-    XCTAssertTrue(app.staticTexts["Issuance confirmed"].waitForExistence(timeout: 10))
-    app.buttons["finish-ssn"].tap()
-    XCTAssertTrue(open.waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["Not reported as issued"].waitForExistence(timeout: 10))
+    XCTAssertFalse(app.staticTexts["Reported as issued"].exists)
+    return open
+  }
+
+  /// Lifecycle J2: each holder has its own stores and stable workflows. The same holder reopens
+  /// its saved check after relaunch; another holder on the same phone does not see it.
+  @MainActor
+  func testHolderScopedStoresReopenOnlyForTheSameHolder() throws {
+    #if !targetEnvironment(simulator)
+    throw XCTSkip("The synthetic provider and holder argument exist only in the simulator host")
+    #endif
+    let first = "--reference-holder=" + UUID().uuidString
+    let second = "--reference-holder=" + UUID().uuidString
+    let app = XCUIApplication()
+    app.launchArguments = ["--ssn-artifact-fixture", first]
+    app.launch()
+    _ = completeSyntheticSSN(app)
+    app.terminate()
+    app.launchArguments = ["--ssn-artifact-fixture", first]
+    app.launch()
+    let open = app.buttons["open-ssn"]
+    XCTAssertTrue(open.waitForExistence(timeout: 30))
+    for _ in 0..<3 where !open.isHittable { app.swipeUp() }
     open.tap()
-    XCTAssertTrue(app.staticTexts["Issuance confirmed"].waitForExistence(timeout: 5))
-    XCTAssertFalse(app.textFields["ssn-entry"].exists)
+    XCTAssertTrue(app.staticTexts["Not reported as issued"].waitForExistence(timeout: 10),
+      "The same holder must reopen its saved check after relaunch")
+    app.terminate()
+    app.launchArguments = ["--ssn-artifact-fixture", second]
+    app.launch()
+    XCTAssertTrue(open.waitForExistence(timeout: 30))
+    for _ in 0..<3 where !open.isHittable { app.swipeUp() }
+    open.tap()
+    XCTAssertTrue(app.buttons["ssn-begin-entry"].waitForExistence(timeout: 10))
+    XCTAssertFalse(app.staticTexts["Not reported as issued"].exists, "Another holder must not see the first holder's check")
+  }
+
+  @MainActor
+  func testBackgroundingCoversPersonalDataAndForegroundRemovesTheCover() {
+    let app = XCUIApplication()
+    app.launch()
+    let open = app.buttons["open-ssn"]
+    XCTAssertTrue(open.waitForExistence(timeout: 30))
+    XCTAssertFalse(app.otherElements["privacy-cover"].exists)
+    XCUIDevice.shared.press(.home)
+    XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10) || app.state == .runningBackgroundSuspended)
+    XCTAssertTrue(app.otherElements["privacy-cover"].exists, "The app-switcher snapshot must show the cover")
+    app.activate()
+    XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))
+    XCTAssertFalse(app.otherElements["privacy-cover"].waitForExistence(timeout: 2))
+    XCTAssertTrue(open.waitForExistence(timeout: 5))
   }
 
   @MainActor
@@ -115,28 +171,17 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(open.waitForExistence(timeout: 5))
   }
 
+  /// The generated simulator host has no passport trust anchors or face models.
   @MainActor
-  func testUnavailableCameraOffersABottomSheetAndReturnToIdentity() throws {
-    #if !targetEnvironment(simulator)
-    throw XCTSkip("This test exercises unavailable simulator camera hardware")
-    #endif
+  func testMissingTrustAnchorsAndModelsDisableTheirCards() throws {
     let app = XCUIApplication()
+    app.launchArguments = ["--reference-holder=" + UUID().uuidString]
     app.launch()
-    let open = app.buttons["open-capture-flow"]
-    XCTAssertTrue(open.waitForExistence(timeout: 30))
-    open.tap()
-    let start = app.buttons["start-passport-scan"]
-    XCTAssertTrue(start.waitForExistence(timeout: 5))
-    start.tap()
-    let permission = XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.firstMatch
-    if permission.waitForExistence(timeout: 3), permission.buttons["Allow"].exists {
-      permission.buttons["Allow"].tap()
-    }
-    let back = app.buttons["back-to-details"]
-    XCTAssertTrue(back.waitForExistence(timeout: 15), "Unsupported hardware needs a way back")
-    XCTAssertEqual(app.alerts.count, 0, "App recovery must not use a native alert")
-    back.tap()
-    XCTAssertTrue(open.waitForExistence(timeout: 5))
+    let passport = app.buttons["open-capture-flow"]
+    XCTAssertTrue(passport.waitForExistence(timeout: 30))
+    XCTAssertFalse(passport.isEnabled)
+    XCTAssertFalse(app.buttons["face-match-card"].isEnabled)
+    XCTAssertTrue(passport.label.contains("Passport chip checking is not set up in this app"), passport.label)
   }
   @MainActor
   func testNativeDocumentProviderAndDurableResultCommandsThroughInstalledPackage() throws {

@@ -62,7 +62,7 @@ test('license capture returns to Identity and both exact photos and read details
   await act(async () => { view.unmount(); }); expect(mockSession.release).toHaveBeenCalledTimes(1);
 });
 test('permanent camera failure uses an app bottom sheet and returns to the same Identity home', async () => {
-  mockSession.startDocument.mockRejectedValueOnce({code: 'back_camera_unavailable'});
+  mockSession.startDocument.mockRejectedValueOnce({code: 'backCameraUnavailable'});
   const {view, tap} = await renderApp(); await tap('open-driver-license'); await tap('start-document-front');
   expect(view.root.findByProps({testID: 'document-bottom-sheet'})).toBeDefined();
   expect(JSON.stringify(view.toJSON())).toContain('Camera unavailable');

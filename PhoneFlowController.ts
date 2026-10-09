@@ -1,9 +1,33 @@
-import type {Configuration, IdentityCaptureSession, PhoneCheckSnapshot} from '@kenshiki/identity-capture';
+import type {CaptureErrorCode, Configuration, IdentityCaptureSession, PhoneCheckSnapshot} from '@kenshiki/identity-capture';
+import {errorCode, errorText, type ErrorText} from './HolderText';
 
 export type SavedPhoneCheck = {session: IdentityCaptureSession; snapshot: PhoneCheckSnapshot};
 export type PhoneFlowState = {
   snapshot?: PhoneCheckSnapshot; busy: boolean; paused: boolean;
   sheet?: {kind: 'restart' | 'erase'} | {kind: 'error'; message: string};
+};
+
+// Wording follows the SDK's native phone copy (Hosts/SensorHost/Sources/PhoneCheckCopy.swift).
+const setupErrors: ErrorText = {
+  compositionUnavailable: 'Text messaging is unavailable. Use an iPhone with text messaging enabled.',
+  phoneNotConfigured: 'The phone check is not set up in this app. Return to Identity; your other checks remain available.',
+  notConfigured: 'The phone verification service is not available for this check. Return to Identity.',
+  invalidConfiguration: 'The phone check is not set up in this app. Return to Identity; your other checks remain available.',
+  unauthorized: 'The phone verification service is not available for this check. Return to Identity.',
+  contextChanged: 'The checked ID or installation changed. Return to Identity and review your ID check.',
+  recoveryRequired: 'Resume the existing check before starting another one. Your text may already have arrived.',
+  messageNotSent: 'The text was not sent. You can send the same message again.',
+};
+const checkErrors: ErrorText = {
+  expired: 'This text challenge can no longer complete. Start a new check when you are ready.',
+  unknownChallenge: 'This text challenge can no longer complete. Start a new check when you are ready.',
+  conflict: 'The service could not bind this text to one sender. Start a new check when you are ready.',
+  refused: 'The phone verification service declined this check. Start a new check when you are ready.',
+  invalidResponse: 'The service returned a result that could not be verified. No new result was accepted.',
+  rateLimited: 'The service asked us to wait. Resume this check in a moment.',
+  timedOut: 'The service did not answer in time. Resume the check to look for the same text.',
+  storageUnavailable: 'The check could not be saved or opened on this phone. Your previous result has not been replaced.',
+  busy: 'The previous request is still finishing. Wait a moment, then try again.',
 };
 
 /** Native SDK owns challenge identity, polling and encrypted receipts. JS only presents them. */
@@ -42,21 +66,16 @@ export class PhoneFlowController {
   }
   private accept(snapshot: PhoneCheckSnapshot) {
     this.update({snapshot, paused: snapshot.pending ? this.state.paused : false});
-    if (snapshot.failure) this.failure(snapshot.failure);
+    // The native snapshot failure is drawn from the same closed vocabulary as command rejections.
+    if (snapshot.failure) this.failure(snapshot.failure as CaptureErrorCode);
   }
-  private failure(code?: string) {
-    const message = code === 'compositionUnavailable'
-      ? 'Text messaging is unavailable. Use an iPhone with text messaging enabled.'
-      : ['phoneNotConfigured', 'notConfigured', 'invalidConfiguration', 'contextChanged', 'unauthorized'].includes(code ?? '')
-        ? 'The phone service or checked ID is not available. Return to Identity and review your setup.'
-        : code === 'recoveryRequired'
-          ? 'Resume the existing check before starting another one. Your text may already have arrived.'
-          : code === 'messageNotSent' ? 'The text was not sent. You can send the same message again.'
-            : this.state.snapshot?.stage === 'finishing'
-              ? 'The answer arrived but could not be saved. Save it again without sending another text.'
-              : ['expired', 'unknownChallenge', 'conflict', 'refused'].includes(code ?? '')
-                ? 'This challenge can no longer complete. Start a new check when you are ready.'
-                : 'The check could not finish. Resume it to look for the same text. Your previous result is retained.';
+  /** Presents a rejected command or interrupted drain in this screen's sheet. */
+  fail = (error: unknown) => this.failure(errorCode(error));
+  private failure(code?: CaptureErrorCode) {
+    const finishing = this.state.snapshot?.stage === 'finishing';
+    const message = code !== undefined && setupErrors[code] ? setupErrors[code]
+      : finishing ? 'The answer arrived but could not be saved. Save it again without sending another text.'
+        : errorText(code, checkErrors, 'The check could not finish. Resume it to look for the same text. Your previous result is retained.');
     const revoked = code === 'contextChanged' || code === 'unauthorized';
     this.update({...(revoked ? {snapshot: undefined} : {}), sheet: {kind: 'error', message}});
   }
@@ -77,7 +96,7 @@ export class PhoneFlowController {
         const snapshot = await action(session);
         if (!this.closed && epoch === this.epoch && revision === this.eventRevision) this.accept(snapshot);
       } catch (error) {
-        if (!this.closed && epoch === this.epoch) this.failure((error as {code?: string}).code);
+        if (!this.closed && epoch === this.epoch) this.fail(error);
       } finally {
         if (!this.closed && epoch === this.epoch) this.update({busy: false});
       }
@@ -127,17 +146,15 @@ export class PhoneFlowController {
       }
     })();
     this.drain = work;
-    void work.then(() => {
-      if (this.drain === work) { this.drain = undefined; this.update({busy: false}); }
-    }, error => {
-      if (this.drain === work) { this.drain = undefined; this.update({busy: false}); this.failure(error?.code); }
-    });
+    // The caller presents a failed drain: the backgrounding listener through `fail`, handoff below.
+    const settled = () => { if (this.drain === work) { this.drain = undefined; this.update({busy: false}); } };
+    work.then(settled, settled);
     return work;
   };
   handoff = async (): Promise<SavedPhoneCheck | undefined> => {
     if (this.closed) return undefined;
     if (!this.state.snapshot && !this.active) { await this.dispose(); return undefined; }
-    await this.pause();
+    try { await this.pause(); } catch (error) { this.fail(error); throw error; }
     if (!this.current || !this.state.snapshot) { await this.dispose(); return undefined; }
     const result = {session: this.current, snapshot: this.state.snapshot};
     this.unsubscribe?.(); this.unsubscribe = undefined;

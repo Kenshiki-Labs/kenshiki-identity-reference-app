@@ -1,6 +1,7 @@
 import type {
   CaptureEvent, Configuration, DocumentObservation, DocumentRecordSummary, IdentityCaptureSession,
 } from '@kenshiki/identity-capture';
+import {errorCode, errorText, type ErrorText} from './HolderText';
 
 export type DocumentSide = 'front' | 'back';
 export type SavedDocumentCapture = {session: IdentityCaptureSession; document: DocumentObservation};
@@ -15,6 +16,27 @@ export type DocumentFlowState = {
 };
 const initial = (): DocumentFlowState => ({phase: 'loading', busy: false, capturing: false,
   ready: false, preview: 0, saved: []});
+type Sheet = NonNullable<DocumentFlowState['sheet']>;
+const cameraUnavailable: ErrorText = {
+  backCameraUnavailable: 'This device has no back camera this app can use. You can return to your saved results.',
+  cameraUnavailable: 'The camera could not start on this device. You can return to your saved results.',
+  unavailable: 'The camera could not start on this device. You can return to your saved results.',
+  cannotAddCameraInput: 'The camera could not start on this device. You can return to your saved results.',
+  cannotAddPhotoOutput: 'The camera could not take photos on this device. You can return to your saved results.',
+  cannotAddVideoOutput: 'The camera could not start on this device. You can return to your saved results.',
+};
+const captureErrors: ErrorText = {
+  locationRequired: 'Location access is needed for this capture. Allow it in Settings, then try again.',
+  cameraNotReady: 'The camera was not ready yet. Hold the card in view and try again.',
+  captureFailed: 'The photo could not be completed. Keep the whole card in view and try again.',
+  captureQualityNotReady: 'The photo was not sharp enough yet. Hold the card still, avoid glare and try again.',
+  busy: 'The previous photo is still being saved. Wait a moment, then try again.',
+  consentRequired: 'Choose to start the scan before taking a photo.',
+  recordingTerminated: 'The camera stopped before the photo was saved. Try again.',
+  nativeControlsPaused: 'The camera paused. Continue when you are ready.',
+};
+const storageCodes = new Set(['documentCustodyFailed', 'documentCheckpointFailed', 'documentUnavailable', 'custodyErased']);
+
 export const isCompleteDocument = (value?: DocumentObservation) => !!(value?.front && value.back);
 
 /** A scan draft never replaces a completed license until the SDK commits both sides. */
@@ -122,19 +144,25 @@ export class DocumentFlowController {
         ...(reveal ? {phase: 'frontReview' as const} : {})});
     }
   }
-  private failure(error: unknown, fallback: Recovery): NonNullable<DocumentFlowState['sheet']> {
-    const code = (error as {code?: string}).code ?? '';
-    if (['camera_permission_denied', 'cameraPermissionDenied'].includes(code)) return {
+  /** Presents a rejected settlement in this screen's sheet. */
+  fail = (error: unknown) => this.update({busy: false, sheet: this.failure(error, 'snapshot')});
+  private failure(error: unknown, fallback: Recovery): Sheet {
+    const code = errorCode(error);
+    if (code === 'cameraPermissionDenied') return {
       title: 'Allow camera access', message: 'Open Settings to allow camera access, then return to continue.', recovery: 'settings'};
-    if (['back_camera_unavailable', 'cameraUnavailable', 'unavailable', 'camera_permission_restricted', 'cameraPermissionRestricted'].includes(code)) return {
-      title: 'Camera unavailable', message: 'This device cannot start the camera check. You can return to your saved results.', recovery: 'details'};
-    if (['invalidConfiguration', 'invalid_configuration'].includes(code)) return {
+    if (code === 'cameraPermissionRestricted') return {title: 'Camera access is restricted',
+      message: 'Camera use is restricted on this iPhone, for example by Screen Time or a device management profile. Ask whoever manages this iPhone to allow it. You can return to your saved results.',
+      recovery: 'details'};
+    if (code !== undefined && cameraUnavailable[code]) return {title: 'Camera unavailable', message: cameraUnavailable[code], recovery: 'details'};
+    if (code === 'invalidConfiguration' || code === 'configurationFailed') return {
       title: 'Capture is not available', message: 'Driver’s license capture has not been set up for this app.', recovery: 'details'};
-    const storage = ['load', 'recover', 'snapshot'].includes(fallback) || ['documentCustodyFailed', 'documentCheckpointFailed'].includes(code);
-    return {title: storage ? 'Saved scan could not be opened' : 'Let’s try that again',
-      message: storage ? 'Your saved scan could not be read. Try again without clearing it.' :
-        code === 'cancelled' ? 'Your scan is paused. Continue when you are ready.' :
-          'The photo could not be completed. Keep the whole card in view and try again.', recovery: fallback};
+    if (code === 'documentSidesMismatch') return {title: 'This back belongs to a different license',
+      message: 'The back you captured comes from a different license than the saved front. Capture the back of the same license, or retake the front.',
+      recovery: 'back'};
+    if (['load', 'recover', 'snapshot'].includes(fallback) || (code !== undefined && storageCodes.has(code))) return {
+      title: 'Saved scan could not be opened', message: 'Your saved scan could not be read. Try again without clearing it.', recovery: fallback};
+    return {title: 'Let’s try that again', message: code === 'cancelled' ? 'Your scan is paused. Continue when you are ready.'
+      : errorText(code, captureErrors, 'The photo could not be completed. Keep the whole card in view and try again.'), recovery: fallback};
   }
   private async settle(reveal: boolean) {
     const session = this.current;
@@ -146,8 +174,7 @@ export class DocumentFlowController {
       const observation = await session.documentResult();
       if (!this.closed && this.current === session) this.accept(observation, reveal);
     } catch (error) {
-      const code = (error as {code?: string}).code;
-      if (code !== 'documentUnavailable') throw error;
+      if (errorCode(error) !== 'documentUnavailable') throw error;
     }
   }
   pause = async () => {
@@ -217,7 +244,7 @@ export class DocumentFlowController {
       void this.failCamera(sheet);
     }
   }
-  private async failCamera(sheet: NonNullable<DocumentFlowState['sheet']>) {
+  private async failCamera(sheet: Sheet) {
     const epoch = ++this.epoch;
     this.update({busy: true, ready: false, capturing: false, sheet});
     try { await this.settle(false); }

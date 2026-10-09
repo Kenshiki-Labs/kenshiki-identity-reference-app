@@ -55,7 +55,7 @@ test('SSN review displays exact digits in a bottom sheet and a completed result 
   expect(view.root.findByProps({testID: 'ssn-confirmation-number'}).props.children).toBe('000-00-1234');
   expect(mockSession.ssnConfirm).not.toHaveBeenCalled();
   await tap('ssn-confirm'); expect(mockSession.ssnConfirm).toHaveBeenCalledWith('token');
-  expect(JSON.stringify(view.toJSON())).toContain('Issuance confirmed');
+  expect(JSON.stringify(view.toJSON())).toContain('Reported as issued');
   expect(JSON.stringify(view.toJSON())).not.toContain('000-00-1234');
   await tap('finish-ssn'); await tap('open-ssn');
   expect(view.root.findByProps({testID: 'ssn-result'})).toBeDefined();
@@ -82,8 +82,8 @@ test('issuance unavailable is not promoted to identity verification', async () =
   let view!: renderer.ReactTestRenderer;
   await act(async () => { view = renderer.create(<SSNResultDetails receipt={{...mockReceipt, issuance: 'unavailable'}} />); });
   const shown = JSON.stringify(view.toJSON());
-  expect(shown).toContain('Issuance unavailable');
-  expect(shown).not.toContain('Issuance confirmed'); expect(shown).not.toContain('Verified');
+  expect(shown).toContain('Issuance not available');
+  expect(shown).not.toContain('Reported as issued'); expect(shown).not.toContain('Verified');
   expect(shown).toContain('does not establish that the number belongs to you');
   await act(async () => { view.unmount(); });
 });
@@ -107,17 +107,18 @@ test('returned findings show source values, while older receipts explain why det
     codeDescription: 'Issued in the reported period',
   }}} />); });
   let shown = JSON.stringify(view.toJSON());
-  for (const value of ['CA', '1978-01-01', '1979-12-31', 'Issued in the reported period', 'Item1', 'Synthetic provider']) {
+  for (const value of ['CA', 'Jan 1, 1978', 'Dec 31, 1979', 'Issued in the reported period', 'Item1']) {
     expect(shown).toContain(value);
   }
+  expect(shown).not.toContain('Synthetic provider');
   await act(async () => { view.update(<SSNResultDetails receipt={{...mockReceipt, details: {
     source: 'Synthetic provider', responseCode: 0, reportedStatus: 'Item1',
   }}} />); });
   shown = JSON.stringify(view.toJSON());
-  expect(shown).toContain('Not returned'); expect(shown).not.toContain('1978-01-01');
+  expect(shown).toContain('Not returned'); expect(shown).not.toContain('Jan 1, 1978');
   await act(async () => { view.update(<SSNResultDetails receipt={mockReceipt} />); });
   shown = JSON.stringify(view.toJSON());
-  expect(shown).toContain('Provider details were not retained');
+  expect(shown).toContain('Its details were not retained');
   expect(mockSession.ssnConfirm).not.toHaveBeenCalled();
   await act(async () => { view.unmount(); });
 });

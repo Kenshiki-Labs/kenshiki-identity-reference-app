@@ -10,10 +10,10 @@ const mockReady: PhoneCheckSnapshot = {stage: 'start', busy: false, failure: nul
   challengeReserved: false, receipt: null, recordedAt: null, sendAgainAt: null};
 const mockReceipt: PhoneCheckReceipt = {challengeID: 'synthetic', sender: '12025550123', messageHash: 'a'.repeat(64),
   receivedAt: '2026-10-08T12:00:00Z', completedAt: '2026-10-08T12:00:01Z', subjectComparison: {
-    status: 'contradicted', fieldsCompared: ['givenName'], checkedAt: '2026-10-08T12:00:01Z',
-    evidence: {requestID: 'synthetic', providers: [{source: 'twilio', answered: true, carrier: 'Synthetic carrier',
-      smsFraudRiskScore: 0, numberValid: false}, {source: 'vonage', answered: false, failure: 'timed_out'}],
-      fields: [{field: 'givenName', source: 'twilio', grade: 'no_match'}, {field: 'extra', source: 'unknown', grade: 'future'}]},
+    status: 'agreed', fieldsCompared: ['givenName'], checkedAt: '2026-10-08T12:00:01Z',
+    evidence: {requestID: 'synthetic', providers: [{source: 'synthetic-source-a', answered: true, carrier: 'Synthetic carrier',
+      smsFraudRiskScore: 0, numberValid: false}, {source: 'synthetic-source-b', answered: false, failure: 'timed_out'}],
+      fields: [{field: 'givenName', source: 'synthetic-source-a', grade: 'no_match'}, {field: 'extra', source: 'synthetic-source-c', grade: 'future'}]},
   }};
 let mockSnapshot = mockReady;
 let mockListener: ((event: CaptureEvent) => void) | undefined;
@@ -54,8 +54,8 @@ test('Phone opens from Identity, sending waits for receipt, Done and reopen keep
     mockListener?.({type: 'phoneSnapshot', snapshot: mockSnapshot});
   });
   let shown = JSON.stringify(view.toJSON());
-  for (const value of ['12025550123', 'Subscriber details differ', 'Synthetic carrier', 'Does not match', 'Unrecognized result (future)', 'SMS fraud risk score', 'Number valid', 'Not returned']) expect(shown).toContain(value);
-  expect(shown).not.toContain('Subscriber details agree');
+  for (const value of ['12025550123', 'Subscriber details agree', 'Synthetic carrier', 'Does not match', 'Unrecognized result', 'Message fraud risk score', 'Number valid', 'Reported a failure']) expect(shown).toContain(value);
+  expect(shown).not.toContain('Subscriber details differ'); expect(shown).not.toContain('synthetic-source');
   await tap('phone-receipt-details');
   expect(JSON.stringify(view.toJSON())).toContain('a'.repeat(64));
   await tap('phone-done'); await tap('open-phone');
@@ -84,7 +84,7 @@ test('inactive message-composer transitions do not cancel; actual backgrounding 
 test('older receipts explicitly explain missing details without triggering a new check', async () => {
   let view!: renderer.ReactTestRenderer;
   await act(async () => { view = renderer.create(<PhoneResultDetails receipt={{...mockReceipt, subjectComparison: undefined}} />); });
-  expect(JSON.stringify(view.toJSON())).toContain('Provider details are not present in this saved receipt');
+  expect(JSON.stringify(view.toJSON())).toContain('Number check details are not present in this saved receipt');
   expect(mockSession.phoneSend).not.toHaveBeenCalled();
   await act(async () => { view.unmount(); });
 });
@@ -108,8 +108,8 @@ test('subscriber findings appear on the same result screen without another conse
   });
   const shown = JSON.stringify(view.toJSON());
   for (const text of ['Phone possession confirmed', 'Comparison incomplete', 'Does not match', 'No data', 'Not returned', 'Whole address',
-    'This combined observation does not fill in missing individual address checks.', 'Synthetic provider']) expect(shown).toContain(text);
-  expect(shown).not.toContain('Required details agree');
+    'This combined observation does not fill in missing individual address checks.']) expect(shown).toContain(text);
+  expect(shown).not.toContain('Required details agree'); expect(shown).not.toContain('Synthetic provider');
   expect(view.root.findAllByProps({testID: 'phone-bottom-sheet'})).toHaveLength(0);
   await tap('phone-done'); await tap('open-phone');
   expect(JSON.stringify(view.toJSON())).toContain('Comparison incomplete');

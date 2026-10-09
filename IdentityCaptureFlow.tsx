@@ -3,6 +3,7 @@ import {AppState, Linking, Pressable, ScrollView, StyleSheet, Text, View} from '
 import {IdentityCaptureImage, IdentityCapturePreview, IdentityCaptureSession} from '@kenshiki/identity-capture';
 import type {Configuration, PassportObservation} from '@kenshiki/identity-capture';
 import {CaptureFlowController, type CompletedCapture, type FlowState} from './CaptureFlowController';
+import {formatMoment} from './HolderText';
 
 /** Completion transfers the session to the adopter. Cancellation releases it. */
 export function IdentityCaptureFlow({configuration, onExit, onComplete, completed, resume}: {
@@ -75,7 +76,7 @@ export function IdentityCaptureFlow({configuration, onExit, onComplete, complete
       {phase === 'saved' && <>
         <Text style={styles.body}>Choose a saved passport check.</Text>
         {state.saved?.map((record, index) => <View key={record.workflowID} style={styles.card}>
-          <Text style={styles.body}>{record.recordedAt}</Text>
+          <Text style={styles.body}>{`Saved ${formatMoment(record.recordedAt)}`}</Text>
           {action('Open saved results', () => controller.recoverSaved(record.workflowID), false, `saved-passport-${index}`)}
         </View>)}
         {action('Scan another passport', controller.restart, false, 'new-passport', true)}
@@ -100,7 +101,7 @@ export function IdentityCaptureFlow({configuration, onExit, onComplete, complete
         <CaptureResultDetails result={result} focus={phase === 'result' ? 'face' : 'passport'} />
         {action('Done', finish, false, 'finish-capture')}
         {action(state.comparison ? 'Retake selfie' : 'Compare with a selfie', controller.selfie,
-          !state.passport?.portraitAvailable, 'retake-selfie', true)}
+          !state.passport?.portraitAvailable || !configuration.embedderURL || !configuration.detectorURL, 'retake-selfie', true)}
         {action('Read chip again', controller.read, false, 'reread-passport', true)}
       </>}
       {(phase === 'captured' || phase === 'comparing') && <Text style={styles.body} accessibilityLiveRegion="polite">Your selfie was captured. Comparing it with the passport photo…</Text>}
@@ -133,33 +134,45 @@ export function IdentityCaptureFlow({configuration, onExit, onComplete, complete
 }
 
 const protocolLabels: Record<keyof PassportObservation['protocols'], string> = {
-  countrySigningChain: 'Issuer signing chain', documentSignature: 'Chip data signature',
+  countrySigningChain: 'Issuer signing chain (revocation and expiry are not checked)', documentSignature: 'Chip data signature',
   dataGroupHashes: 'Data integrity', activeAuthentication: 'Active authentication',
   chipAuthentication: 'Chip authentication', pace: 'PACE connection', basicAccessControl: 'BAC connection',
 };
 const correspondenceLabels = {documentNumber: 'Passport number', birthDate: 'Date of birth',
   expiryDate: 'Expiry date', surname: 'Surname', givenNames: 'Given names'};
 const outcomeLabels: Record<string, string> = {pass: 'Photos match', fail: 'Photos did not match', manual_review: 'Needs another look'};
+const failureLabels: Record<keyof PassportObservation['protocols'], string> = {
+  countrySigningChain: 'Issuer signing chain failed', documentSignature: 'Chip data signature failed',
+  dataGroupHashes: 'Data integrity check failed', activeAuthentication: 'Active authentication failed',
+  chipAuthentication: 'Chip authentication failed', pace: 'PACE connection failed', basicAccessControl: 'BAC connection failed',
+};
 
 export function CaptureResultDetails({result, focus = 'passport'}: {result: CompletedCapture; focus?: 'passport' | 'face'}) {
   const {passport, comparison, session} = result;
   const [technical, setTechnical] = useState(false);
   const depth = comparison?.admissionReceipt.depthEvidence;
   const referenceSHA = comparison?.referenceSHA256 ?? passport.portraitSHA256;
+  // The SDK compares and restores only selfies whose TrueDepth face depth was measured and accepted.
   const faceCard = <View style={styles.card} testID="face-result">
     <Text accessibilityRole="header" style={styles.sheetTitle}>Face comparison</Text>
-    <Text style={styles.body}>{comparison ? outcomeLabels[comparison.outcome] ?? comparison.outcome : 'Not taken yet'}</Text>
-    {comparison && <>
-      {comparison.savedResult && <Details label="Checked at" value={comparison.savedResult.recordedAt} />}
-      <Details label="TrueDepth liveness" value={depth ? 'Depth recorded with this selfie' : 'Depth evidence unavailable'} />
+    {!comparison ? <Text style={styles.body}>Not taken yet</Text> : !depth
+      ? <Text style={styles.body}>This comparison has no depth record, so its result is not shown. Take a new selfie to compare again.</Text> : <>
+      <Text style={styles.body}>{outcomeLabels[comparison.outcome] ?? 'Unrecognized comparison result'}</Text>
+      {comparison.savedResult && <Details label="Checked at" value={formatMoment(comparison.savedResult.recordedAt)} />}
+      <Details label="Face depth (TrueDepth camera)" value="Face depth measured with this selfie" />
       <Details label="Expression" value={comparison.admissionReceipt.eyesOpen ? 'Blink completed; eyes reopened' : 'Not available'} />
     </>}
   </View>;
+  const failed = (Object.keys(failureLabels) as Array<keyof typeof failureLabels>).filter(key => passport.protocols[key] === 'failed');
   return <>
     {focus === 'face' && faceCard}
     <View style={styles.card} testID="passport-result">
       <Text accessibilityRole="header" style={styles.sheetTitle}>Passport</Text>
-      {passport.savedResult && <Details label="Read at" value={passport.savedResult.recordedAt} />}
+      {passport.savedResult && <Details label="Read at" value={formatMoment(passport.savedResult.recordedAt)} />}
+      {!!failed.length && <View style={styles.detail} testID="passport-protocol-failures">
+        {failed.map(key => <Text key={key} style={styles.body}>{failureLabels[key]}</Text>)}
+        <Text style={styles.body}>A failed chip check means this passport read should not be relied on. Read the chip again, or use another document.</Text>
+      </View>}
       <View style={styles.portraits}>
         {referenceSHA && <View style={styles.portrait}>
           <IdentityCaptureImage key={referenceSHA} session={session} image="reference" sha256={referenceSHA}
@@ -196,7 +209,7 @@ export function CaptureResultDetails({result, focus = 'passport'}: {result: Comp
       {passport.personalNumber && <Details label="Personal number" value={passport.personalNumber} />}
       {(Object.keys(protocolLabels) as Array<keyof typeof protocolLabels>).map(key => <Details key={key}
         label={protocolLabels[key]} value={{succeeded: 'Succeeded', failed: 'Failed', notPerformed: 'Not performed'}[passport.protocols[key]]} />)}
-      {comparison && <>
+      {comparison && depth && <>
         <Details label="Similarity" value={String(comparison.similarity)} />
         <Details label="Comparison route" value={comparison.route} />
         {depth && <>
@@ -228,7 +241,7 @@ function displayDate(raw: string): string {
   return month ? `${Number(raw.slice(4))} ${month} ’${raw.slice(0, 2)}` : raw;
 }
 function Details({label, value}: {label: string; value: string}) {
-  return <View style={styles.detail}><Text style={styles.label}>{label}</Text><Text selectable style={styles.body}>{value}</Text></View>;
+  return <View style={styles.detail}><Text style={styles.label}>{label}</Text><Text style={styles.body}>{value}</Text></View>;
 }
 export function Action({label, onPress, disabled = false, testID, secondary = false}: {
   label: string; onPress: () => unknown; disabled?: boolean; testID?: string; secondary?: boolean;
@@ -244,9 +257,9 @@ export const styles = StyleSheet.create({
   title: {fontSize: 32, fontWeight: '700', color: '#122b54'}, body: {fontSize: 18, lineHeight: 26, color: '#252c39'},
   label: {fontSize: 14, fontWeight: '700', color: '#4d576a'}, detail: {gap: 4},
   card: {padding: 20, gap: 16, backgroundColor: '#fff', borderRadius: 20},
-  portraits: {flexDirection: 'row', gap: 12}, portrait: {flex: 1, gap: 8}, image: {height: 180, width: '100%'},
-  camera: {flex: 1, backgroundColor: '#152032'}, cameraTop: {padding: 24, gap: 12},
-  cameraBottom: {position: 'absolute', bottom: 20, left: 24, right: 24, gap: 12}, white: {color: '#fff'},
+  portraits: {flexDirection: 'row', gap: 12}, portrait: {flex: 1, gap: 8}, image: {aspectRatio: 3 / 4, width: '100%'},
+  camera: {flex: 1, backgroundColor: '#152032', justifyContent: 'space-between'}, cameraTop: {padding: 24, gap: 12},
+  cameraBottom: {paddingHorizontal: 24, paddingBottom: 20, gap: 12}, white: {color: '#fff'},
   guideCenter: {position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, alignItems: 'center', justifyContent: 'center'},
   oval: {borderWidth: 3, borderColor: '#fff', borderRadius: 1000},
   action: {backgroundColor: '#173965', padding: 16, minHeight: 52, borderRadius: 14, alignItems: 'center'},
