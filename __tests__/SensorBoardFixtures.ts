@@ -1,0 +1,56 @@
+import type { SensorBoardState } from '@kenshiki/identity-capture';
+
+export function sensorBoardFixture(): SensorBoardState {
+  return {
+    reading: null,
+    mediaOutput: null,
+    collection: { collectedAt: null, failure: null, paused: false, sequence: 0 },
+    permissions: {
+      motion: 'notRequested',
+      bluetooth: 'notRequested',
+      location: 'notRequested',
+      always: false,
+      precise: false,
+    },
+    windows: { motion: 1.5, magnetometer: 1.5, barometer: 1.5, sharedMotion: 1.5 },
+    units: 'system',
+    systemUsesImperial: false,
+    location: {
+      fix: null,
+      trail: [],
+      estimateID: null,
+      answeredAt: null,
+      deliveredCount: 0,
+      permissionAtDelivery: null,
+      precisionAtDelivery: null,
+      failure: null,
+    },
+    weather: {
+      state: 'notConfigured',
+      readAt: null,
+      observedAt: null,
+      pressureKPa: null,
+      temperatureC: null,
+      humidityPercent: null,
+      stationName: null,
+      stationID: null,
+      distanceMeters: null,
+      stationElevationMeters: null,
+      quality: null,
+      source: null,
+      failure: null,
+      details: [],
+    },
+    evidence: { count: 0, failure: null, exportURL: null, receipt: null },
+    storage: { trackers: [], eraseResults: [], erasedAt: null },
+    environment: {
+      defaultsSuiteName: 'test.sensors',
+      directoryURL: 'file:///test/sensors',
+      applicationIdentifier: 'test.app',
+      unconfiguredDefaultsSuiteName: null,
+      unconfiguredDirectoryURL: 'file:///test/defaults',
+      unconfiguredApplicationIdentifier: 'test.app',
+    },
+    batteryProvider: { reads: 0, monitoringEnables: 0 },
+  };
+}

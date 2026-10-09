@@ -13,6 +13,7 @@ import { IntegrationChecks } from './IntegrationChecks';
 import { PhoneFlow } from './PhoneFlow';
 import type { SavedPhoneCheck } from './PhoneFlowController';
 import { phoneCheckStopped } from './PhonePolicy';
+import { SensorScreen } from './SensorScreen';
 import { SSNFlow, ssnSummary } from './SSNFlow';
 import type { SavedSSNCheck } from './SSNFlowController';
 
@@ -45,7 +46,15 @@ export default function App({
   configurationIssue?: 'holderScopeUnreadable' | undefined;
 }) {
   const [screen, setScreen] = useState<
-    'identity' | 'result' | 'capture' | 'checks' | 'documentCapture' | 'documentResult' | 'ssn' | 'phone'
+    | 'identity'
+    | 'result'
+    | 'capture'
+    | 'checks'
+    | 'documentCapture'
+    | 'documentResult'
+    | 'ssn'
+    | 'phone'
+    | 'sensors'
   >('identity');
   const [result, setResult] = useState<CompletedCapture>();
   const [focus, setFocus] = useState<'passport' | 'face'>('passport');
@@ -298,6 +307,8 @@ export default function App({
     !(result?.comparison || (faceReady && result?.passport.portraitAvailable) || (!result && savedCount > 0));
   const covered = !!clearSheet || !!restoreFailure;
   function renderScreen() {
+    if (screen === 'sensors')
+      return <SensorScreen configuration={configuration} onExit={() => setScreen('identity')} />;
     if (screen === 'capture') {
       return (
         <IdentityCaptureFlow
@@ -462,6 +473,7 @@ export default function App({
           {renderFaceCard()}
           {renderSSNCard()}
           {renderPhoneCard()}
+          <Action label="Phone sensors" secondary onPress={() => setScreen('sensors')} />
           {configuration.results && result && (
             <Action
               label="Open saved passport checks"

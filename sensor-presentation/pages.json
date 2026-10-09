@@ -1,0 +1,965 @@
+{
+  "pages": {
+    "audioRoute": {
+      "algorithmCode": null,
+      "algorithmKeys": [],
+      "apis": [
+        {
+          "abstractKey": "docs.audioRoute.api.0",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.sharedInstance()",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/sharedinstance()"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.1",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.currentRoute",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/currentroute"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.2",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSessionRouteDescription.outputs",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosessionroutedescription/outputs"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.3",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSessionPortDescription.portType",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosessionportdescription/porttype"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.4",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.isOtherAudioPlaying",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/isotheraudioplaying"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.5",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.builtInSpeaker",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/builtinspeaker"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.6",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.builtInReceiver",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/builtinreceiver"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.7",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.headphones",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/headphones"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.8",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.headsetMic",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/headsetmic"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.9",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.bluetoothA2DP",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/bluetootha2dp"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.10",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.bluetoothHFP",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/bluetoothhfp"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.11",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.bluetoothLE",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/bluetoothle"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.12",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.carAudio",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/caraudio"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.13",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.airPlay",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/airplay"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.14",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.usbAudio",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/usbaudio"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.15",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.HDMI",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/hdmi"
+        },
+        {
+          "abstractKey": "docs.audioRoute.api.16",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.displayPort",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/displayport"
+        }
+      ],
+      "checks": [],
+      "limitKeys": [],
+      "noteKeys": [
+        "docs.audioRoute.note.0",
+        "docs.audioRoute.note.1"
+      ]
+    },
+    "barometer": {
+      "algorithmCode": "KenshikiSensors/BarometerWindow.swift",
+      "algorithmKeys": [
+        "docs.barometer.algorithm.0",
+        "docs.barometer.algorithm.1",
+        "docs.barometer.algorithm.2"
+      ],
+      "apis": [
+        {
+          "abstractKey": "docs.barometer.api.0",
+          "framework": "Core Motion",
+          "symbol": "CMAltimeter",
+          "url": "https://developer.apple.com/documentation/coremotion/cmaltimeter"
+        },
+        {
+          "abstractKey": "docs.barometer.api.1",
+          "framework": "Core Motion",
+          "symbol": "CMAltimeter.startRelativeAltitudeUpdates(to:withHandler:)",
+          "url": "https://developer.apple.com/documentation/coremotion/cmaltimeter/startrelativealtitudeupdates(to:withhandler:)"
+        },
+        {
+          "abstractKey": "docs.barometer.api.2",
+          "framework": "Core Motion",
+          "symbol": "CMAltimeter.stopRelativeAltitudeUpdates()",
+          "url": "https://developer.apple.com/documentation/coremotion/cmaltimeter/stoprelativealtitudeupdates()"
+        },
+        {
+          "abstractKey": "docs.barometer.api.3",
+          "framework": "Core Motion",
+          "symbol": "CMAltitudeData",
+          "url": "https://developer.apple.com/documentation/coremotion/cmaltitudedata"
+        },
+        {
+          "abstractKey": "docs.barometer.api.4",
+          "framework": "Core Motion",
+          "symbol": "CMAltitudeData.pressure",
+          "url": "https://developer.apple.com/documentation/coremotion/cmaltitudedata/pressure"
+        },
+        {
+          "abstractKey": "docs.barometer.api.5",
+          "framework": "Core Motion",
+          "symbol": "CMAltitudeData.relativeAltitude",
+          "url": "https://developer.apple.com/documentation/coremotion/cmaltitudedata/relativealtitude"
+        }
+      ],
+      "checks": [
+        {
+          "quoteKey": "docs.barometer.check.0",
+          "symbol": "CMAltimeter.isRelativeAltitudeAvailable()",
+          "url": "https://developer.apple.com/documentation/coremotion/cmaltimeter/isrelativealtitudeavailable()"
+        },
+        {
+          "quoteKey": "docs.barometer.check.2",
+          "symbol": "CMAltimeter.authorizationStatus()",
+          "url": "https://developer.apple.com/documentation/coremotion/cmaltimeter/authorizationstatus()"
+        }
+      ],
+      "limitKeys": [],
+      "noteKeys": [
+        "docs.barometer.note.0",
+        "docs.barometer.note.1",
+        "docs.barometer.note.2",
+        "docs.barometer.note.3",
+        "docs.barometer.note.4"
+      ],
+      "updates": {
+        "quoteKey": "docs.barometer.updates",
+        "url": "https://developer.apple.com/documentation/coremotion/cmaltimeter"
+      },
+      "usageKey": {
+        "key": "NSMotionUsageDescription",
+        "quoteKey": "docs.barometer.usageKey",
+        "url": "https://developer.apple.com/documentation/coremotion/cmaltimeter"
+      }
+    },
+    "bluetooth": {
+      "algorithmCode": null,
+      "algorithmKeys": [],
+      "apis": [
+        {
+          "abstractKey": "docs.bluetooth.api.0",
+          "framework": "Core Bluetooth",
+          "symbol": "CBManager.authorization",
+          "url": "https://developer.apple.com/documentation/corebluetooth/cbmanager/authorization-swift.type.property"
+        },
+        {
+          "abstractKey": "docs.bluetooth.api.1",
+          "framework": "Core Bluetooth",
+          "symbol": "CBCentralManager",
+          "url": "https://developer.apple.com/documentation/corebluetooth/cbcentralmanager"
+        },
+        {
+          "abstractKey": "docs.bluetooth.api.2",
+          "framework": "Core Bluetooth",
+          "symbol": "CBManager.state",
+          "url": "https://developer.apple.com/documentation/corebluetooth/cbmanager/state"
+        },
+        {
+          "abstractKey": "docs.bluetooth.api.3",
+          "framework": "Core Bluetooth",
+          "symbol": "CBCentralManagerDelegate.centralManagerDidUpdateState(_:)",
+          "url": "https://developer.apple.com/documentation/corebluetooth/cbcentralmanagerdelegate/centralmanagerdidupdatestate(_:)"
+        },
+        {
+          "abstractKey": "docs.bluetooth.api.4",
+          "framework": "Core Bluetooth",
+          "symbol": "CBManagerState.poweredOn",
+          "url": "https://developer.apple.com/documentation/corebluetooth/cbmanagerstate/poweredon"
+        },
+        {
+          "abstractKey": "docs.bluetooth.api.5",
+          "framework": "Core Bluetooth",
+          "symbol": "CBCentralManagerOptionShowPowerAlertKey",
+          "url": "https://developer.apple.com/documentation/corebluetooth/cbcentralmanageroptionshowpoweralertkey"
+        },
+        {
+          "abstractKey": "docs.bluetooth.api.6",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSessionPortDescription.portType",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosessionportdescription/porttype"
+        },
+        {
+          "abstractKey": "docs.bluetooth.api.7",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.carAudio",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/caraudio"
+        },
+        {
+          "abstractKey": "docs.bluetooth.api.8",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.bluetoothA2DP",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/bluetootha2dp"
+        },
+        {
+          "abstractKey": "docs.bluetooth.api.9",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.bluetoothHFP",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/bluetoothhfp"
+        },
+        {
+          "abstractKey": "docs.bluetooth.api.10",
+          "framework": "AVFAudio",
+          "symbol": "AVAudioSession.Port.bluetoothLE",
+          "url": "https://developer.apple.com/documentation/avfaudio/avaudiosession/port/bluetoothle"
+        }
+      ],
+      "checks": [
+        {
+          "quoteKey": "docs.bluetooth.check.0",
+          "symbol": "CBManager.authorization",
+          "url": "https://developer.apple.com/documentation/corebluetooth/cbmanager/authorization-swift.type.property"
+        }
+      ],
+      "hardware": {
+        "quoteKey": "docs.bluetooth.hardware",
+        "url": "https://developer.apple.com/documentation/corebluetooth/cbcentralmanager"
+      },
+      "limitKeys": [],
+      "noteKeys": [
+        "docs.bluetooth.note.0",
+        "docs.bluetooth.note.1",
+        "docs.bluetooth.note.2"
+      ],
+      "updates": {
+        "quoteKey": "docs.bluetooth.updates",
+        "url": "https://developer.apple.com/documentation/corebluetooth/cbmanager/state"
+      },
+      "usageKey": {
+        "key": "NSBluetoothAlwaysUsageDescription",
+        "quoteKey": "docs.bluetooth.usageKey",
+        "url": "https://developer.apple.com/documentation/bundleresources/information-property-list/nsbluetoothalwaysusagedescription"
+      }
+    },
+    "callActivity": {
+      "algorithmCode": null,
+      "algorithmKeys": [],
+      "apis": [
+        {
+          "abstractKey": "docs.callActivity.api.0",
+          "framework": "CallKit",
+          "symbol": "CXCallObserver",
+          "url": "https://developer.apple.com/documentation/callkit/cxcallobserver"
+        },
+        {
+          "abstractKey": "docs.callActivity.api.1",
+          "framework": "CallKit",
+          "symbol": "CXCallObserver.calls",
+          "url": "https://developer.apple.com/documentation/callkit/cxcallobserver/calls"
+        },
+        {
+          "abstractKey": "docs.callActivity.api.2",
+          "framework": "CallKit",
+          "symbol": "CXCallObserverDelegate.callObserver(_:callChanged:)",
+          "url": "https://developer.apple.com/documentation/callkit/cxcallobserverdelegate/callobserver(_:callchanged:)"
+        },
+        {
+          "abstractKey": "docs.callActivity.api.3",
+          "framework": "CallKit",
+          "symbol": "CXCall.hasEnded",
+          "url": "https://developer.apple.com/documentation/callkit/cxcall/hasended"
+        },
+        {
+          "abstractKey": "docs.callActivity.api.4",
+          "framework": "CallKit",
+          "symbol": "CXCall.hasConnected",
+          "url": "https://developer.apple.com/documentation/callkit/cxcall/hasconnected"
+        },
+        {
+          "abstractKey": "docs.callActivity.api.5",
+          "framework": "CallKit",
+          "symbol": "CXCall.isOnHold",
+          "url": "https://developer.apple.com/documentation/callkit/cxcall/isonhold"
+        }
+      ],
+      "checks": [],
+      "limitKeys": [],
+      "noteKeys": [
+        "docs.callActivity.note.0",
+        "docs.callActivity.note.1"
+      ],
+      "updates": {
+        "quoteKey": "docs.callActivity.updates",
+        "url": "https://developer.apple.com/documentation/callkit/cxcallobserver"
+      }
+    },
+    "connectivity": {
+      "algorithmCode": "KenshikiContinuity/NetworkContinuity.swift",
+      "algorithmKeys": [
+        "docs.connectivity.algorithm.0",
+        "docs.connectivity.algorithm.1",
+        "docs.connectivity.algorithm.2"
+      ],
+      "apis": [
+        {
+          "abstractKey": "docs.connectivity.api.0",
+          "framework": "Network",
+          "symbol": "NWPathMonitor",
+          "url": "https://developer.apple.com/documentation/network/nwpathmonitor"
+        },
+        {
+          "abstractKey": "docs.connectivity.api.1",
+          "framework": "Network",
+          "symbol": "NWPathMonitor.currentPath",
+          "url": "https://developer.apple.com/documentation/network/nwpathmonitor/currentpath"
+        },
+        {
+          "abstractKey": "docs.connectivity.api.2",
+          "framework": "Network",
+          "symbol": "NWPath",
+          "url": "https://developer.apple.com/documentation/network/nwpath"
+        },
+        {
+          "abstractKey": "docs.connectivity.api.3",
+          "framework": "Network",
+          "symbol": "NWPath.status",
+          "url": "https://developer.apple.com/documentation/network/nwpath/status-swift.property"
+        },
+        {
+          "abstractKey": "docs.connectivity.api.4",
+          "framework": "Network",
+          "symbol": "NWPath.Status.satisfied",
+          "url": "https://developer.apple.com/documentation/network/nwpath/status-swift.enum/satisfied"
+        },
+        {
+          "abstractKey": "docs.connectivity.api.5",
+          "framework": "Network",
+          "symbol": "NWPath.Status.requiresConnection",
+          "url": "https://developer.apple.com/documentation/network/nwpath/status-swift.enum/requiresconnection"
+        },
+        {
+          "framework": "Network",
+          "symbol": "NWPath.unsatisfiedReason",
+          "url": "https://developer.apple.com/documentation/network/nwpath/unsatisfiedreason-swift.property"
+        },
+        {
+          "abstractKey": "docs.connectivity.api.7",
+          "framework": "Network",
+          "symbol": "NWPath.usesInterfaceType(_:)",
+          "url": "https://developer.apple.com/documentation/network/nwpath/usesinterfacetype(_:)"
+        },
+        {
+          "abstractKey": "docs.connectivity.api.8",
+          "framework": "Network",
+          "symbol": "NWPath.isExpensive",
+          "url": "https://developer.apple.com/documentation/network/nwpath/isexpensive"
+        },
+        {
+          "abstractKey": "docs.connectivity.api.9",
+          "framework": "Network",
+          "symbol": "NWPath.isConstrained",
+          "url": "https://developer.apple.com/documentation/network/nwpath/isconstrained"
+        },
+        {
+          "abstractKey": "docs.connectivity.api.10",
+          "framework": "Network Extension",
+          "symbol": "NEHotspotNetwork.fetchCurrent(completionHandler:)",
+          "url": "https://developer.apple.com/documentation/networkextension/nehotspotnetwork/fetchcurrent(completionhandler:)"
+        },
+        {
+          "abstractKey": "docs.connectivity.api.11",
+          "framework": "Network Extension",
+          "symbol": "NEHotspotNetwork.ssid",
+          "url": "https://developer.apple.com/documentation/networkextension/nehotspotnetwork/ssid"
+        },
+        {
+          "abstractKey": "docs.connectivity.api.12",
+          "framework": "Network Extension",
+          "symbol": "NEHotspotNetwork.bssid",
+          "url": "https://developer.apple.com/documentation/networkextension/nehotspotnetwork/bssid"
+        }
+      ],
+      "checks": [
+        {
+          "quoteKey": "docs.connectivity.check.0",
+          "symbol": "NEHotspotNetwork.fetchCurrent(completionHandler:)",
+          "url": "https://developer.apple.com/documentation/networkextension/nehotspotnetwork/fetchcurrent(completionhandler:)"
+        }
+      ],
+      "limitKeys": [
+        "docs.connectivity.limit.0"
+      ],
+      "noteKeys": [
+        "docs.connectivity.note.0",
+        "docs.connectivity.note.1"
+      ]
+    },
+    "deviceSurface": {
+      "algorithmCode": null,
+      "algorithmKeys": [],
+      "apis": [
+        {
+          "abstractKey": "docs.deviceSurface.api.0",
+          "framework": "UIKit",
+          "symbol": "UIDevice.systemName",
+          "url": "https://developer.apple.com/documentation/uikit/uidevice/systemname"
+        },
+        {
+          "abstractKey": "docs.deviceSurface.api.1",
+          "framework": "Foundation",
+          "symbol": "ProcessInfo.operatingSystemVersion",
+          "url": "https://developer.apple.com/documentation/foundation/processinfo/operatingsystemversion"
+        },
+        {
+          "abstractKey": "docs.deviceSurface.api.2",
+          "framework": "UIKit",
+          "symbol": "UIDevice.userInterfaceIdiom",
+          "url": "https://developer.apple.com/documentation/uikit/uidevice/userinterfaceidiom"
+        }
+      ],
+      "checks": [],
+      "limitKeys": [],
+      "noteKeys": [
+        "docs.deviceSurface.note.0",
+        "docs.deviceSurface.note.1"
+      ]
+    },
+    "location": {
+      "algorithmCode": "LocationCapture/CoreLocationFixContracts.swift",
+      "algorithmKeys": [
+        "docs.location.algorithm.0",
+        "docs.location.algorithm.1",
+        "docs.location.algorithm.2",
+        "docs.location.algorithm.3"
+      ],
+      "apis": [
+        {
+          "abstractKey": "docs.location.api.0",
+          "framework": "Core Location",
+          "symbol": "CLLocationManager.requestLocation()",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocationmanager/requestlocation()"
+        },
+        {
+          "abstractKey": "docs.location.api.1",
+          "framework": "Core Location",
+          "symbol": "CLLocationManagerDelegate.locationManager(_:didUpdateLocations:)",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocationmanagerdelegate/locationmanager(_:didupdatelocations:)"
+        },
+        {
+          "abstractKey": "docs.location.api.2",
+          "framework": "Core Location",
+          "symbol": "CLLocation.coordinate",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocation/coordinate"
+        },
+        {
+          "abstractKey": "docs.location.api.3",
+          "framework": "Core Location",
+          "symbol": "CLLocation.horizontalAccuracy",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocation/horizontalaccuracy"
+        },
+        {
+          "abstractKey": "docs.location.api.4",
+          "framework": "Core Location",
+          "symbol": "CLLocation.verticalAccuracy",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocation/verticalaccuracy"
+        },
+        {
+          "abstractKey": "docs.location.api.5",
+          "framework": "Core Location",
+          "symbol": "CLLocation.altitude",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocation/altitude"
+        },
+        {
+          "abstractKey": "docs.location.api.6",
+          "framework": "Core Location",
+          "symbol": "CLLocation.ellipsoidalAltitude",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocation/ellipsoidalaltitude"
+        },
+        {
+          "abstractKey": "docs.location.api.7",
+          "framework": "Core Location",
+          "symbol": "CLLocation.speed",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocation/speed"
+        },
+        {
+          "abstractKey": "docs.location.api.8",
+          "framework": "Core Location",
+          "symbol": "CLLocation.speedAccuracy",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocation/speedaccuracy"
+        },
+        {
+          "abstractKey": "docs.location.api.9",
+          "framework": "Core Location",
+          "symbol": "CLLocation.course",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocation/course"
+        },
+        {
+          "abstractKey": "docs.location.api.10",
+          "framework": "Core Location",
+          "symbol": "CLLocation.courseAccuracy",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocation/courseaccuracy"
+        },
+        {
+          "abstractKey": "docs.location.api.11",
+          "framework": "Core Location",
+          "symbol": "CLLocation.timestamp",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocation/timestamp"
+        },
+        {
+          "abstractKey": "docs.location.api.12",
+          "framework": "Core Location",
+          "symbol": "CLLocation.sourceInformation",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocation/sourceinformation"
+        },
+        {
+          "abstractKey": "docs.location.api.13",
+          "framework": "Core Location",
+          "symbol": "CLLocationSourceInformation.isSimulatedBySoftware",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocationsourceinformation/issimulatedbysoftware"
+        },
+        {
+          "abstractKey": "docs.location.api.14",
+          "framework": "Core Location",
+          "symbol": "CLLocationSourceInformation.isProducedByAccessory",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocationsourceinformation/isproducedbyaccessory"
+        }
+      ],
+      "checks": [
+        {
+          "quoteKey": "docs.location.check.0",
+          "symbol": "CLLocationManager.authorizationStatus",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocationmanager/authorizationstatus-swift.property"
+        },
+        {
+          "quoteKey": "docs.location.check.1",
+          "symbol": "CLLocationManager.accuracyAuthorization",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocationmanager/accuracyauthorization"
+        },
+        {
+          "quoteKey": "docs.location.check.2",
+          "symbol": "CLLocationManager.requestWhenInUseAuthorization()",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocationmanager/requestwheninuseauthorization()"
+        },
+        {
+          "quoteKey": "docs.location.check.3",
+          "symbol": "CLLocationManager.requestAlwaysAuthorization()",
+          "url": "https://developer.apple.com/documentation/corelocation/cllocationmanager/requestalwaysauthorization()"
+        }
+      ],
+      "limitKeys": [],
+      "noteKeys": [
+        "docs.location.note.0",
+        "docs.location.note.1",
+        "docs.location.note.2"
+      ],
+      "updates": {
+        "quoteKey": "docs.location.updates",
+        "url": "https://developer.apple.com/documentation/corelocation/cllocationmanager/requestlocation()"
+      },
+      "usageKey": {
+        "key": "NSLocationWhenInUseUsageDescription",
+        "quoteKey": "docs.location.usageKey",
+        "url": "https://developer.apple.com/documentation/corelocation/cllocationmanager/requestwheninuseauthorization()"
+      }
+    },
+    "magnetometer": {
+      "algorithmCode": "KenshikiSensors/DeviceMotionWindow.swift",
+      "algorithmKeys": [
+        "docs.magnetometer.algorithm.0",
+        "docs.magnetometer.algorithm.1",
+        "docs.magnetometer.algorithm.2"
+      ],
+      "apis": [
+        {
+          "abstractKey": "docs.magnetometer.api.0",
+          "framework": "Core Motion",
+          "symbol": "CMDeviceMotion.magneticField",
+          "url": "https://developer.apple.com/documentation/coremotion/cmdevicemotion/magneticfield"
+        },
+        {
+          "abstractKey": "docs.magnetometer.api.1",
+          "framework": "Core Motion",
+          "symbol": "CMCalibratedMagneticField",
+          "url": "https://developer.apple.com/documentation/coremotion/cmcalibratedmagneticfield"
+        },
+        {
+          "abstractKey": "docs.magnetometer.api.2",
+          "framework": "Core Motion",
+          "symbol": "CMCalibratedMagneticField.field",
+          "url": "https://developer.apple.com/documentation/coremotion/cmcalibratedmagneticfield/field"
+        },
+        {
+          "abstractKey": "docs.magnetometer.api.3",
+          "framework": "Core Motion",
+          "symbol": "CMCalibratedMagneticField.accuracy",
+          "url": "https://developer.apple.com/documentation/coremotion/cmcalibratedmagneticfield/accuracy"
+        },
+        {
+          "abstractKey": "docs.magnetometer.api.4",
+          "framework": "Core Motion",
+          "symbol": "CMMagneticFieldCalibrationAccuracy",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmagneticfieldcalibrationaccuracy"
+        },
+        {
+          "abstractKey": "docs.magnetometer.api.5",
+          "framework": "Core Motion",
+          "symbol": "CMMagneticFieldCalibrationAccuracy.uncalibrated",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmagneticfieldcalibrationaccuracy/uncalibrated"
+        },
+        {
+          "abstractKey": "docs.magnetometer.api.6",
+          "framework": "Core Motion",
+          "symbol": "CMAttitudeReferenceFrame.xMagneticNorthZVertical",
+          "url": "https://developer.apple.com/documentation/coremotion/cmattitudereferenceframe/xmagneticnorthzvertical"
+        },
+        {
+          "abstractKey": "docs.magnetometer.api.7",
+          "framework": "Core Motion",
+          "symbol": "CMMotionManager.availableAttitudeReferenceFrames()",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/availableattitudereferenceframes()"
+        },
+        {
+          "abstractKey": "docs.magnetometer.api.10",
+          "framework": "Core Motion",
+          "symbol": "CMMotionManager.isMagnetometerAvailable",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/ismagnetometeravailable"
+        },
+        {
+          "abstractKey": "docs.magnetometer.api.13",
+          "framework": "Core Motion",
+          "symbol": "CMMagnetometerData.magneticField",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmagnetometerdata/magneticfield"
+        },
+        {
+          "abstractKey": "docs.magnetometer.api.added.0",
+          "framework": "Core Motion",
+          "symbol": "CMMotionManager.startDeviceMotionUpdates(using:to:withHandler:)",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/startdevicemotionupdates(using:to:withhandler:)"
+        },
+        {
+          "abstractKey": "docs.magnetometer.api.added.1",
+          "framework": "Core Motion",
+          "symbol": "CMMotionManager.startMagnetometerUpdates(to:withHandler:)",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/startmagnetometerupdates(to:withhandler:)"
+        }
+      ],
+      "checks": [
+        {
+          "quoteKey": "docs.magnetometer.check.1",
+          "symbol": "CMMotionManager.isMagnetometerAvailable",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/ismagnetometeravailable"
+        },
+        {
+          "quoteKey": "docs.magnetometer.check.2",
+          "symbol": "CMMotionManager.availableAttitudeReferenceFrames()",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/availableattitudereferenceframes()"
+        }
+      ],
+      "hardware": {
+        "quoteKey": "docs.magnetometer.hardware",
+        "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/ismagnetometeravailable"
+      },
+      "limitKeys": [],
+      "noteKeys": [
+        "docs.magnetometer.note.0",
+        "docs.magnetometer.note.1",
+        "docs.magnetometer.note.2",
+        "docs.magnetometer.note.3"
+      ],
+      "updates": {
+        "quoteKey": "docs.magnetometer.updates",
+        "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/devicemotionupdateinterval"
+      }
+    },
+    "motion": {
+      "algorithmCode": "KenshikiSensors/DeviceMotionWindow.swift",
+      "algorithmKeys": [
+        "docs.motion.algorithm.0",
+        "docs.motion.algorithm.1",
+        "docs.motion.algorithm.2"
+      ],
+      "apis": [
+        {
+          "abstractKey": "docs.motion.api.0",
+          "framework": "Core Motion",
+          "symbol": "CMMotionManager",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager"
+        },
+        {
+          "abstractKey": "docs.motion.api.1",
+          "framework": "Core Motion",
+          "symbol": "CMMotionManager.isDeviceMotionAvailable",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/isdevicemotionavailable"
+        },
+        {
+          "abstractKey": "docs.motion.api.2",
+          "framework": "Core Motion",
+          "symbol": "CMMotionManager.deviceMotionUpdateInterval",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/devicemotionupdateinterval"
+        },
+        {
+          "abstractKey": "docs.motion.api.6",
+          "framework": "Core Motion",
+          "symbol": "CMDeviceMotion",
+          "url": "https://developer.apple.com/documentation/coremotion/cmdevicemotion"
+        },
+        {
+          "abstractKey": "docs.motion.api.7",
+          "framework": "Core Motion",
+          "symbol": "CMDeviceMotion.userAcceleration",
+          "url": "https://developer.apple.com/documentation/coremotion/cmdevicemotion/useracceleration"
+        },
+        {
+          "abstractKey": "docs.motion.api.8",
+          "framework": "Core Motion",
+          "symbol": "CMDeviceMotion.rotationRate",
+          "url": "https://developer.apple.com/documentation/coremotion/cmdevicemotion/rotationrate"
+        },
+        {
+          "abstractKey": "docs.motion.api.9",
+          "framework": "Core Motion",
+          "symbol": "CMDeviceMotion.gravity",
+          "url": "https://developer.apple.com/documentation/coremotion/cmdevicemotion/gravity"
+        },
+        {
+          "abstractKey": "docs.motion.api.added.0",
+          "framework": "Core Motion",
+          "symbol": "CMMotionManager.startDeviceMotionUpdates(using:to:withHandler:)",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/startdevicemotionupdates(using:to:withhandler:)"
+        },
+        {
+          "abstractKey": "docs.motion.api.added.1",
+          "framework": "Core Motion",
+          "symbol": "CMMotionManager.startDeviceMotionUpdates(to:withHandler:)",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/startdevicemotionupdates(to:withhandler:)"
+        }
+      ],
+      "checks": [
+        {
+          "quoteKey": "docs.motion.check.2",
+          "symbol": "CMMotionManager.isDeviceMotionAvailable",
+          "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/isdevicemotionavailable"
+        }
+      ],
+      "hardware": {
+        "quoteKey": "docs.motion.hardware",
+        "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/isdevicemotionavailable"
+      },
+      "limitKeys": [],
+      "noteKeys": [
+        "docs.motion.note.0",
+        "docs.motion.note.1",
+        "docs.motion.note.2",
+        "docs.motion.note.3"
+      ],
+      "updates": {
+        "quoteKey": "docs.motion.updates",
+        "url": "https://developer.apple.com/documentation/coremotion/cmmotionmanager/devicemotionupdateinterval"
+      }
+    },
+    "status": {
+      "algorithmCode": null,
+      "algorithmKeys": [],
+      "apis": [],
+      "checks": [],
+      "limitKeys": [],
+      "noteKeys": [
+        "docs.status.note.0",
+        "docs.status.note.1"
+      ]
+    },
+    "telephony": {
+      "algorithmCode": null,
+      "algorithmKeys": [],
+      "apis": [
+        {
+          "abstractKey": "docs.telephony.api.0",
+          "framework": "Core Telephony",
+          "symbol": "CTTelephonyNetworkInfo",
+          "url": "https://developer.apple.com/documentation/coretelephony/cttelephonynetworkinfo"
+        },
+        {
+          "abstractKey": "docs.telephony.api.1",
+          "framework": "Core Telephony",
+          "symbol": "CTTelephonyNetworkInfo.serviceCurrentRadioAccessTechnology",
+          "url": "https://developer.apple.com/documentation/coretelephony/cttelephonynetworkinfo/servicecurrentradioaccesstechnology"
+        },
+        {
+          "abstractKey": "docs.telephony.api.2",
+          "framework": "Core Telephony",
+          "symbol": "CTTelephonyNetworkInfo.dataServiceIdentifier",
+          "url": "https://developer.apple.com/documentation/coretelephony/cttelephonynetworkinfo/dataserviceidentifier"
+        },
+        {
+          "abstractKey": "docs.telephony.api.3",
+          "framework": "Core Telephony",
+          "symbol": "CTSubscriberInfo.subscribers()",
+          "url": "https://developer.apple.com/documentation/coretelephony/ctsubscriberinfo/subscribers()"
+        },
+        {
+          "abstractKey": "docs.telephony.api.4",
+          "framework": "Core Telephony",
+          "symbol": "CTSubscriber",
+          "url": "https://developer.apple.com/documentation/coretelephony/ctsubscriber"
+        },
+        {
+          "abstractKey": "docs.telephony.api.5",
+          "framework": "Core Telephony",
+          "symbol": "CTSubscriber.isSIMInserted",
+          "url": "https://developer.apple.com/documentation/coretelephony/ctsubscriber/issiminserted"
+        },
+        {
+          "abstractKey": "docs.telephony.api.6",
+          "framework": "Core Telephony",
+          "symbol": "CTCellularData.restrictedState",
+          "url": "https://developer.apple.com/documentation/coretelephony/ctcellulardata/restrictedstate"
+        },
+        {
+          "abstractKey": "docs.telephony.api.7",
+          "framework": "Core Telephony",
+          "symbol": "CTCellularDataRestrictedState",
+          "url": "https://developer.apple.com/documentation/coretelephony/ctcellulardatarestrictedstate"
+        }
+      ],
+      "checks": [],
+      "limitKeys": [],
+      "noteKeys": [
+        "docs.telephony.note.0",
+        "docs.telephony.note.1",
+        "docs.telephony.note.2"
+      ]
+    },
+    "thermalAndPower": {
+      "algorithmCode": null,
+      "algorithmKeys": [],
+      "apis": [
+        {
+          "abstractKey": "docs.thermalAndPower.api.0",
+          "framework": "Foundation",
+          "symbol": "ProcessInfo.thermalState",
+          "url": "https://developer.apple.com/documentation/foundation/processinfo/thermalstate-swift.property"
+        },
+        {
+          "abstractKey": "docs.thermalAndPower.api.1",
+          "framework": "Foundation",
+          "symbol": "ProcessInfo.ThermalState",
+          "url": "https://developer.apple.com/documentation/foundation/processinfo/thermalstate-swift.enum"
+        },
+        {
+          "abstractKey": "docs.thermalAndPower.api.2",
+          "framework": "Foundation",
+          "symbol": "ProcessInfo.ThermalState.nominal",
+          "url": "https://developer.apple.com/documentation/foundation/processinfo/thermalstate-swift.enum/nominal"
+        },
+        {
+          "abstractKey": "docs.thermalAndPower.api.3",
+          "framework": "Foundation",
+          "symbol": "ProcessInfo.ThermalState.fair",
+          "url": "https://developer.apple.com/documentation/foundation/processinfo/thermalstate-swift.enum/fair"
+        },
+        {
+          "abstractKey": "docs.thermalAndPower.api.4",
+          "framework": "Foundation",
+          "symbol": "ProcessInfo.ThermalState.serious",
+          "url": "https://developer.apple.com/documentation/foundation/processinfo/thermalstate-swift.enum/serious"
+        },
+        {
+          "abstractKey": "docs.thermalAndPower.api.5",
+          "framework": "Foundation",
+          "symbol": "ProcessInfo.ThermalState.critical",
+          "url": "https://developer.apple.com/documentation/foundation/processinfo/thermalstate-swift.enum/critical"
+        },
+        {
+          "abstractKey": "docs.thermalAndPower.api.6",
+          "framework": "UIKit",
+          "symbol": "UIDevice.batteryLevel",
+          "url": "https://developer.apple.com/documentation/uikit/uidevice/batterylevel"
+        },
+        {
+          "abstractKey": "docs.thermalAndPower.api.7",
+          "framework": "UIKit",
+          "symbol": "UIDevice.batteryState",
+          "url": "https://developer.apple.com/documentation/uikit/uidevice/batterystate-swift.property"
+        },
+        {
+          "abstractKey": "docs.thermalAndPower.api.8",
+          "framework": "UIKit",
+          "symbol": "UIDevice.BatteryState",
+          "url": "https://developer.apple.com/documentation/uikit/uidevice/batterystate-swift.enum"
+        },
+        {
+          "abstractKey": "docs.thermalAndPower.api.9",
+          "framework": "Foundation",
+          "symbol": "ProcessInfo.isLowPowerModeEnabled",
+          "url": "https://developer.apple.com/documentation/foundation/processinfo/islowpowermodeenabled"
+        }
+      ],
+      "checks": [
+        {
+          "quoteKey": "docs.thermalAndPower.check.0",
+          "symbol": "UIDevice.isBatteryMonitoringEnabled",
+          "url": "https://developer.apple.com/documentation/uikit/uidevice/isbatterymonitoringenabled"
+        }
+      ],
+      "hardware": {
+        "quoteKey": "docs.thermalAndPower.hardware",
+        "url": "https://developer.apple.com/documentation/uikit/uidevice/batterylevel"
+      },
+      "limitKeys": [],
+      "noteKeys": [
+        "docs.thermalAndPower.note.0",
+        "docs.thermalAndPower.note.1"
+      ],
+      "updates": {
+        "quoteKey": "docs.thermalAndPower.updates",
+        "url": "https://developer.apple.com/documentation/uikit/uidevice/isbatterymonitoringenabled"
+      }
+    }
+  }
+}

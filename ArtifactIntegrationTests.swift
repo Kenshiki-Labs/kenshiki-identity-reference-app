@@ -1,6 +1,93 @@
 import XCTest
 
 final class ArtifactIntegrationTests: XCTestCase {
+  /// Exercises the real packaged sensor bridge without granting permissions or requesting a fix.
+  @MainActor
+  func testSensorBoardNavigationScreenshotsAndSessionReopen() throws {
+    #if !targetEnvironment(simulator)
+    throw XCTSkip("This navigation check avoids acquiring personal device observations")
+    #endif
+    let app = XCUIApplication()
+    app.launchArguments = ["--reference-holder=" + UUID().uuidString]
+    app.launch()
+
+    func reveal(_ element: XCUIElement, upward: Bool = true) {
+      for _ in 0..<30 where !element.isHittable {
+        if upward { app.swipeUp() } else { app.swipeDown() }
+      }
+      XCTAssertTrue(element.isHittable, "Expected navigation control: \(element.label)")
+    }
+    func screenshot(_ name: String) {
+      let attachment = XCTAttachment(screenshot: app.screenshot())
+      attachment.name = name
+      attachment.lifetime = .keepAlways
+      add(attachment)
+    }
+    func assertNoSensorFailure() {
+      XCTAssertEqual(app.alerts.count, 0)
+      for failure in [
+        "Sensors could not be opened.",
+        "Sensors are not configured in this app.",
+        "The request stopped. Check permissions or try again.",
+        "Sensors could not change activity state.",
+        "Sensors could not close"
+      ] {
+        XCTAssertFalse(app.staticTexts[failure].exists, failure)
+      }
+    }
+
+    let open = app.buttons["Phone sensors"]
+    XCTAssertTrue(open.waitForExistence(timeout: 30))
+    reveal(open)
+    open.tap()
+    // These controls are rendered only after sensorBoard returns a decoded native board.
+    let pause = app.buttons["Pause sensors"]
+    XCTAssertTrue(pause.waitForExistence(timeout: 20), "The real sensor bridge must load its board")
+    reveal(pause, upward: false)
+    pause.tap()
+    XCTAssertTrue(app.buttons["Resume sensors"].waitForExistence(timeout: 10))
+    XCTAssertTrue(app.staticTexts["Last read"].exists)
+    assertNoSensorFailure()
+    screenshot("sensor-board-sensors")
+
+    let motion = app.buttons["About Motion"]
+    reveal(motion)
+    motion.tap()
+    let allSensors = app.buttons["All sensors"]
+    XCTAssertTrue(allSensors.waitForExistence(timeout: 10))
+    reveal(allSensors, upward: false)
+    XCTAssertTrue(app.staticTexts["Motion"].firstMatch.exists)
+    screenshot("sensor-board-motion-detail")
+
+    let settings = app.buttons["Settings"]
+    reveal(settings, upward: false)
+    settings.tap()
+    XCTAssertTrue(app.buttons["Prepare export"].waitForExistence(timeout: 10))
+    let motionWindow = app.descendants(matching: .any)
+      .matching(NSPredicate(format: "label == %@", "motion reading time")).firstMatch
+    reveal(motionWindow)
+    XCTAssertTrue(motionWindow.exists, "Settings must expose the adjustable motion capture window")
+    XCTAssertTrue(app.staticTexts["Shared motion capture"].exists)
+    assertNoSensorFailure()
+    screenshot("sensor-board-settings-reading-time")
+
+    let back = app.buttons["Back to Identity"]
+    reveal(back, upward: false)
+    back.tap()
+    XCTAssertTrue(open.waitForExistence(timeout: 10))
+    reveal(open)
+    open.tap()
+    XCTAssertTrue(pause.waitForExistence(timeout: 20), "Reopening must establish a new usable bridge session")
+    reveal(pause, upward: false)
+    pause.tap()
+    XCTAssertTrue(app.buttons["Resume sensors"].waitForExistence(timeout: 10))
+    assertNoSensorFailure()
+    screenshot("sensor-board-reopened")
+    reveal(back, upward: false)
+    back.tap()
+    XCTAssertTrue(open.waitForExistence(timeout: 10))
+  }
+
   @MainActor
   func testUnavailablePhoneUsesBottomSheetAndReturnsToIdentity() {
     let app = XCUIApplication()

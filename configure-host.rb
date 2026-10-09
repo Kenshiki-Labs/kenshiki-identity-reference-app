@@ -6,11 +6,15 @@ app = project.targets.find { |target| target.name == 'IdentitySDKHost' }
 FileUtils.cp(File.join(__dir__, 'AppDelegate.swift'), File.join(host, 'ios/IdentitySDKHost/AppDelegate.swift'))
 info_path = File.join(host, 'ios/IdentitySDKHost/Info.plist')
 info = Xcodeproj::Plist.read_from_path(info_path)
+info['CFBundleDisplayName'] = 'Kenshiki SDK'
 info['NSCameraUsageDescription'] = 'Scan your ID or passport and take a selfie when you start an identity check.'
+info['NSMotionUsageDescription'] = 'Read motion and air pressure when you choose to collect sensor readings.'
+info['NSLocationWhenInUseUsageDescription'] = 'Show your position and its accuracy when you choose Get one fix.'
+info['NSLocationAlwaysAndWhenInUseUsageDescription'] = 'Allow location access when you enable the Always permission control.'
+info['NSBluetoothAlwaysUsageDescription'] = 'Read Bluetooth availability when you choose to enable sensor readings. No nearby devices are scanned.'
 info['NFCReaderUsageDescription'] = 'Read your passport chip when you choose to continue.'
 info['com.apple.developer.nfc.readersession.iso7816.select-identifiers'] = ['A0000002471001']
-# The reference app never requests location (requiresLocation is false), so an empty purpose
-# string from the template is removed rather than shipped blank.
+# Keep an empty template purpose string out of the host.
 location = 'NSLocationWhenInUseUsageDescription'
 info.delete(location) if info.key?(location) && info[location].to_s.strip.empty?
 Xcodeproj::Plist.write_to_path(info, info_path)
@@ -59,6 +63,20 @@ tests.build_configurations.each do |config|
     config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = app_id + '.ArtifactIntegrationTests'
     config.build_settings['SWIFT_VERSION'] = '6.0'
     config.build_settings['TEST_TARGET_NAME'] = 'IdentitySDKHost'
+end
+# Apple Icon Composer source supplies the layered icon and appearance variants.
+icon_name = 'KenshikiID'
+icon_path = File.join(host, 'ios', icon_name + '.icon')
+FileUtils.rm_rf(icon_path)
+FileUtils.cp_r(File.join(__dir__, icon_name + '.icon'), icon_path)
+icon_ref = project.files.find { |ref| ref.path == icon_name + '.icon' }
+unless icon_ref
+  icon_ref = project.main_group.new_file(icon_name + '.icon')
+  icon_ref.last_known_file_type = 'folder.icon'
+  app.resources_build_phase.add_file_reference(icon_ref)
+end
+app.build_configurations.each do |config|
+  config.build_settings['ASSETCATALOG_COMPILER_APPICON_NAME'] = icon_name
 end
 project.save
 scheme_path = File.join(host, 'ios/IdentitySDKHost.xcodeproj/xcshareddata/xcschemes/IdentitySDKHost.xcscheme')

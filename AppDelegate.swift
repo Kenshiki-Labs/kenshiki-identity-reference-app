@@ -34,6 +34,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     if let support = FileManager.default.urls(for: .applicationSupportDirectory,
       in: .userDomainMask).first, let identity = Bundle.main.bundleIdentifier {
+      configuration["sensors"] = [
+        "directoryURL": support.appendingPathComponent("SensorEvidence", isDirectory: true).absoluteString,
+        "defaultsSuiteName": identity + ".sensors",
+        "applicationIdentifier": identity,
+      ]
       switch ReferenceHolder.retainedLocalHolderID() {
       case .failure(.unreadableHolderID):
         // No store is configured without a readable holder scope; the hub states why.

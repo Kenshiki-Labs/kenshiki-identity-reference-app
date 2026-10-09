@@ -10,6 +10,22 @@ export function mockSession<T extends Partial<CaptureSession>>(overrides: T) {
     subscribe: jest.fn<ReturnType<CaptureSession['subscribe']>, Parameters<CaptureSession['subscribe']>>(
       unexpected,
     ),
+    sensorBoard: jest.fn<
+      ReturnType<CaptureSession['sensorBoard']>,
+      Parameters<CaptureSession['sensorBoard']>
+    >(unexpected),
+    sensorStatus: jest.fn<
+      ReturnType<CaptureSession['sensorStatus']>,
+      Parameters<CaptureSession['sensorStatus']>
+    >(unexpected),
+    captureSensors: jest.fn<
+      ReturnType<CaptureSession['captureSensors']>,
+      Parameters<CaptureSession['captureSensors']>
+    >(unexpected),
+    requestSensorPermission: jest.fn<
+      ReturnType<CaptureSession['requestSensorPermission']>,
+      Parameters<CaptureSession['requestSensorPermission']>
+    >(unexpected),
     startMRZ: jest.fn<ReturnType<CaptureSession['startMRZ']>, Parameters<CaptureSession['startMRZ']>>(
       unexpected,
     ),
@@ -176,7 +192,7 @@ function isCallback(value: unknown): value is (...args: unknown[]) => unknown {
 }
 export function invoke(node: ReactTestInstance, key: string, ...args: unknown[]): unknown {
   const callback = property(node, key);
-  if (!isCallback(callback)) throw new Error('Required event handler is absent: ' + key);
+  if (!isCallback(callback)) throw new Error(`Required event handler is absent: ${key}`);
   return callback(...args);
 }
 export function without<T extends object, K extends keyof T>(value: T, key: K): Omit<T, K> {
