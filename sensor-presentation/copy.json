@@ -671,7 +671,7 @@
   "overTime.reading.header": "What a reading is",
   "overTime.reading.is": "One reading is one pass over the sensors, signed and added to the chain. It takes about a second and a half, and it is the unit every count on these screens is made of.",
   "overTime.reading.noSchedule": "The SDK has no schedule of its own and never wakes the phone. How often to read is the app's decision, and the numbers below simply reflect whatever it decided.",
-  "overTime.reading.when": "This app takes one whenever the Sensors tab is open, a few seconds apart, so a demo builds a chain quickly. A real app would take one when it is used, or once in the background, not continuously.",
+  "overTime.reading.when": "This app takes one whenever the Sensors tab is open, a few seconds apart, so a chain builds quickly here. A real app would take one when it is used, or once in the background, not continuously.",
   "overTime.reset.header": "Two ways it can end",
   "overTime.reset.note": "Neither is a judgement about a person. Both are facts about a device, which is all continuity has ever claimed to be about.",
   "overTime.row": "How this behaves over time",
