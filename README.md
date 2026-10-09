@@ -325,11 +325,12 @@ Follow [How to test the React Native SDK](../../docs/react-native-testing.md) fo
 ### First-run permissions
 
 The generated iOS host enables `firstRunPermissions`. Before mounting the main app, the introduction
-reads permission status through the existing SDK sensor session. Its buttons request Always
-Location, Motion & Fitness, and Bluetooth; they do not start collection. While Using is not shown
+reads permission status through the existing SDK sensor session. Three screens introduce Always
+Location, Motion & Fitness, and Bluetooth, with one permission request per screen. They use the
+shared Page and Action components and do not start collection. While Using is not shown
 as an Always grant. Reduced accuracy has a link to Settings, and returning from Settings refreshes
 the OS readings. Camera access stays with the capture flow.
 
-Continue releases the setup session before the main sensor session opens. A local UserDefaults
+Completing or skipping the final step releases the setup session before the main sensor session opens. A local UserDefaults
 string records completion of the introduction; authorization is always read from iOS. Users can
 continue without a grant and adjust access later in Settings.

@@ -15,30 +15,32 @@
 // rule to the generator.
 {
   "firstRun": {
-    "title": "Welcome to Kenshiki Pulse",
-    "intro": "Choose which sensors Pulse can use. You can change these permissions later in Settings.",
     "location": {
-      "title": "Always Location",
-      "body": "Allow Always Location for continuity checks, and keep Precise Location on. iOS may ask in stages; choose Always when offered, or enable it in Settings."
+      "title": "Allow location",
+      "body": "Choose Always so location is available for continuity checks. Keep Precise Location on. iOS may ask in two stages."
     },
     "motion": {
-      "title": "Motion & Fitness",
-      "body": "Allow air-pressure readings for Air Check. Other motion readings have their own availability checks."
+      "title": "Allow Motion & Fitness",
+      "body": "Use the phone’s barometer to compare air pressure with local weather."
     },
     "bluetooth": {
-      "title": "Bluetooth",
-      "body": "Read Bluetooth availability and the connected audio route. This app does not scan for nearby devices."
+      "title": "Allow Bluetooth",
+      "body": "Read Bluetooth status and your connected audio route."
     },
-    "allow": "Choose access",
-    "allowed": "Allowed",
-    "unavailable": "Not available",
-    "precise": "Review Precise Location",
-    "preciseBody": "Location access is on, but iOS is sharing an approximate position. You can enable Precise Location in Settings.",
+    "step": "Step {number} of {total}",
+    "request": "Continue",
+    "next": "Next",
+    "open": "Open Pulse",
+    "notNow": "Not now",
     "settings": "Open Settings",
-    "camera": "Camera access is requested when you start a document scan or face capture.",
-    "later": "You can continue without granting access. Checks that need a missing permission will be limited.",
-    "failure": "A permission could not be checked or updated. Try again, or continue and review access in Settings.",
-    "continue": "Continue to Pulse"
+    "allowed": "Access is enabled.",
+    "locationReady": "Always and Precise Location are enabled.",
+    "unavailable": "This permission is not available on this device. You can continue.",
+    "denied": "Access is off or restricted. You can review it in Settings or continue without it.",
+    "whileUsing": "iOS currently allows access only while using the app. Always access is still needed.",
+    "preciseBody": "iOS is sharing an approximate position. Enable Precise Location in Settings.",
+    "camera": "We’ll ask for camera access when you start a scan or face capture.",
+    "failure": "This step could not finish. Try again or choose Not now."
   },
   "fusionUI": {
     "passCountValue": "Readings so far: {count}",
@@ -151,6 +153,7 @@
 
   // Words several screens share, with the same meaning everywhere.
   "common": {
+    "back": "Back",
     // Button that leaves a check and returns to the hub screen named "Identity".
     "backToIdentity": "Back to Identity",
     "backToResults": "Back to results",

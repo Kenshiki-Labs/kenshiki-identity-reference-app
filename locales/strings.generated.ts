@@ -7,24 +7,26 @@ export type Part = string | readonly ['#'] | readonly ['arg', string]
 
 /** Every message key, with the values its message needs (undefined: none). */
 export type MessageValues = {
-  readonly "firstRun.title": undefined;
-  readonly "firstRun.intro": undefined;
   readonly "firstRun.location.title": undefined;
   readonly "firstRun.location.body": undefined;
   readonly "firstRun.motion.title": undefined;
   readonly "firstRun.motion.body": undefined;
   readonly "firstRun.bluetooth.title": undefined;
   readonly "firstRun.bluetooth.body": undefined;
-  readonly "firstRun.allow": undefined;
-  readonly "firstRun.allowed": undefined;
-  readonly "firstRun.unavailable": undefined;
-  readonly "firstRun.precise": undefined;
-  readonly "firstRun.preciseBody": undefined;
+  readonly "firstRun.step": {readonly number: string | number; readonly total: string | number};
+  readonly "firstRun.request": undefined;
+  readonly "firstRun.next": undefined;
+  readonly "firstRun.open": undefined;
+  readonly "firstRun.notNow": undefined;
   readonly "firstRun.settings": undefined;
+  readonly "firstRun.allowed": undefined;
+  readonly "firstRun.locationReady": undefined;
+  readonly "firstRun.unavailable": undefined;
+  readonly "firstRun.denied": undefined;
+  readonly "firstRun.whileUsing": undefined;
+  readonly "firstRun.preciseBody": undefined;
   readonly "firstRun.camera": undefined;
-  readonly "firstRun.later": undefined;
   readonly "firstRun.failure": undefined;
-  readonly "firstRun.continue": undefined;
   readonly "fusionUI.passCountValue": {readonly count: string | number};
   readonly "fusionUI.evaluate": undefined;
   readonly "fusionUI.evaluating": undefined;
@@ -116,6 +118,7 @@ export type MessageValues = {
   readonly "fusionMath.contradictionCoherenceWeight": undefined;
   readonly "brand.wordmark": undefined;
   readonly "brand.appName": undefined;
+  readonly "common.back": undefined;
   readonly "common.backToIdentity": undefined;
   readonly "common.backToResults": undefined;
   readonly "common.done": undefined;
@@ -912,24 +915,26 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
     formatLocale: "en-US",
     plural: (count) => (count === 1 ? 'one' : 'other'),
     messages: {
-      "firstRun.title": "Welcome to Kenshiki Pulse",
-      "firstRun.intro": "Choose which sensors Pulse can use. You can change these permissions later in Settings.",
-      "firstRun.location.title": "Always Location",
-      "firstRun.location.body": "Allow Always Location for continuity checks, and keep Precise Location on. iOS may ask in stages; choose Always when offered, or enable it in Settings.",
-      "firstRun.motion.title": "Motion & Fitness",
-      "firstRun.motion.body": "Allow air-pressure readings for Air Check. Other motion readings have their own availability checks.",
-      "firstRun.bluetooth.title": "Bluetooth",
-      "firstRun.bluetooth.body": "Read Bluetooth availability and the connected audio route. This app does not scan for nearby devices.",
-      "firstRun.allow": "Choose access",
-      "firstRun.allowed": "Allowed",
-      "firstRun.unavailable": "Not available",
-      "firstRun.precise": "Review Precise Location",
-      "firstRun.preciseBody": "Location access is on, but iOS is sharing an approximate position. You can enable Precise Location in Settings.",
+      "firstRun.location.title": "Allow location",
+      "firstRun.location.body": "Choose Always so location is available for continuity checks. Keep Precise Location on. iOS may ask in two stages.",
+      "firstRun.motion.title": "Allow Motion & Fitness",
+      "firstRun.motion.body": "Use the phone’s barometer to compare air pressure with local weather.",
+      "firstRun.bluetooth.title": "Allow Bluetooth",
+      "firstRun.bluetooth.body": "Read Bluetooth status and your connected audio route.",
+      "firstRun.step": ["Step ", ["arg", "number"], " of ", ["arg", "total"]],
+      "firstRun.request": "Continue",
+      "firstRun.next": "Next",
+      "firstRun.open": "Open Pulse",
+      "firstRun.notNow": "Not now",
       "firstRun.settings": "Open Settings",
-      "firstRun.camera": "Camera access is requested when you start a document scan or face capture.",
-      "firstRun.later": "You can continue without granting access. Checks that need a missing permission will be limited.",
-      "firstRun.failure": "A permission could not be checked or updated. Try again, or continue and review access in Settings.",
-      "firstRun.continue": "Continue to Pulse",
+      "firstRun.allowed": "Access is enabled.",
+      "firstRun.locationReady": "Always and Precise Location are enabled.",
+      "firstRun.unavailable": "This permission is not available on this device. You can continue.",
+      "firstRun.denied": "Access is off or restricted. You can review it in Settings or continue without it.",
+      "firstRun.whileUsing": "iOS currently allows access only while using the app. Always access is still needed.",
+      "firstRun.preciseBody": "iOS is sharing an approximate position. Enable Precise Location in Settings.",
+      "firstRun.camera": "We’ll ask for camera access when you start a scan or face capture.",
+      "firstRun.failure": "This step could not finish. Try again or choose Not now.",
       "fusionUI.passCountValue": ["Readings so far: ", ["arg", "count"]],
       "fusionUI.evaluate": "Evaluate this reading",
       "fusionUI.evaluating": "Working…",
@@ -1021,6 +1026,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "fusionMath.contradictionCoherenceWeight": "Contradiction coherence weight",
       "brand.wordmark": "Kenshiki Pulse",
       "brand.appName": "Kenshiki Pulse",
+      "common.back": "Back",
       "common.backToIdentity": "Back to Identity",
       "common.backToResults": "Back to results",
       "common.done": "Done",

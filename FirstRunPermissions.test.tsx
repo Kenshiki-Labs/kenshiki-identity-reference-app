@@ -4,7 +4,7 @@ import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { sensorBoardFixture } from './__tests__/SensorBoardFixtures';
 import { invoke, required } from './__tests__/support';
 import { FirstRunPermissions } from './FirstRunPermissions';
-import { ButtonRow } from './ui/List';
+import { Action } from './ui/Action';
 
 jest.mock('react-native/Libraries/Settings/Settings', () => ({
   default: { get: jest.fn(), set: jest.fn() },
@@ -30,7 +30,7 @@ let view: ReactTestRenderer | undefined;
 function button(id: string) {
   return required(
     required(view)
-      .root.findAllByType(ButtonRow)
+      .root.findAllByType(Action)
       .find((node) => node.props.testID === id),
   );
 }
@@ -41,6 +41,14 @@ async function render() {
         <Text testID="app-content">App</Text>
       </FirstRunPermissions>,
     );
+  });
+}
+async function skipToLast() {
+  await act(async () => {
+    invoke(button('first-run-skip'), 'onPress');
+  });
+  await act(async () => {
+    invoke(button('first-run-skip'), 'onPress');
   });
 }
 beforeEach(() => {
@@ -76,16 +84,18 @@ test('first launch reads status without collecting or prompting; each request ne
   expect(mockRead.mock.calls.map(([request]) => request.action)).toEqual(['status']);
   expect(required(view).root.findAllByProps({ testID: 'app-content' })).toHaveLength(0);
   await act(async () => {
-    invoke(button('first-run-location'), 'onPress');
+    invoke(button('first-run-primary'), 'onPress');
   });
   expect(mockRead).toHaveBeenLastCalledWith({ action: 'permission', permission: 'always', consent: true });
   expect(completed).toBe(false);
+  expect(JSON.stringify(required(view).toJSON())).toContain('Step 1 of 3');
 });
 test('continue works with denied permissions, releases the native lease, and remembers introduction', async () => {
   mockBoard.permissions.location = 'refused';
   await render();
+  await skipToLast();
   await act(async () => {
-    invoke(button('first-run-continue'), 'onPress');
+    invoke(button('first-run-skip'), 'onPress');
   });
   expect(mockRelease).toHaveBeenCalledTimes(1);
   expect(Settings.set).toHaveBeenCalledTimes(1);
@@ -100,22 +110,24 @@ test('continue works with denied permissions, releases the native lease, and rem
 test('failed release leaves the introduction visible and does not record completion', async () => {
   mockRelease.mockRejectedValueOnce(new Error('release failed'));
   await render();
+  await skipToLast();
   await act(async () => {
-    invoke(button('first-run-continue'), 'onPress');
+    invoke(button('first-run-skip'), 'onPress');
   });
   expect(completed).toBe(false);
   expect(required(view).root.findAllByProps({ testID: 'app-content' })).toHaveLength(0);
   await act(async () => {
-    invoke(button('first-run-continue'), 'onPress');
+    invoke(button('first-run-skip'), 'onPress');
   });
   expect(completed).toBe(true);
 });
 test('reduced location accuracy is visible and opens Settings rather than claiming precise access', async () => {
   mockBoard.permissions.location = 'given';
+  mockBoard.permissions.always = true;
   const open = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined);
   await render();
   await act(async () => {
-    invoke(button('first-run-precise'), 'onPress');
+    invoke(button('first-run-primary'), 'onPress');
   });
   expect(open).toHaveBeenCalledTimes(1);
   expect(mockRead.mock.calls.map(([request]) => request.action)).toEqual(['status']);
@@ -131,23 +143,23 @@ test('permission state is refreshed after returning from Settings', async () => 
   await act(async () => {
     call[1]('active');
   });
-  expect(button('first-run-location').props.label).toBe('Allowed');
-  expect(button('first-run-location').props.disabled).toBe(true);
+  expect(button('first-run-primary').props.label).toBe('Next');
+  expect(button('first-run-primary').props.disabled).toBe(false);
 });
 
 test('While Using does not satisfy Always; an unanswered upgrade directs the user to Settings', async () => {
   mockBoard.permissions.location = 'given';
   mockBoard.permissions.always = false;
   await render();
-  expect(button('first-run-location').props.disabled).toBe(false);
+  expect(button('first-run-primary').props.disabled).toBe(false);
   await act(async () => {
-    invoke(button('first-run-location'), 'onPress');
+    invoke(button('first-run-primary'), 'onPress');
   });
   expect(mockRead).toHaveBeenLastCalledWith({ action: 'permission', permission: 'always', consent: true });
-  expect(button('first-run-location').props.label).toBe('Open Settings');
+  expect(button('first-run-primary').props.label).toBe('Open Settings');
   const open = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined);
   await act(async () => {
-    invoke(button('first-run-location'), 'onPress');
+    invoke(button('first-run-primary'), 'onPress');
   });
   expect(open).toHaveBeenCalledTimes(1);
 });

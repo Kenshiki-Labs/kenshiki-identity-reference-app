@@ -5,14 +5,18 @@ import {
   IdentityCaptureSession,
 } from '@kenshiki/identity-capture';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppState, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CaptureFlowController, type CompletedCapture, type FlowState } from './CaptureFlowController';
 import { formatMoment } from './HolderText';
 import { t } from './locales/i18n';
+import { Action } from './ui/Action';
 import { type CancelHandle, useCancel } from './ui/ModalCancel';
 import { NativeSheet, useConfirmation } from './ui/NativeSheet';
-import { border, color, opacity, radius, size, spacing, text } from './ui/tokens.generated';
+import { styles as sharedStyles } from './ui/styles';
+import { color, size, spacing, text } from './ui/tokens.generated';
+
+export { Action } from './ui/Action';
 
 /** Completion transfers the session to the adopter. Cancellation releases it. */
 export function IdentityCaptureFlow({
@@ -631,119 +635,20 @@ function Details({ label, value }: { label: string; value: string }) {
     </View>
   );
 }
-export function Action({
-  label,
-  onPress,
-  disabled = false,
-  testID,
-  secondary = false,
-  destructive = false,
-}: {
-  label: string;
-  onPress: () => unknown;
-  disabled?: boolean | undefined;
-  testID?: string | undefined;
-  /** A plain tinted button, as iOS draws every action but the one prominent one. */
-  secondary?: boolean | undefined;
-  /** A plain red button: an action that deletes or discards. */
-  destructive?: boolean | undefined;
-}) {
-  const [failure, setFailure] = useState(false);
-  const press = () => {
-    setFailure(false);
-    try {
-      Promise.resolve(onPress()).catch(() => setFailure(true));
-    } catch {
-      setFailure(true);
-    }
-  };
-  return (
-    <>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ disabled }}
-        disabled={disabled}
-        testID={testID}
-        onPress={press}
-        style={[secondary || destructive ? styles.plain : styles.action, disabled && styles.disabled]}
-      >
-        <Text
-          style={[
-            secondary || destructive ? styles.plainText : styles.actionText,
-            destructive && styles.destructiveText,
-          ]}
-        >
-          {label}
-        </Text>
-      </Pressable>
-      {failure && (
-        <Text accessibilityRole="alert" style={styles.body}>
-          {t('common.actionFailed')}
-        </Text>
-      )}
-    </>
-  );
-}
-export const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.background },
-  content: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xxxxl,
-    gap: spacing.lg,
-  },
-  eyebrow: { ...text.eyebrow, color: color.secondaryText },
-  title: { ...text.screenTitle, color: color.text },
-  body: { ...text.body, color: color.text },
-  label: { ...text.label, color: color.secondaryText },
-  detail: { gap: spacing.xxs },
-  card: { padding: spacing.md, gap: spacing.sm, backgroundColor: color.card, borderRadius: radius.group },
-  portraits: { flexDirection: 'row', gap: spacing.sm },
-  portrait: { flex: 1, gap: spacing.xs },
-  image: { aspectRatio: size.portraitAspectRatio, width: '100%' },
-  camera: { flex: 1, backgroundColor: color.cameraBackground, justifyContent: 'space-between' },
-  cameraTop: { padding: spacing.xl, gap: spacing.sm },
-  cameraBottom: { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.sm },
-  white: { color: color.onCamera },
-  guideCenter: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  oval: { borderWidth: border.guide, borderColor: color.onCamera, borderRadius: radius.full },
-  action: {
-    backgroundColor: color.tint,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    minHeight: size.actionMinHeight,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionText: { ...text.action, color: color.onTint, textAlign: 'center' },
-  plain: {
-    minHeight: size.touchTarget,
-    paddingVertical: spacing.xs,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  plainText: { ...text.plainAction, color: color.tint, textAlign: 'center' },
-  destructiveText: { color: color.destructive },
-  disabled: { opacity: opacity.disabled },
-  sheetTitle: { ...text.sectionTitle, color: color.text },
-  entry: { ...text.entry, color: color.text },
-  list: { gap: spacing.md },
-  group: { gap: spacing.sm },
-  documentPreview: { height: size.documentPreviewHeight },
-  documentImage: { height: size.documentImageHeight },
-  developerContent: { padding: spacing.md, gap: spacing.md },
-  developerTitle: { ...text.developerTitle, color: color.text },
-  developerPreview: { height: size.developerPreviewHeight },
-});
+export const styles = {
+  ...sharedStyles,
+  ...StyleSheet.create({
+    root: { flex: 1, backgroundColor: color.background },
+    content: {
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.xxxxl,
+      gap: spacing.lg,
+    },
+    developerContent: { padding: spacing.md, gap: spacing.md },
+    developerTitle: { ...text.developerTitle, color: color.text },
+  }),
+};
 
 const protocolKeys = [
   'basicAccessControl',

@@ -195,6 +195,7 @@
 
   // Fixed sizes and proportions. Rows have none: text sets their height, so Dynamic Type reflows.
   "size": {
+    "navigationActionWidth": 72,
     // A prominent button's minimum height. Replaces 52.
     "fusionDiagram": 200,
     "fusionRing": 80,

@@ -5,11 +5,12 @@ import {
   type SensorBoardState,
 } from '@kenshiki/identity-capture';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { AppState, Linking, ScrollView, Settings, Text } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { styles } from './IdentityCaptureFlow';
+import { AppState, Linking, Settings, Text } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { t } from './locales/i18n';
-import { ButtonRow, ListSection, TextRow } from './ui/List';
+import { Action } from './ui/Action';
+import { Page } from './ui/Page';
+import { styles } from './ui/styles';
 
 const completionKey = 'kenshiki.reference.permissionsIntroduction.v1';
 const permissions = ['location', 'motion', 'bluetooth'] as const;
@@ -53,6 +54,7 @@ function PermissionIntroduction({
   const [board, setBoard] = useState<SensorBoardState | null>(null);
   const [busy, setBusy] = useState(false);
   const [askedAlways, setAskedAlways] = useState(false);
+  const [permission, setPermission] = useState<Permission>('location');
   const [failure, setFailure] = useState(false);
   useEffect(() => {
     let live = true;
@@ -147,75 +149,127 @@ function PermissionIntroduction({
     }
   }
 
+  const next = () => {
+    setFailure(false);
+    if (permission === 'location') setPermission('motion');
+    else if (permission === 'motion') setPermission('bluetooth');
+    else finish().catch(() => setFailure(true));
+  };
+  return (
+    <PermissionPrimer
+      board={board}
+      permission={permission}
+      askedAlways={askedAlways}
+      busy={busy}
+      failure={failure}
+      onNext={next}
+      onRequest={() => {
+        request(permission).catch(() => setFailure(true));
+      }}
+      onSettings={() => {
+        Linking.openSettings().catch(() => setFailure(true));
+      }}
+    />
+  );
+}
+
+function PermissionPrimer({
+  board,
+  permission,
+  askedAlways,
+  busy,
+  failure,
+  onNext,
+  onRequest,
+  onSettings,
+}: {
+  board: SensorBoardState | null;
+  permission: Permission;
+  askedAlways: boolean;
+  busy: boolean;
+  failure: boolean;
+  onNext: () => void;
+  onRequest: () => void;
+  onSettings: () => void;
+}) {
+  const { status, granted, approximate, settingsNeeded, whileUsing } = permissionPresentation(
+    board,
+    permission,
+    askedAlways,
+  );
+  const last = permission === 'bluetooth';
+  const proceed = () => {
+    if (granted || status === 'unavailable') onNext();
+    else if (settingsNeeded) onSettings();
+    else onRequest();
+  };
+  const actionLabel =
+    granted || status === 'unavailable'
+      ? t(last ? 'firstRun.open' : 'firstRun.next')
+      : t(settingsNeeded ? 'firstRun.settings' : 'firstRun.request');
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.root}>
-        <ScrollView contentContainerStyle={styles.content} testID="permissions-introduction">
-          <Text accessibilityRole="header" style={styles.title}>
-            {t('firstRun.title')}
-          </Text>
-          <Text style={styles.body}>{t('firstRun.intro')}</Text>
-          {permissions.map((permission) => {
-            const status = board?.permissions[permission];
-            const granted =
-              status === 'given' && (permission !== 'location' || board?.permissions.always === true);
-            const settingsNeeded = status === 'refused' || (permission === 'location' && askedAlways);
-            return (
-              <ListSection
-                key={permission}
-                header={t(`firstRun.${permission}.title`)}
-                footer={t(`firstRun.${permission}.body`)}
-              >
-                <ButtonRow
-                  label={
-                    granted
-                      ? t('firstRun.allowed')
-                      : settingsNeeded
-                        ? t('firstRun.settings')
-                        : status === 'unavailable'
-                          ? t('firstRun.unavailable')
-                          : t('firstRun.allow')
-                  }
-                  testID={`first-run-${permission}`}
-                  disabled={busy || !status || granted || status === 'unavailable'}
-                  onPress={() => {
-                    request(permission).catch(() => setFailure(true));
-                  }}
-                />
-              </ListSection>
-            );
-          })}
-          {board?.permissions.location === 'given' && !board.permissions.precise ? (
-            <ListSection footer={t('firstRun.preciseBody')}>
-              <ButtonRow
-                label={t('firstRun.precise')}
-                testID="first-run-precise"
-                onPress={() => {
-                  Linking.openSettings().catch(() => setFailure(true));
-                }}
-              />
-            </ListSection>
-          ) : null}
-          <ListSection footer={t('firstRun.later')}>
-            <TextRow text={t('firstRun.camera')} />
-          </ListSection>
-          {failure ? (
-            <Text accessibilityLiveRegion="polite" style={styles.body}>
-              {t('firstRun.failure')}
-            </Text>
-          ) : null}
-          <ListSection>
-            <ButtonRow
-              label={t('firstRun.continue')}
-              testID="first-run-continue"
-              disabled={busy}
-              onPress={() => {
-                finish().catch(() => setFailure(true));
-              }}
+      <Page
+        key={permission}
+        title={t(`firstRun.${permission}.title`)}
+        testID="permissions-introduction"
+        actions={
+          <>
+            <Action
+              label={actionLabel}
+              testID="first-run-primary"
+              disabled={busy || !status}
+              onPress={proceed}
             />
-          </ListSection>
-        </ScrollView>
-      </SafeAreaView>
+            {!granted && status !== 'unavailable' && (
+              <Action
+                label={t('firstRun.notNow')}
+                testID="first-run-skip"
+                secondary
+                disabled={busy}
+                onPress={onNext}
+              />
+            )}
+          </>
+        }
+      >
+        <Text style={styles.eyebrow}>
+          {t('firstRun.step', { number: permissions.indexOf(permission) + 1, total: permissions.length })}
+        </Text>
+        <Text style={styles.body}>{t(`firstRun.${permission}.body`)}</Text>
+        {granted && (
+          <Text style={styles.body}>
+            {t(permission === 'location' ? 'firstRun.locationReady' : 'firstRun.allowed')}
+          </Text>
+        )}
+        {status === 'unavailable' && <Text style={styles.label}>{t('firstRun.unavailable')}</Text>}
+        {status === 'refused' && <Text style={styles.label}>{t('firstRun.denied')}</Text>}
+        {whileUsing && <Text style={styles.label}>{t('firstRun.whileUsing')}</Text>}
+        {approximate && <Text style={styles.label}>{t('firstRun.preciseBody')}</Text>}
+        {last && <Text style={styles.label}>{t('firstRun.camera')}</Text>}
+        {failure && (
+          <Text accessibilityLiveRegion="polite" style={styles.body}>
+            {t('firstRun.failure')}
+          </Text>
+        )}
+      </Page>
     </SafeAreaProvider>
   );
+}
+
+function permissionPresentation(
+  board: SensorBoardState | null,
+  permission: Permission,
+  askedAlways: boolean,
+) {
+  const status = board?.permissions[permission];
+  const granted =
+    status === 'given' &&
+    (permission !== 'location' || (board?.permissions.always === true && board.permissions.precise));
+  const approximate = permission === 'location' && status === 'given' && !board?.permissions.precise;
+  const settingsNeeded =
+    status === 'refused' ||
+    (permission === 'location' && (askedAlways || (board?.permissions.always === true && approximate)));
+  const whileUsing = permission === 'location' && status === 'given' && !board?.permissions.always;
+  return { status, granted, approximate, settingsNeeded, whileUsing };
 }

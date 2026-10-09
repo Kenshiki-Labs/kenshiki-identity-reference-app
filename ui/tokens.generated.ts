@@ -94,6 +94,7 @@ export const opacity = {
 } as const;
 
 export const size = {
+  navigationActionWidth: 72,
   fusionDiagram: 200,
   fusionRing: 80,
   fusionMinimumScale: 0.18,

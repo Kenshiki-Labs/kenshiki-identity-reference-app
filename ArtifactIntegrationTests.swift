@@ -12,12 +12,16 @@ final class ArtifactIntegrationTests: XCTestCase {
 
   @MainActor
   static func completeIntroductionIfShown(_ app: XCUIApplication) {
-    let proceed = app.buttons["first-run-continue"]
-    if proceed.waitForExistence(timeout: 2) {
-      if !proceed.isHittable { app.swipeUp() }
-      proceed.tap()
-      XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 20))
+    let primary = app.buttons["first-run-primary"]
+    guard primary.waitForExistence(timeout: 2) else { return }
+    for _ in 0..<3 {
+      let skip = app.buttons["first-run-skip"]
+      let action = skip.exists ? skip : primary
+      for _ in 0..<8 where !action.isHittable { app.swipeUp() }
+      XCTAssertTrue(action.isHittable, "Introduction action must remain reachable at the current text size")
+      action.tap()
     }
+    XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 20))
   }
 
   @MainActor
@@ -25,16 +29,33 @@ final class ArtifactIntegrationTests: XCTestCase {
     let app = Self.hostApp()
     app.launchArguments = ["-kenshiki.reference.permissionsIntroduction.v1", "NO"]
     app.launch()
-    XCTAssertTrue(app.staticTexts["Welcome to Kenshiki Pulse"].waitForExistence(timeout: 20))
-    XCTAssertTrue(app.buttons["first-run-location"].exists)
+    XCTAssertTrue(app.staticTexts["Allow location"].waitForExistence(timeout: 20))
+    XCTAssertTrue(app.buttons["first-run-primary"].exists)
     XCTAssertFalse(app.tabBars.firstMatch.exists)
     XCTAssertFalse(XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.firstMatch.exists)
-    Self.completeIntroductionIfShown(app)
+    for (index, title) in ["Allow location", "Allow Motion & Fitness", "Allow Bluetooth"].enumerated() {
+      XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout: 10))
+      XCTAssertTrue(app.staticTexts[title].isHittable, "New permission step must start with its heading visible")
+      let overview = XCTAttachment(screenshot: app.screenshot())
+      overview.name = "First run step \(index + 1) overview"
+      overview.lifetime = .keepAlways
+      add(overview)
+      let skip = app.buttons["first-run-skip"]
+      let action = skip.exists ? skip : app.buttons["first-run-primary"]
+      for _ in 0..<8 where !action.isHittable { app.swipeUp() }
+      XCTAssertTrue(action.isHittable, "Step \(index + 1) action must remain reachable")
+      let controls = XCTAttachment(screenshot: app.screenshot())
+      controls.name = "First run step \(index + 1) reachable actions"
+      controls.lifetime = .keepAlways
+      add(controls)
+      action.tap()
+    }
+    XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 20))
     app.terminate()
     app.launchArguments = []
     app.launch()
     XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 20))
-    XCTAssertFalse(app.buttons["first-run-continue"].exists)
+    XCTAssertFalse(app.buttons["first-run-primary"].exists)
   }
 
   /// Identity workflows explicitly choose their tab; Fusion is now the initial screen.
