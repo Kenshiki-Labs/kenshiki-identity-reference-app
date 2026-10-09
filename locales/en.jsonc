@@ -59,7 +59,9 @@
     // A row label: when a comparison was made. The value is a date and time.
     "compared": "Compared",
     // Shown under a button whose action failed before it could report its own error.
-    "actionFailed": "This action could not finish. Try again."
+    "actionFailed": "This action could not finish. Try again.",
+    // Dismisses a confirmation without acting.
+    "cancel": "Cancel"
   },
 
   // Dates and times.
@@ -912,6 +914,160 @@
       "unknown": "Unknown",
       "other": "Unrecognized value"
     }
+  },
+
+  // The phone sensor board. Most of its words are SensorHost's, generated into
+  // sensor-presentation/copy.json and read through copy() in SensorPresentation.ts; these are the
+  // words this app adds around them.
+  "sensors": {
+    "opening": "Opening sensors…",
+    "pause": "Pause sensors",
+    "resume": "Resume sensors",
+    "allSensors": "All sensors",
+    // Re-enables collection after erase or a failed request.
+    "resumeCollection": "Resume collection",
+    // {title} is a sensor section's name, such as Motion.
+    "about": "About {title}",
+    "waitingForReading": "Waiting for a reading.",
+    "group": {
+      "free": "Freely readable",
+      "permissioned": "With your permission"
+    },
+    "notice": {
+      "simulator": "Simulator readings are limited.",
+      "motion": "Enable Motion & Fitness in Settings to read air pressure."
+    },
+    "state": {
+      "paused": "Paused"
+    },
+    // The operating system's answer for one sensor permission.
+    "permission": {
+      "given": "Allowed",
+      "refused": "Denied",
+      "notRequested": "Not asked yet",
+      "unavailable": "Unavailable",
+      "always": "Always allow location"
+    },
+    // A measurement and its unit: {value} is already formatted for the device locale.
+    "measurement": "{value} {unit}",
+    // Unit symbols the sensor board prints after a value.
+    "unit": {
+      "hectopascals": "hPa",
+      "inchesOfMercury": "inHg",
+      "metres": "m",
+      "feet": "ft",
+      "metresPerSecond": "m/s",
+      "milesPerHour": "mph",
+      "celsius": "°C",
+      "fahrenheit": "°F",
+      "microtesla": "µT",
+      "gravity": "g",
+      "radiansPerSecond": "rad/s",
+      "degrees": "°",
+      "percent": "%"
+    },
+    // {value} is a number of seconds, already formatted.
+    "seconds": "{value} s",
+    // The same duration, as VoiceOver reads it.
+    "secondsSpoken": "{value} seconds",
+    // Joins the parts of a short value, as in a weather station's name and identifier.
+    "joiner": " · ",
+    "failure": {
+      "open": "Sensors could not be opened.",
+      "activity": "Sensors could not change activity state.",
+      "closeTitle": "Sensors could not close",
+      "closeBody": "Reopen the app before starting another sensor session.",
+      "request": "The request stopped. Check permissions or try again.",
+      "notConfigured": "Sensors are not configured in this app.",
+      "session": "The sensor session could not be opened. Go back and try again.",
+      "requestUnfinished": "The request could not finish. Resume sensors to try again.",
+      "close": "The sensor session could not close.",
+      "refresh": "The sensor refresh stopped. Pause and resume to try again.",
+      "read": "The sensors could not be read. Trying again.",
+      "settings": "iOS Settings could not be opened."
+    },
+    "export": {
+      "prepare": "Prepare export",
+      "share": "Share export",
+      "shareFailed": "The export could not be shared.",
+      "notLocal": "The export is not a local file.",
+      "tamper": "Tamper with newest reading",
+      "tamperTitle": "Tamper with reading",
+      "tamperBody": "This deliberately changes the newest local evidence to test verification.",
+      "forget": "Forget exported readings",
+      "forgetTitle": "Forget readings",
+      "forgetBody": "Remove this host’s retained export evidence."
+    },
+    // Full erase. The body must keep naming every kind of key the erase removes.
+    "erase": {
+      "action": "Erase local sensor data",
+      "title": "Erase sensor data",
+      "body": "Delete local sensor readings, continuity records, signing keys and biometric approval keys in this app. Identity documents stay on the phone. Collection will remain paused.",
+      // {status} is Erased or Failed; {detail} is the store's own report.
+      "result": "{status} · {detail}",
+      "keysLeft": "Keys left"
+    },
+    "persisted": {
+      // {count} is already formatted.
+      "savedItems": "{count} saved items"
+    },
+    "battery": {
+      "provider": "Provider",
+      "hostReader": "Host battery reader",
+      "reads": "Readings taken",
+      "monitoringEnables": "Monitoring enables"
+    },
+    "units": {
+      // Marks the unit system in use; {name} is its name.
+      "selected": "✓ {name}"
+    },
+    "window": {
+      // {sensor} is the sensor's name. VoiceOver reads this as the slider's label.
+      "label": "{sensor} reading time",
+      "shared": "Shared motion capture"
+    },
+    "location": {
+      // {count} fixes of at most {limit} are on the map.
+      "fixesOnMap": "{count} of {limit}"
+    },
+    "weather": {
+      "note": "Weather uses the phone’s position to request a report from the configured weather service.",
+      "notConfigured": "Weather is not configured in this host.",
+      "row": {
+        "pressure": "Pressure",
+        "temperature": "Temperature",
+        "humidity": "Humidity",
+        "station": "Station",
+        "distance": "Distance",
+        "stationHeight": "Station height",
+        "quality": "Quality",
+        "source": "Source",
+        "reportedAt": "Reported at"
+      }
+    },
+    // Apple documentation pages for a sensor section.
+    "docs": {
+      "openFailed": "The documentation could not be opened.",
+      "updates": "Updates",
+      "limits": "Limits",
+      // {symbol} is an Apple API name, {framework} its framework, {abstract} Apple's summary.
+      "api": "{symbol} · {framework}\n{abstract}",
+      // {name} is an API or Info.plist key, {quote} Apple's words about it.
+      "entry": "{name}\n{quote}",
+      // {title} is a sensor section's name.
+      "howWorkedOut": "How {title} is worked out",
+      // One numbered step of an algorithm explanation.
+      "step": "{number}. {text}"
+    }
+  },
+
+  // Failure messages of the Jest test helpers in __tests__/support.ts. No screen shows them; the
+  // boundary gate's host scan reads that helper as host source, so its words live here too.
+  "testSupport": {
+    "unexpectedNativeOperation": "Unexpected native operation in this test",
+    "missingFixture": "Required test fixture value is absent",
+    // {key} is the name of a React prop.
+    "missingHandler": "Required event handler is absent: {key}"
   },
 
   // The simulator-only developer checks screen. Developers read these; the holder never does.

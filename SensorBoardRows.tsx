@@ -1,16 +1,47 @@
 import { IdentitySensorSymbol, type SensorBoardState } from '@kenshiki/identity-capture';
 import { createContext, type ReactNode, useContext } from 'react';
 import { PixelRatio, StyleSheet, Text, View } from 'react-native';
-import { copy, measure, moment, plain, prefix, type SensorPage, sensorConfig } from './SensorPresentation';
+import { t } from './locales/i18n';
+import {
+  copy,
+  type MeasureKind,
+  measure,
+  moment,
+  plain,
+  prefix,
+  type SensorPage,
+  sensorConfig,
+  swiftColor,
+} from './SensorPresentation';
+import { color, radius, spacing, text } from './ui/tokens.generated';
 export const boardStyles = StyleSheet.create({
-  section: { backgroundColor: '#ffffff', borderRadius: 12, padding: 16, gap: 10, marginVertical: 8 },
-  heading: { fontSize: 20, fontWeight: '600', color: '#161616' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', gap: 14, paddingVertical: 5 },
-  label: { fontSize: 16, color: '#171717', flex: 1 },
-  value: { fontSize: 16, color: '#60606a', textAlign: 'right', flex: 1, fontVariant: ['tabular-nums'] },
-  note: { fontSize: 13, color: '#60606a', lineHeight: 19 },
-  warning: { fontSize: 14, color: '#994700' },
-  group: { fontSize: 23, fontWeight: '600', marginTop: 20, color: '#171717' },
+  section: {
+    backgroundColor: color.card,
+    borderRadius: radius.group,
+    padding: spacing.md,
+    gap: spacing.sm,
+    marginVertical: spacing.xs,
+  },
+  heading: { ...text.groupTitle, color: color.text },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    paddingVertical: spacing.xxs,
+  },
+  label: { ...text.row, color: color.text, flex: 1 },
+  value: {
+    ...text.row,
+    color: color.secondaryText,
+    textAlign: 'right',
+    flex: 1,
+    fontVariant: ['tabular-nums'],
+  },
+  note: { ...text.note, color: color.secondaryText },
+  warning: { ...text.warning, color: color.warning },
+  group: { ...text.groupHeader, marginTop: spacing.lg, color: color.text },
+  tabs: { flexDirection: 'row', gap: spacing.md },
+  documents: { padding: spacing.xl },
 });
 export const SensorIconContext = createContext<{ sessionId: string | null; enabled: boolean }>({
   sessionId: null,
@@ -56,7 +87,7 @@ function SectionIcon({ title }: { title: string }) {
         width: size,
         height: size,
         borderRadius: sensorConfig.sectionIcon.cornerRadius * scale,
-        backgroundColor: icon.color,
+        backgroundColor: swiftColor(icon.color),
         alignItems: 'center',
         justifyContent: 'center',
       }}
@@ -98,7 +129,7 @@ export function Row({ label, value }: { label: string; value: unknown }) {
 export function Note({ text }: { text: string }) {
   return text ? <Text style={boardStyles.note}>{text}</Text> : null;
 }
-type Field = [label: string, property: string, unit?: string];
+type Field = [label: string, property: string, unit?: MeasureKind | 'time' | 'presence'];
 const fields: Partial<Record<SensorPage, Field[]>> = {
   audioRoute: [
     ['routeClass', 'routeClass'],
@@ -146,13 +177,13 @@ const fields: Partial<Record<SensorPage, Field[]>> = {
     ['simulator', 'simulator'],
   ],
   magnetometer: [
-    ['field', 'fieldMagnitudeMicrotesla', 'µT'],
+    ['field', 'fieldMagnitudeMicrotesla', 'magneticField'],
     ['calibration', 'calibrationAccuracy'],
   ],
   motion: [
-    ['userAcceleration', 'userAccelerationMagnitude', 'g'],
-    ['rotationRate', 'rotationRateMagnitude', 'rad/s'],
-    ['gravity', 'gravityMagnitude', 'g'],
+    ['userAcceleration', 'userAccelerationMagnitude', 'acceleration'],
+    ['rotationRate', 'rotationRateMagnitude', 'rotationRate'],
+    ['gravity', 'gravityMagnitude', 'acceleration'],
   ],
   telephony: [
     ['radioGenerations', 'radioGenerations'],
@@ -165,7 +196,7 @@ const fields: Partial<Record<SensorPage, Field[]>> = {
   ],
   thermalAndPower: [
     ['thermalState', 'thermalState'],
-    ['batteryLevel', 'level', 'percent'],
+    ['batteryLevel', 'level', 'fraction'],
     ['batteryState', 'state'],
     ['lowPowerMode', 'lowPowerModeEnabled'],
   ],
@@ -181,32 +212,31 @@ function signal(board: SensorBoardState, page: SensorPage): Record<string, unkno
   };
   return sources[page] ?? null;
 }
-function fieldValue(value: unknown, unit: string | undefined, board: SensorBoardState): string {
+function fieldValue(value: unknown, unit: Field[2], board: SensorBoardState): string {
   if (unit === 'time') return moment(typeof value === 'string' ? value : null);
-  if (unit === 'presence') return value ? copy('connectivity.value.present', 'Made') : '—';
-  if (unit === 'percent') return typeof value === 'number' ? `${plain(value * 100)} %` : '—';
+  if (unit === 'presence') return value ? copy('connectivity.value.present') : copy('common.none');
+  if (unit === 'fraction')
+    return typeof value === 'number' ? measure(value, unit, board) : copy('common.none');
   if (unit && typeof value === 'number') return measure(value, unit, board);
   return plain(value);
 }
 export function SignalRows({ board, page }: { board: SensorBoardState; page: SensorPage }) {
   const source = signal(board, page);
-  if (!source) return <Note text="Waiting for a reading." />;
+  if (!source) return <Note text={t('sensors.waitingForReading')} />;
   const support = source.support;
   const nowFields: Partial<Record<SensorPage, Field>> = {
-    thermalAndPower: ['batteryLevel', 'level', 'percent'],
+    thermalAndPower: ['batteryLevel', 'level', 'fraction'],
     callActivity: ['activeCalls', 'activeCallCount'],
     deviceSurface: ['system', 'systemName'],
   };
   const first = nowFields[page] ?? (fields[page] ?? [])[0];
   return (
     <>
-      {first && <Row label="Now" value={fieldValue(source[first[1]], first[2], board)} />}
+      {first && <Row label={copy('sensorGroup.now')} value={fieldValue(source[first[1]], first[2], board)} />}
       {typeof support === 'object' && support !== null && 'status' in support && (
         <SupportRows status={String(support.status)} board={board} page={page} />
       )}
-      {'sampleCount' in source && (
-        <Row label={copy('common.samples', 'Samples')} value={source.sampleCount} />
-      )}
+      {'sampleCount' in source && <Row label={copy('common.row.samples')} value={source.sampleCount} />}
       {(fields[page] ?? []).map(([label, property, unit]) => (
         <Row
           key={property}
@@ -229,7 +259,7 @@ function SupportRows({ status, board, page }: { status: string; board: SensorBoa
   }
   return (
     <>
-      <Row label={copy('common.status', 'Status')} value={copy(`supportStatus.${key}`, plain(status))} />
+      <Row label={copy('common.row.status')} value={copy(`supportStatus.${key}`, plain(status))} />
       <Note text={hint} />
     </>
   );

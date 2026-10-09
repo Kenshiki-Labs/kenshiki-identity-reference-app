@@ -45,7 +45,31 @@
     // Text and the selfie guide drawn over the camera preview. Replaces #fff.
     "onCamera": {"fixed": "white"},
     // Dimming layer behind a bottom sheet; its opacity is elevation.sheetDimming. Replaces #0008.
-    "scrim": {"fixed": "black", "opacity": "sheetDimming"}
+    "scrim": {"fixed": "black", "opacity": "sheetDimming"},
+
+    // Sensor board. Warnings and unmet location terms, as SensorHost's `colors.warning` (SwiftUI
+    // orange) in sensor-presentation/config.json. Replaces #994700.
+    "warning": {"ios": "systemOrange"},
+    // The capture-window slider's unfilled track, as UISlider draws it. Replaces #d1d1d6.
+    "sliderTrack": {"ios": "systemGray4"},
+    // The slider thumb: white in both appearances, as UISlider's. Replaces #fff.
+    "sliderThumb": {"fixed": "white"},
+    // The slider thumb's outline. Replaces #ddd.
+    "sliderThumbBorder": {"ios": "opaqueSeparator"},
+
+    // SwiftUI's standard colors. sensor-presentation/config.json, generated from SensorHost, names
+    // each section icon's tile color with one of these SwiftUI names; SensorPresentation.ts resolves
+    // a name to the iOS system color SwiftUI uses for it. React Native would otherwise read "teal"
+    // or "gray" as a CSS color.
+    "swiftBlue": {"ios": "systemBlue"},
+    "swiftGray": {"ios": "systemGray"},
+    "swiftGreen": {"ios": "systemGreen"},
+    "swiftIndigo": {"ios": "systemIndigo"},
+    "swiftOrange": {"ios": "systemOrange"},
+    "swiftPink": {"ios": "systemPink"},
+    "swiftPurple": {"ios": "systemPurple"},
+    "swiftRed": {"ios": "systemRed"},
+    "swiftTeal": {"ios": "systemTeal"}
   },
 
   // The iOS Dynamic Type ramp at the default ("Large") content size, in points, from Apple's
@@ -83,7 +107,20 @@
     // The SSN digits while they are entered. Replaces fontSize 28.
     "entry": {"style": "title1", "fontWeight": "400"},
     // The developer checks screen title. Replaces fontSize 24, weight bold.
-    "developerTitle": {"style": "title2", "fontWeight": "700"}
+    "developerTitle": {"style": "title2", "fontWeight": "700"},
+    // Sensor board section titles. Replaces fontSize 20, weight 600.
+    "groupTitle": {"style": "title3", "fontWeight": "600"},
+    // Sensor board group headings ("Freely readable"). Replaces fontSize 23, weight 600.
+    "groupHeader": {"style": "title2", "fontWeight": "600"},
+    // Sensor board row labels and values. Replaces fontSize 16.
+    "row": {"style": "callout", "fontWeight": "400"},
+    // Sensor board explanations under a row. Replaces fontSize 13, lineHeight 19.
+    "note": {"style": "footnote", "fontWeight": "400"},
+    // Sensor board warnings. Replaces fontSize 14, which joins the subheadline step.
+    "warning": {"style": "subheadline", "fontWeight": "400"},
+    // The value printed under the capture-window slider. Replaces fontSize 10, which joins the
+    // smallest step of the ramp.
+    "caption": {"style": "caption2", "fontWeight": "400"}
   },
 
   // Spacing, in points. One scale for padding, margins and gaps.
@@ -117,8 +154,13 @@
     "control": 14,
     // A bottom sheet's top corners. Replaces 28.
     "sheet": 28,
-    // Fully rounded: the selfie oval. Replaces 1000.
-    "full": 1000
+    // Fully rounded: the selfie oval and the slider thumb. Replaces 1000, and 12 for the 24-point
+    // slider thumb.
+    "full": 1000,
+    // Sensor board sections. Replaces 12.
+    "group": 12,
+    // The capture-window slider's track. Replaces 2.
+    "sliderTrack": 2
   },
 
   // Fixed sizes and proportions.
@@ -138,13 +180,23 @@
     // Selfie guide width, as a share of the camera width. Replaces .68.
     "selfieGuideWidth": 0.68,
     // Selfie guide height over its width. Replaces 1.3.
-    "selfieGuideAspect": 1.3
+    "selfieGuideAspect": 1.3,
+    // The 44-point iOS minimum touch target: the capture-window slider's height. Replaces 44.
+    "touchTarget": 44,
+    // The capture-window slider's track thickness. Replaces 4.
+    "sliderTrack": 4,
+    // The capture-window slider's thumb diameter. Replaces 24.
+    "sliderThumb": 24,
+    // How far below the slider's top its printed value sits. Replaces 30.
+    "sliderValueOffset": 30
   },
 
   // Border widths, in points.
   "border": {
     // The selfie guide outline. Replaces 3.
-    "guide": 3
+    "guide": 3,
+    // The capture-window slider thumb's outline. Replaces 1.
+    "hairline": 1
   },
 
   // Opacities.

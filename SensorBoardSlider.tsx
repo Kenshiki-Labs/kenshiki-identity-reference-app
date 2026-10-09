@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { t } from './locales/i18n';
 import { sensorConfig } from './SensorPresentation';
+import { border, color, opacity, radius, size, text } from './ui/tokens.generated';
 
 const {
   minimumSeconds: minimum,
@@ -30,7 +32,12 @@ export function SensorWindowSlider({
     <View
       accessibilityRole="adjustable"
       accessibilityLabel={label}
-      accessibilityValue={{ min: minimum, max: maximum, now: draft, text: `${draft.toFixed(1)} seconds` }}
+      accessibilityValue={{
+        min: minimum,
+        max: maximum,
+        now: draft,
+        text: t('sensors.secondsSpoken', { value: draft.toFixed(1) }),
+      }}
       accessibilityState={{ disabled }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={(event) => {
@@ -44,36 +51,37 @@ export function SensorWindowSlider({
       onResponderMove={(event) => setDraft(position(event.nativeEvent.locationX))}
       onResponderRelease={(event) => onCommit(position(event.nativeEvent.locationX))}
       onResponderTerminate={() => setDraft(value)}
-      style={{ height: 44, justifyContent: 'center', opacity: disabled ? 0.4 : 1 }}
+      style={[sliderStyles.slider, disabled && sliderStyles.disabled]}
     >
-      <View style={{ height: 4, borderRadius: 2, backgroundColor: '#d1d1d6' }} />
-      <View
-        style={{
-          position: 'absolute',
-          height: 4,
-          width: `${((draft - minimum) / (maximum - minimum)) * 100}%`,
-          backgroundColor: '#007aff',
-        }}
-      />
-      <View
-        style={{
-          position: 'absolute',
-          left: `${((draft - minimum) / (maximum - minimum)) * 100}%`,
-          marginLeft: -12,
-          width: 24,
-          height: 24,
-          borderRadius: 12,
-          backgroundColor: '#fff',
-          borderColor: '#ddd',
-          borderWidth: 1,
-        }}
-      />
-      <Text
-        accessibilityElementsHidden
-        style={{ position: 'absolute', right: 0, top: 30, fontSize: 10, color: '#60606a' }}
-      >
-        {draft.toFixed(1)} s
+      <View style={sliderStyles.track} />
+      <View style={[sliderStyles.fill, { width: `${((draft - minimum) / (maximum - minimum)) * 100}%` }]} />
+      <View style={[sliderStyles.thumb, { left: `${((draft - minimum) / (maximum - minimum)) * 100}%` }]} />
+      <Text accessibilityElementsHidden style={sliderStyles.value}>
+        {t('sensors.seconds', { value: draft.toFixed(1) })}
       </Text>
     </View>
   );
 }
+const sliderStyles = StyleSheet.create({
+  slider: { height: size.touchTarget, justifyContent: 'center' },
+  disabled: { opacity: opacity.disabled },
+  track: { height: size.sliderTrack, borderRadius: radius.sliderTrack, backgroundColor: color.sliderTrack },
+  fill: { position: 'absolute', height: size.sliderTrack, backgroundColor: color.tint },
+  thumb: {
+    position: 'absolute',
+    marginLeft: -size.sliderThumb / 2,
+    width: size.sliderThumb,
+    height: size.sliderThumb,
+    borderRadius: radius.full,
+    backgroundColor: color.sliderThumb,
+    borderColor: color.sliderThumbBorder,
+    borderWidth: border.hairline,
+  },
+  value: {
+    ...text.caption,
+    position: 'absolute',
+    right: 0,
+    top: size.sliderValueOffset,
+    color: color.secondaryText,
+  },
+});

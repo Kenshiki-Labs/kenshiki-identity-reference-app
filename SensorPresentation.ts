@@ -1,6 +1,9 @@
 import type { SensorBoardState } from '@kenshiki/identity-capture';
+import type { ColorValue } from 'react-native';
+import { t } from './locales/i18n';
 import catalog from './sensor-presentation/copy.json';
 import documentation from './sensor-presentation/pages.json';
+import { color } from './ui/tokens.generated';
 
 export { default as sensorConfig } from './sensor-presentation/config.json';
 
@@ -49,19 +52,19 @@ const docs: Record<string, PageDoc> = documentation.pages;
 export function pageDoc(page: SensorPage): PageDoc | undefined {
   return docs[page];
 }
+const permissionWords: Record<string, string> = {
+  given: t('sensors.permission.given'),
+  refused: t('sensors.permission.refused'),
+  notRequested: t('sensors.permission.notRequested'),
+  unavailable: t('sensors.permission.unavailable'),
+};
 export function plain(value: unknown): string {
-  if (value === null || value === undefined || value === '') return copy('common.none', '—');
-  if (typeof value === 'boolean') return copy(value ? 'common.yes' : 'common.no', value ? 'Yes' : 'No');
+  if (value === null || value === undefined || value === '') return copy('common.none');
+  if (typeof value === 'boolean') return copy(value ? 'common.yes' : 'common.no');
   if (typeof value === 'number')
     return new Intl.NumberFormat(undefined, { maximumFractionDigits: 3 }).format(value);
-  if (Array.isArray(value)) return value.map(plain).join(', ') || '—';
+  if (Array.isArray(value)) return value.map(plain).join(t('common.listSeparator')) || copy('common.none');
   const text = String(value);
-  const permissionWords: Record<string, string> = {
-    given: 'Allowed',
-    refused: 'Denied',
-    notRequested: 'Not asked yet',
-    unavailable: 'Unavailable',
-  };
   if (permissionWords[text]) return permissionWords[text];
   const entry = Object.keys(words).find((key) => key.startsWith('sdkValue.') && key.endsWith(`.${text}`));
   if (entry) return words[entry] ?? text;
@@ -71,17 +74,60 @@ export function plain(value: unknown): string {
   );
 }
 export function moment(value: string | null | undefined): string {
-  return value ? new Date(value).toLocaleString() : '—';
+  return value ? new Date(value).toLocaleString() : copy('common.none');
 }
-export function measure(value: number | null | undefined, kind: string, board: SensorBoardState): string {
-  if (value === null || value === undefined) return '—';
+/** What a native value measures. The first four follow the board's unit choice. */
+export type MeasureKind =
+  | 'pressure'
+  | 'distance'
+  | 'speed'
+  | 'temperature'
+  | 'magneticField'
+  | 'acceleration'
+  | 'rotationRate'
+  | 'degrees'
+  | 'percentage'
+  | 'fraction';
+export function measure(
+  value: number | null | undefined,
+  kind: MeasureKind,
+  board: SensorBoardState,
+): string {
+  if (value === null || value === undefined) return copy('common.none');
   const imperial = board.units === 'imperial' || (board.units === 'system' && board.systemUsesImperial);
-  const conversions: Record<string, [number, number, string]> = {
-    pressure: imperial ? [0.295299875, 0, 'inHg'] : [10, 0, 'hPa'],
-    distance: imperial ? [3.280839895, 0, 'ft'] : [1, 0, 'm'],
-    speed: imperial ? [2.236936292, 0, 'mph'] : [1, 0, 'm/s'],
-    temperature: imperial ? [1.8, 32, '°F'] : [1, 0, '°C'],
+  const conversions: Record<MeasureKind, [number, number, string]> = {
+    pressure: imperial
+      ? [0.295299875, 0, t('sensors.unit.inchesOfMercury')]
+      : [10, 0, t('sensors.unit.hectopascals')],
+    distance: imperial ? [3.280839895, 0, t('sensors.unit.feet')] : [1, 0, t('sensors.unit.metres')],
+    speed: imperial
+      ? [2.236936292, 0, t('sensors.unit.milesPerHour')]
+      : [1, 0, t('sensors.unit.metresPerSecond')],
+    temperature: imperial ? [1.8, 32, t('sensors.unit.fahrenheit')] : [1, 0, t('sensors.unit.celsius')],
+    magneticField: [1, 0, t('sensors.unit.microtesla')],
+    acceleration: [1, 0, t('sensors.unit.gravity')],
+    rotationRate: [1, 0, t('sensors.unit.radiansPerSecond')],
+    degrees: [1, 0, t('sensors.unit.degrees')],
+    percentage: [1, 0, t('sensors.unit.percent')],
+    // A 0–1 fraction, such as the battery level, shown as a percentage.
+    fraction: [100, 0, t('sensors.unit.percent')],
   };
-  const [factor, offset, unit] = conversions[kind] ?? [1, 0, kind];
-  return `${plain(value * factor + offset)} ${unit}`;
+  const [factor, offset, unit] = conversions[kind];
+  return t('sensors.measurement', { value: plain(value * factor + offset), unit });
+}
+/** SensorHost names icon colors with SwiftUI's standard color names (config.json `sections`). */
+const swiftColors: Record<string, ColorValue> = {
+  blue: color.swiftBlue,
+  gray: color.swiftGray,
+  green: color.swiftGreen,
+  indigo: color.swiftIndigo,
+  orange: color.swiftOrange,
+  pink: color.swiftPink,
+  purple: color.swiftPurple,
+  red: color.swiftRed,
+  teal: color.swiftTeal,
+};
+/** The iOS system color SwiftUI draws for `name`; undefined for a name SwiftUI does not define. */
+export function swiftColor(name: string): ColorValue | undefined {
+  return swiftColors[name];
 }

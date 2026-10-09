@@ -5,6 +5,7 @@ import {
   type SensorBoardRequest,
   type SensorBoardState,
 } from '@kenshiki/identity-capture';
+import { t } from './locales/i18n';
 
 export type SensorBoardPresentation = {
   board: SensorBoardState | null;
@@ -46,7 +47,7 @@ export class SensorBoardController {
   private async initialize(): Promise<void> {
     if (this.disposed) return;
     if (!this.configuration.sensors) {
-      this.fail('Sensors are not configured in this app.');
+      this.fail(t('sensors.failure.notConfigured'));
       return;
     }
     try {
@@ -64,7 +65,7 @@ export class SensorBoardController {
       this.publish();
       this.schedule();
     } catch {
-      this.fail('The sensor session could not be opened. Go back and try again.');
+      this.fail(t('sensors.failure.session'));
     }
   }
 
@@ -98,7 +99,7 @@ export class SensorBoardController {
     this.queue = work.catch(() => {
       this.desiredRunning = false;
       if (this.board) this.board = { ...this.board, collection: { ...this.board.collection, paused: true } };
-      this.fail('The request could not finish. Resume sensors to try again.');
+      this.fail(t('sensors.failure.requestUnfinished'));
     });
     try {
       await this.queue;
@@ -137,7 +138,7 @@ export class SensorBoardController {
         await this.queue;
         await session.release();
       } catch {
-        throw new Error('The sensor session could not close.');
+        throw new Error(t('sensors.failure.close'));
       }
     }
     await this.opening;
@@ -155,7 +156,7 @@ export class SensorBoardController {
     )
       return;
     this.timer = setTimeout(() => {
-      this.refresh().catch(() => this.fail('The sensor refresh stopped. Pause and resume to try again.'));
+      this.refresh().catch(() => this.fail(t('sensors.failure.refresh')));
     }, this.pauseMilliseconds);
   }
 
@@ -173,7 +174,7 @@ export class SensorBoardController {
       }
     });
     this.queue = work.catch(() => {
-      if (generation === this.generation) this.fail('The sensors could not be read. Trying again.');
+      if (generation === this.generation) this.fail(t('sensors.failure.read'));
     });
     try {
       await this.queue;

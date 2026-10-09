@@ -15,6 +15,19 @@ export const color = {
   cameraBackground: "#000000",
   onCamera: "#FFFFFF",
   scrim: "rgba(0, 0, 0, 0.53)",
+  warning: PlatformColor("systemOrange"),
+  sliderTrack: PlatformColor("systemGray4"),
+  sliderThumb: "#FFFFFF",
+  sliderThumbBorder: PlatformColor("opaqueSeparator"),
+  swiftBlue: PlatformColor("systemBlue"),
+  swiftGray: PlatformColor("systemGray"),
+  swiftGreen: PlatformColor("systemGreen"),
+  swiftIndigo: PlatformColor("systemIndigo"),
+  swiftOrange: PlatformColor("systemOrange"),
+  swiftPink: PlatformColor("systemPink"),
+  swiftPurple: PlatformColor("systemPurple"),
+  swiftRed: PlatformColor("systemRed"),
+  swiftTeal: PlatformColor("systemTeal"),
 } as const;
 
 /** Text styles, each on a step of the iOS Dynamic Type ramp. */
@@ -27,6 +40,12 @@ export const text = {
   action: {fontSize: 17, lineHeight: 22, fontWeight: "600"},
   entry: {fontSize: 28, lineHeight: 34, fontWeight: "400"},
   developerTitle: {fontSize: 22, lineHeight: 28, fontWeight: "700"},
+  groupTitle: {fontSize: 20, lineHeight: 25, fontWeight: "600"},
+  groupHeader: {fontSize: 22, lineHeight: 28, fontWeight: "600"},
+  row: {fontSize: 16, lineHeight: 21, fontWeight: "400"},
+  note: {fontSize: 13, lineHeight: 18, fontWeight: "400"},
+  warning: {fontSize: 15, lineHeight: 20, fontWeight: "400"},
+  caption: {fontSize: 11, lineHeight: 13, fontWeight: "400"},
 } as const;
 
 export const spacing = {
@@ -46,10 +65,13 @@ export const radius = {
   control: 14,
   sheet: 28,
   full: 1000,
+  group: 12,
+  sliderTrack: 2,
 } as const;
 
 export const border = {
   guide: 3,
+  hairline: 1,
 } as const;
 
 export const opacity = {
@@ -69,4 +91,8 @@ export const size = {
   portraitAspectRatio: 0.75,
   selfieGuideWidth: 0.68,
   selfieGuideAspect: 1.3,
+  touchTarget: 44,
+  sliderTrack: 4,
+  sliderThumb: 24,
+  sliderValueOffset: 30,
 } as const;

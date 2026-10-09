@@ -6,6 +6,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 import { Action } from './IdentityCaptureFlow';
+import { t } from './locales/i18n';
 import { boardStyles, Note, Row } from './SensorBoardRows';
 import { copy, measure, moment, plain, sensorConfig } from './SensorPresentation';
 export type BoardActions = {
@@ -26,7 +27,7 @@ export function LocationRows({
   }, []);
   return (
     <>
-      <Row label="Now" value={board.permissions.location} />
+      <Row label={copy('sensorGroup.now')} value={board.permissions.location} />
       <Action
         label={copy('location.button.getOneFix')}
         disabled={busy}
@@ -50,7 +51,10 @@ export function LocationRows({
       )}
       <Row
         label={copy('location.map.row.fixesOnMap')}
-        value={`${plain(board.location.trail.length)} of ${plain(sensorConfig.map.trailLimit)}`}
+        value={t('sensors.location.fixesOnMap', {
+          count: plain(board.location.trail.length),
+          limit: plain(sensorConfig.map.trailLimit),
+        })}
       />
       <Action
         secondary
@@ -79,17 +83,22 @@ function FixRows({ board, now }: { board: SensorBoardState; now: number }) {
     ['longitude', String(fix.longitude)],
     [
       'horizontalAccuracy',
-      fix.horizontalAccuracy < 0 ? 'Not valid' : measure(fix.horizontalAccuracy, 'distance', board),
+      fix.horizontalAccuracy < 0
+        ? copy('common.notValid')
+        : measure(fix.horizontalAccuracy, 'distance', board),
     ],
     [
       'verticalAccuracy',
-      fix.verticalAccuracy < 0 ? 'Not valid' : measure(fix.verticalAccuracy, 'distance', board),
+      fix.verticalAccuracy < 0 ? copy('common.notValid') : measure(fix.verticalAccuracy, 'distance', board),
     ],
     ['altitude', measure(fix.altitude, 'distance', board)],
     ['speed', measure(fix.speed, 'speed', board)],
-    ['course', measure(fix.course, '°', board)],
+    ['course', measure(fix.course, 'degrees', board)],
     ['measuredAt', moment(fix.measuredAt)],
-    ['age', age < 0 ? copy('location.value.inTheFuture') : `${plain(Math.floor(age))} s`],
+    [
+      'age',
+      age < 0 ? copy('location.value.inTheFuture') : t('sensors.seconds', { value: plain(Math.floor(age)) }),
+    ],
     ['simulated', fix.simulated],
     ['fromAccessory', fix.accessory],
     ['fixContract', copy(fix.accepted ? 'location.value.accepted' : 'location.value.notAccepted')],
@@ -116,26 +125,29 @@ function FixRows({ board, now }: { board: SensorBoardState; now: number }) {
 export function WeatherRows({ board, busy, perform }: BoardActions) {
   const weather = board.weather;
   const rows: [string, unknown][] = [
-    ['Pressure', measure(weather.pressureKPa, 'pressure', board)],
-    ['Temperature', measure(weather.temperatureC, 'temperature', board)],
-    ['Humidity', measure(weather.humidityPercent, '%', board)],
-    ['Station', [weather.stationName, weather.stationID].filter(Boolean).join(' · ')],
-    ['Distance', measure(weather.distanceMeters, 'distance', board)],
-    ['Station height', measure(weather.stationElevationMeters, 'distance', board)],
-    ['Quality', weather.quality],
-    ['Source', weather.source],
-    ['Reported at', moment(weather.observedAt)],
-    ['Read at', moment(weather.readAt)],
+    [t('sensors.weather.row.pressure'), measure(weather.pressureKPa, 'pressure', board)],
+    [t('sensors.weather.row.temperature'), measure(weather.temperatureC, 'temperature', board)],
+    [t('sensors.weather.row.humidity'), measure(weather.humidityPercent, 'percentage', board)],
+    [
+      t('sensors.weather.row.station'),
+      [weather.stationName, weather.stationID].filter(Boolean).join(t('sensors.joiner')),
+    ],
+    [t('sensors.weather.row.distance'), measure(weather.distanceMeters, 'distance', board)],
+    [t('sensors.weather.row.stationHeight'), measure(weather.stationElevationMeters, 'distance', board)],
+    [t('sensors.weather.row.quality'), weather.quality],
+    [t('sensors.weather.row.source'), weather.source],
+    [t('sensors.weather.row.reportedAt'), moment(weather.observedAt)],
+    [copy('weather.row.readAt'), moment(weather.readAt)],
   ];
   return (
     <>
       <Action
-        label={copy('weather.button.read', 'Read weather')}
+        label={copy('weather.button.read')}
         disabled={busy}
         onPress={() => perform({ action: 'weather', consent: true })}
       />
-      <Note text="Weather uses the phone’s position to request a report from the configured weather service." />
-      {weather.state === 'notConfigured' && <Note text="Weather is not configured in this host." />}
+      <Note text={t('sensors.weather.note')} />
+      {weather.state === 'notConfigured' && <Note text={t('sensors.weather.notConfigured')} />}
       {weather.state === 'available' &&
         rows.map(([label, value]) => <Row key={label} label={label} value={value} />)}
       {weather.failure && (

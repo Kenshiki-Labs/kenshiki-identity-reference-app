@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Linking, Modal, ScrollView, Text } from 'react-native';
 import { Action } from './IdentityCaptureFlow';
+import { t } from './locales/i18n';
 import { boardStyles, Note, Section } from './SensorBoardRows';
 import { copy, pageDoc, type SensorPage, title } from './SensorPresentation';
 export function SensorDocuments({
@@ -14,28 +15,35 @@ export function SensorDocuments({
   const [algorithm, setAlgorithm] = useState(false);
   if (!docs) return null;
   const link = (url: string) => {
-    Linking.openURL(url).catch(() => onFailure('The documentation could not be opened.'));
+    Linking.openURL(url).catch(() => onFailure(t('sensors.docs.openFailed')));
   };
   return (
     <>
       {docs.apis.length > 0 && (
-        <Section title="Apple APIs">
+        <Section title={copy('page.header.apis')}>
           {docs.apis.map((api) => (
             <Action
               key={api.url}
               secondary
-              label={`${api.symbol} · ${api.framework}\n${api.abstractKey ? copy(api.abstractKey) : ''}`}
+              label={t('sensors.docs.api', {
+                symbol: api.symbol,
+                framework: api.framework,
+                abstract: api.abstractKey ? copy(api.abstractKey) : '',
+              })}
               onPress={() => link(api.url)}
             />
           ))}
         </Section>
       )}
       {(docs.usageKey || docs.checks.length > 0) && (
-        <Section title="Permission">
+        <Section title={copy('page.header.permission')}>
           {docs.usageKey && (
             <Action
               secondary
-              label={`${docs.usageKey.key}\n${copy(docs.usageKey.quoteKey)}`}
+              label={t('sensors.docs.entry', {
+                name: docs.usageKey.key,
+                quote: copy(docs.usageKey.quoteKey),
+              })}
               onPress={() => {
                 if (docs.usageKey) link(docs.usageKey.url);
               }}
@@ -45,15 +53,15 @@ export function SensorDocuments({
             <Action
               key={check.url}
               secondary
-              label={`${check.symbol}\n${copy(check.quoteKey)}`}
+              label={t('sensors.docs.entry', { name: check.symbol, quote: copy(check.quoteKey) })}
               onPress={() => link(check.url)}
             />
           ))}
         </Section>
       )}
       {[
-        ['Hardware', docs.hardware],
-        ['Updates', docs.updates],
+        [copy('page.header.hardware'), docs.hardware],
+        [t('sensors.docs.updates'), docs.updates],
       ].map(([heading, entry]) =>
         typeof entry === 'object' && entry ? (
           <Section key={String(heading)} title={String(heading)}>
@@ -61,13 +69,13 @@ export function SensorDocuments({
           </Section>
         ) : null,
       )}
-      <Section title={`About ${title(page)}`}>
+      <Section title={t('sensors.about', { title: title(page) })}>
         {docs.noteKeys.map((key) => (
           <Note key={key} text={copy(key)} />
         ))}
       </Section>
       {docs.limitKeys.length > 0 && (
-        <Section title="Limits">
+        <Section title={t('sensors.docs.limits')}>
           {docs.limitKeys.map((key) => (
             <Text key={key} style={boardStyles.warning}>
               {copy(key)}
@@ -76,14 +84,18 @@ export function SensorDocuments({
         </Section>
       )}
       {docs.algorithmKeys.length > 0 && (
-        <Action secondary label={`How ${title(page)} is worked out`} onPress={() => setAlgorithm(true)} />
+        <Action
+          secondary
+          label={t('sensors.docs.howWorkedOut', { title: title(page) })}
+          onPress={() => setAlgorithm(true)}
+        />
       )}
       <Modal visible={algorithm} animationType="slide" onRequestClose={() => setAlgorithm(false)}>
-        <ScrollView contentContainerStyle={{ padding: 24 }}>
-          <Action label="Done" onPress={() => setAlgorithm(false)} />
+        <ScrollView contentContainerStyle={boardStyles.documents}>
+          <Action label={copy('common.done')} onPress={() => setAlgorithm(false)} />
           <Section title={title(page)}>
             {docs.algorithmKeys.map((key, index) => (
-              <Note key={key} text={`${index + 1}. ${copy(key)}`} />
+              <Note key={key} text={t('sensors.docs.step', { number: index + 1, text: copy(key) })} />
             ))}
             {docs.algorithmCode && (
               <Text selectable style={boardStyles.note}>

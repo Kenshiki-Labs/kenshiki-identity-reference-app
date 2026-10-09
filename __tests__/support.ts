@@ -1,9 +1,10 @@
 import type { CaptureSession } from '@kenshiki/identity-capture';
 import type { ReactTestInstance } from 'react-test-renderer';
+import { t } from '../locales/i18n';
 /** Unconfigured operations fail loudly instead of simulating successful native work. */
 export function mockSession<T extends Partial<CaptureSession>>(overrides: T) {
   const unexpected = (): never => {
-    throw new Error('Unexpected native operation in this test');
+    throw new Error(t('testSupport.unexpectedNativeOperation'));
   };
   return {
     id: 'test-session',
@@ -181,7 +182,7 @@ export function mockSession<T extends Partial<CaptureSession>>(overrides: T) {
   };
 }
 export function required<T>(value: T | undefined | null): T {
-  if (value == null) throw new Error('Required test fixture value is absent');
+  if (value == null) throw new Error(t('testSupport.missingFixture'));
   return value;
 }
 export function property(node: ReactTestInstance, key: string): unknown {
@@ -192,7 +193,7 @@ function isCallback(value: unknown): value is (...args: unknown[]) => unknown {
 }
 export function invoke(node: ReactTestInstance, key: string, ...args: unknown[]): unknown {
   const callback = property(node, key);
-  if (!isCallback(callback)) throw new Error(`Required event handler is absent: ${key}`);
+  if (!isCallback(callback)) throw new Error(t('testSupport.missingHandler', { key }));
   return callback(...args);
 }
 export function without<T extends object, K extends keyof T>(value: T, key: K): Omit<T, K> {

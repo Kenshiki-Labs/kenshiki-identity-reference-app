@@ -2,6 +2,7 @@ import type { Configuration } from '@kenshiki/identity-capture';
 import { useEffect, useState } from 'react';
 import { Alert, AppState, ScrollView, Text, View } from 'react-native';
 import { Action, styles } from './IdentityCaptureFlow';
+import { t } from './locales/i18n';
 import { SensorBoardController, type SensorBoardPresentation } from './SensorBoardController';
 import { SensorDocuments } from './SensorBoardDocuments';
 import { type BoardActions, LocationRows, WeatherRows } from './SensorBoardLocation';
@@ -32,39 +33,34 @@ export function SensorScreen({
     });
     setController(active);
     active.open().catch(() => {
-      if (live) setFailure('Sensors could not be opened.');
+      if (live) setFailure(t('sensors.failure.open'));
     });
     const subscription = AppState.addEventListener('change', (next) => {
       if (next === 'inactive') return;
       active.setActive(next === 'active').catch(() => {
-        if (live) setFailure('Sensors could not change activity state.');
+        if (live) setFailure(t('sensors.failure.activity'));
       });
     });
     return () => {
       live = false;
       subscription.remove();
       active.dispose().catch(() => {
-        Alert.alert('Sensors could not close', 'Reopen the app before starting another sensor session.');
+        Alert.alert(t('sensors.failure.closeTitle'), t('sensors.failure.closeBody'));
       });
     };
   }, [configuration]);
   const perform: BoardActions['perform'] = (request) => {
     setFailure(null);
-    controller
-      ?.perform(request)
-      .catch(() => setFailure('The request stopped. Check permissions or try again.'));
+    controller?.perform(request).catch(() => setFailure(t('sensors.failure.request')));
   };
   const board = state.board;
   return (
     <SensorIconContext.Provider value={{ sessionId: state.sessionId, enabled: page === null }}>
-      <ScrollView
-        contentContainerStyle={[styles.content, { backgroundColor: '#f2f2f7' }]}
-        testID="sensor-screen"
-      >
-        <Action label="Back to Identity" secondary onPress={onExit} />
-        <View style={{ flexDirection: 'row', gap: 16 }}>
+      <ScrollView style={styles.root} contentContainerStyle={styles.content} testID="sensor-screen">
+        <Action label={t('common.backToIdentity')} secondary onPress={onExit} />
+        <View style={boardStyles.tabs}>
           <Action
-            label="Sensors"
+            label={copy('tab.sensors.title')}
             secondary
             onPress={() => {
               setTab('sensors');
@@ -72,7 +68,7 @@ export function SensorScreen({
             }}
           />
           <Action
-            label="Settings"
+            label={copy('tab.settings.title')}
             secondary
             onPress={() => {
               setTab('settings');
@@ -81,18 +77,18 @@ export function SensorScreen({
           />
         </View>
         <Text accessibilityRole="header" style={styles.title}>
-          {page ? title(page) : tab === 'sensors' ? 'Sensors' : 'Settings'}
+          {page ? title(page) : copy(tab === 'sensors' ? 'tab.sensors.title' : 'tab.settings.title')}
         </Text>
         {(failure || state.failure) && (
           <Text accessibilityRole="alert" style={boardStyles.warning}>
             {failure || state.failure}
           </Text>
         )}
-        {!board && <Note text="Opening sensors…" />}
+        {!board && <Note text={t('sensors.opening')} />}
         {board && (
           <>
             <Action
-              label={board.collection.paused ? 'Resume sensors' : 'Pause sensors'}
+              label={board.collection.paused ? t('sensors.resume') : t('sensors.pause')}
               disabled={state.busy}
               onPress={() =>
                 perform(board.collection.paused ? { action: 'resume', consent: true } : { action: 'pause' })
@@ -127,32 +123,30 @@ function SensorContents(props: ContentsProps) {
   if (props.page)
     return (
       <>
-        <Action secondary label="All sensors" onPress={() => props.setPage(null)} />
+        <Action secondary label={t('sensors.allSensors')} onPress={() => props.setPage(null)} />
         <SensorSection {...props} page={props.page} />
         <SensorDocuments page={props.page} onFailure={props.onFailure} />
       </>
     );
   return (
     <>
-      {props.board.reading?.deviceSurface.simulator && (
-        <Note text={copy('sensorGroup.simulatorNotice', 'Simulator readings are limited.')} />
-      )}
-      {props.board.permissions.motion !== 'given' && (
-        <Note
-          text={copy('sensorGroup.motionNotice', 'Enable Motion & Fitness in Settings to read air pressure.')}
-        />
-      )}
+      {props.board.reading?.deviceSurface.simulator && <Note text={t('sensors.notice.simulator')} />}
+      {props.board.permissions.motion !== 'given' && <Note text={t('sensors.notice.motion')} />}
       {[false, true].map((requiresPermission) => (
         <View key={String(requiresPermission)}>
           <Text style={boardStyles.group}>
-            {requiresPermission ? 'With your permission' : 'Freely readable'}
+            {requiresPermission ? t('sensors.group.permissioned') : t('sensors.group.free')}
           </Text>
           {pages
             .filter((page) => permissioned(page) === requiresPermission)
             .map((page) => (
               <View key={page}>
                 <SensorSection {...props} page={page} />
-                <Action secondary label={`About ${title(page)}`} onPress={() => props.setPage(page)} />
+                <Action
+                  secondary
+                  label={t('sensors.about', { title: title(page) })}
+                  onPress={() => props.setPage(page)}
+                />
               </View>
             ))}
         </View>
@@ -172,8 +166,15 @@ function SensorSection({
       <Note text={copy(`meaning.${page}`, '')} />
       {page === 'status' ? (
         <>
-          <Row label="Last read" value={moment(board.collection.collectedAt)} />
-          <Row label="Now" value={board.collection.paused ? 'Paused' : busy ? 'Reading…' : 'Waiting'} />
+          <Row label={copy('collection.row.collectedAt')} value={moment(board.collection.collectedAt)} />
+          <Row
+            label={copy('collection.row.state')}
+            value={
+              board.collection.paused
+                ? t('sensors.state.paused')
+                : copy(busy ? 'collection.state.collecting' : 'collection.state.idle')
+            }
+          />
           {board.collection.failure && <Note text={board.collection.failure} />}
         </>
       ) : null}

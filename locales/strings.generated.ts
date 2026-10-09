@@ -35,6 +35,7 @@ export type MessageValues = {
   readonly "common.reportedOutcome": undefined;
   readonly "common.compared": undefined;
   readonly "common.actionFailed": undefined;
+  readonly "common.cancel": undefined;
   readonly "format.timeNotRecorded": undefined;
   readonly "format.dateNotRecorded": undefined;
   readonly "format.mrzDate": {readonly day: string | number; readonly month: string; readonly year: string | number};
@@ -669,6 +670,97 @@ export type MessageValues = {
   readonly "subscriber.label.mixed": undefined;
   readonly "subscriber.label.unknown": undefined;
   readonly "subscriber.label.other": undefined;
+  readonly "sensors.opening": undefined;
+  readonly "sensors.pause": undefined;
+  readonly "sensors.resume": undefined;
+  readonly "sensors.allSensors": undefined;
+  readonly "sensors.resumeCollection": undefined;
+  readonly "sensors.about": {readonly title: string | number};
+  readonly "sensors.waitingForReading": undefined;
+  readonly "sensors.group.free": undefined;
+  readonly "sensors.group.permissioned": undefined;
+  readonly "sensors.notice.simulator": undefined;
+  readonly "sensors.notice.motion": undefined;
+  readonly "sensors.state.paused": undefined;
+  readonly "sensors.permission.given": undefined;
+  readonly "sensors.permission.refused": undefined;
+  readonly "sensors.permission.notRequested": undefined;
+  readonly "sensors.permission.unavailable": undefined;
+  readonly "sensors.permission.always": undefined;
+  readonly "sensors.measurement": {readonly unit: string | number; readonly value: string | number};
+  readonly "sensors.unit.hectopascals": undefined;
+  readonly "sensors.unit.inchesOfMercury": undefined;
+  readonly "sensors.unit.metres": undefined;
+  readonly "sensors.unit.feet": undefined;
+  readonly "sensors.unit.metresPerSecond": undefined;
+  readonly "sensors.unit.milesPerHour": undefined;
+  readonly "sensors.unit.celsius": undefined;
+  readonly "sensors.unit.fahrenheit": undefined;
+  readonly "sensors.unit.microtesla": undefined;
+  readonly "sensors.unit.gravity": undefined;
+  readonly "sensors.unit.radiansPerSecond": undefined;
+  readonly "sensors.unit.degrees": undefined;
+  readonly "sensors.unit.percent": undefined;
+  readonly "sensors.seconds": {readonly value: string | number};
+  readonly "sensors.secondsSpoken": {readonly value: string | number};
+  readonly "sensors.joiner": undefined;
+  readonly "sensors.failure.open": undefined;
+  readonly "sensors.failure.activity": undefined;
+  readonly "sensors.failure.closeTitle": undefined;
+  readonly "sensors.failure.closeBody": undefined;
+  readonly "sensors.failure.request": undefined;
+  readonly "sensors.failure.notConfigured": undefined;
+  readonly "sensors.failure.session": undefined;
+  readonly "sensors.failure.requestUnfinished": undefined;
+  readonly "sensors.failure.close": undefined;
+  readonly "sensors.failure.refresh": undefined;
+  readonly "sensors.failure.read": undefined;
+  readonly "sensors.failure.settings": undefined;
+  readonly "sensors.export.prepare": undefined;
+  readonly "sensors.export.share": undefined;
+  readonly "sensors.export.shareFailed": undefined;
+  readonly "sensors.export.notLocal": undefined;
+  readonly "sensors.export.tamper": undefined;
+  readonly "sensors.export.tamperTitle": undefined;
+  readonly "sensors.export.tamperBody": undefined;
+  readonly "sensors.export.forget": undefined;
+  readonly "sensors.export.forgetTitle": undefined;
+  readonly "sensors.export.forgetBody": undefined;
+  readonly "sensors.erase.action": undefined;
+  readonly "sensors.erase.title": undefined;
+  readonly "sensors.erase.body": undefined;
+  readonly "sensors.erase.result": {readonly detail: string | number; readonly status: string | number};
+  readonly "sensors.erase.keysLeft": undefined;
+  readonly "sensors.persisted.savedItems": {readonly count: string | number};
+  readonly "sensors.battery.provider": undefined;
+  readonly "sensors.battery.hostReader": undefined;
+  readonly "sensors.battery.reads": undefined;
+  readonly "sensors.battery.monitoringEnables": undefined;
+  readonly "sensors.units.selected": {readonly name: string | number};
+  readonly "sensors.window.label": {readonly sensor: string | number};
+  readonly "sensors.window.shared": undefined;
+  readonly "sensors.location.fixesOnMap": {readonly count: string | number; readonly limit: string | number};
+  readonly "sensors.weather.note": undefined;
+  readonly "sensors.weather.notConfigured": undefined;
+  readonly "sensors.weather.row.pressure": undefined;
+  readonly "sensors.weather.row.temperature": undefined;
+  readonly "sensors.weather.row.humidity": undefined;
+  readonly "sensors.weather.row.station": undefined;
+  readonly "sensors.weather.row.distance": undefined;
+  readonly "sensors.weather.row.stationHeight": undefined;
+  readonly "sensors.weather.row.quality": undefined;
+  readonly "sensors.weather.row.source": undefined;
+  readonly "sensors.weather.row.reportedAt": undefined;
+  readonly "sensors.docs.openFailed": undefined;
+  readonly "sensors.docs.updates": undefined;
+  readonly "sensors.docs.limits": undefined;
+  readonly "sensors.docs.api": {readonly abstract: string | number; readonly framework: string | number; readonly symbol: string | number};
+  readonly "sensors.docs.entry": {readonly name: string | number; readonly quote: string | number};
+  readonly "sensors.docs.howWorkedOut": {readonly title: string | number};
+  readonly "sensors.docs.step": {readonly number: string | number; readonly text: string | number};
+  readonly "testSupport.unexpectedNativeOperation": undefined;
+  readonly "testSupport.missingFixture": undefined;
+  readonly "testSupport.missingHandler": {readonly key: string | number};
   readonly "developer.title": undefined;
   readonly "developer.environment": undefined;
   readonly "developer.run": undefined;
@@ -743,6 +835,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "common.reportedOutcome": "Reported outcome",
       "common.compared": "Compared",
       "common.actionFailed": "This action could not finish. Try again.",
+      "common.cancel": "Cancel",
       "format.timeNotRecorded": "Time not recorded",
       "format.dateNotRecorded": "Date not recorded",
       "format.mrzDate": [["arg", "day"], " ", ["select", "month", {"m01": "Jan", "m02": "Feb", "m03": "Mar", "m04": "Apr", "m05": "May", "m06": "Jun", "m07": "Jul", "m08": "Aug", "m09": "Sep", "m10": "Oct", "m11": "Nov", "m12": "Dec", "other": ""}], " ’", ["arg", "year"]],
@@ -1377,6 +1470,97 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "subscriber.label.mixed": "Mixed",
       "subscriber.label.unknown": "Unknown",
       "subscriber.label.other": "Unrecognized value",
+      "sensors.opening": "Opening sensors…",
+      "sensors.pause": "Pause sensors",
+      "sensors.resume": "Resume sensors",
+      "sensors.allSensors": "All sensors",
+      "sensors.resumeCollection": "Resume collection",
+      "sensors.about": ["About ", ["arg", "title"]],
+      "sensors.waitingForReading": "Waiting for a reading.",
+      "sensors.group.free": "Freely readable",
+      "sensors.group.permissioned": "With your permission",
+      "sensors.notice.simulator": "Simulator readings are limited.",
+      "sensors.notice.motion": "Enable Motion & Fitness in Settings to read air pressure.",
+      "sensors.state.paused": "Paused",
+      "sensors.permission.given": "Allowed",
+      "sensors.permission.refused": "Denied",
+      "sensors.permission.notRequested": "Not asked yet",
+      "sensors.permission.unavailable": "Unavailable",
+      "sensors.permission.always": "Always allow location",
+      "sensors.measurement": [["arg", "value"], " ", ["arg", "unit"]],
+      "sensors.unit.hectopascals": "hPa",
+      "sensors.unit.inchesOfMercury": "inHg",
+      "sensors.unit.metres": "m",
+      "sensors.unit.feet": "ft",
+      "sensors.unit.metresPerSecond": "m/s",
+      "sensors.unit.milesPerHour": "mph",
+      "sensors.unit.celsius": "°C",
+      "sensors.unit.fahrenheit": "°F",
+      "sensors.unit.microtesla": "µT",
+      "sensors.unit.gravity": "g",
+      "sensors.unit.radiansPerSecond": "rad/s",
+      "sensors.unit.degrees": "°",
+      "sensors.unit.percent": "%",
+      "sensors.seconds": [["arg", "value"], " s"],
+      "sensors.secondsSpoken": [["arg", "value"], " seconds"],
+      "sensors.joiner": " · ",
+      "sensors.failure.open": "Sensors could not be opened.",
+      "sensors.failure.activity": "Sensors could not change activity state.",
+      "sensors.failure.closeTitle": "Sensors could not close",
+      "sensors.failure.closeBody": "Reopen the app before starting another sensor session.",
+      "sensors.failure.request": "The request stopped. Check permissions or try again.",
+      "sensors.failure.notConfigured": "Sensors are not configured in this app.",
+      "sensors.failure.session": "The sensor session could not be opened. Go back and try again.",
+      "sensors.failure.requestUnfinished": "The request could not finish. Resume sensors to try again.",
+      "sensors.failure.close": "The sensor session could not close.",
+      "sensors.failure.refresh": "The sensor refresh stopped. Pause and resume to try again.",
+      "sensors.failure.read": "The sensors could not be read. Trying again.",
+      "sensors.failure.settings": "iOS Settings could not be opened.",
+      "sensors.export.prepare": "Prepare export",
+      "sensors.export.share": "Share export",
+      "sensors.export.shareFailed": "The export could not be shared.",
+      "sensors.export.notLocal": "The export is not a local file.",
+      "sensors.export.tamper": "Tamper with newest reading",
+      "sensors.export.tamperTitle": "Tamper with reading",
+      "sensors.export.tamperBody": "This deliberately changes the newest local evidence to test verification.",
+      "sensors.export.forget": "Forget exported readings",
+      "sensors.export.forgetTitle": "Forget readings",
+      "sensors.export.forgetBody": "Remove this host’s retained export evidence.",
+      "sensors.erase.action": "Erase local sensor data",
+      "sensors.erase.title": "Erase sensor data",
+      "sensors.erase.body": "Delete local sensor readings, continuity records, signing keys and biometric approval keys in this app. Identity documents stay on the phone. Collection will remain paused.",
+      "sensors.erase.result": [["arg", "status"], " · ", ["arg", "detail"]],
+      "sensors.erase.keysLeft": "Keys left",
+      "sensors.persisted.savedItems": [["arg", "count"], " saved items"],
+      "sensors.battery.provider": "Provider",
+      "sensors.battery.hostReader": "Host battery reader",
+      "sensors.battery.reads": "Readings taken",
+      "sensors.battery.monitoringEnables": "Monitoring enables",
+      "sensors.units.selected": ["✓ ", ["arg", "name"]],
+      "sensors.window.label": [["arg", "sensor"], " reading time"],
+      "sensors.window.shared": "Shared motion capture",
+      "sensors.location.fixesOnMap": [["arg", "count"], " of ", ["arg", "limit"]],
+      "sensors.weather.note": "Weather uses the phone’s position to request a report from the configured weather service.",
+      "sensors.weather.notConfigured": "Weather is not configured in this host.",
+      "sensors.weather.row.pressure": "Pressure",
+      "sensors.weather.row.temperature": "Temperature",
+      "sensors.weather.row.humidity": "Humidity",
+      "sensors.weather.row.station": "Station",
+      "sensors.weather.row.distance": "Distance",
+      "sensors.weather.row.stationHeight": "Station height",
+      "sensors.weather.row.quality": "Quality",
+      "sensors.weather.row.source": "Source",
+      "sensors.weather.row.reportedAt": "Reported at",
+      "sensors.docs.openFailed": "The documentation could not be opened.",
+      "sensors.docs.updates": "Updates",
+      "sensors.docs.limits": "Limits",
+      "sensors.docs.api": [["arg", "symbol"], " · ", ["arg", "framework"], "\n", ["arg", "abstract"]],
+      "sensors.docs.entry": [["arg", "name"], "\n", ["arg", "quote"]],
+      "sensors.docs.howWorkedOut": ["How ", ["arg", "title"], " is worked out"],
+      "sensors.docs.step": [["arg", "number"], ". ", ["arg", "text"]],
+      "testSupport.unexpectedNativeOperation": "Unexpected native operation in this test",
+      "testSupport.missingFixture": "Required test fixture value is absent",
+      "testSupport.missingHandler": ["Required event handler is absent: ", ["arg", "key"]],
       "developer.title": "SDK package integration",
       "developer.environment": "React Native 0.87.1 · iOS · installed npm artifact",
       "developer.run": "Run simulator checks",
