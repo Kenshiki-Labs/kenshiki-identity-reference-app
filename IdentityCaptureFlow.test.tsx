@@ -198,33 +198,39 @@ test('saved checks stay reachable after selecting one result', async () => {
   await act(async () => {
     view = renderer.create(<App configuration={durable} />);
   });
-  mockSession.listResults.mockResolvedValue([
-    {
-      id: 'first',
-      revision: 1,
-      recordedAt: '2026-10-08T12:00:00Z',
-      kind: 'passport-read-v1',
-      workflowID: 'first',
-      artifacts: [],
-    },
-    {
-      id: 'second',
-      revision: 1,
-      recordedAt: '2026-10-08T12:00:00Z',
-      kind: 'passport-read-v1',
-      workflowID: 'second',
-      artifacts: [],
-    },
-  ]);
-  await act(async () => {
-    await invoke(view.root.findByProps({ label: 'Open saved passport checks' }), 'onPress');
-  });
-  expect(JSON.stringify(view.toJSON())).toContain('Saved passport checks');
-  expect(view.root.findByProps({ testID: 'saved-passport-0' })).toBeDefined();
-  expect(view.root.findByProps({ testID: 'saved-passport-1' })).toBeDefined();
-  expect(mockSession.eraseResults).not.toHaveBeenCalled();
-  expect(mockSession.startMRZ).not.toHaveBeenCalled();
-  await act(async () => {
-    view.unmount();
-  });
+  try {
+    mockSession.listResults.mockResolvedValue([
+      {
+        id: 'first',
+        revision: 1,
+        recordedAt: '2026-10-08T12:00:00Z',
+        kind: 'passport-read-v1',
+        workflowID: 'first',
+        artifacts: [],
+      },
+      {
+        id: 'second',
+        revision: 1,
+        recordedAt: '2026-10-08T12:00:00Z',
+        kind: 'passport-read-v1',
+        workflowID: 'second',
+        artifacts: [],
+      },
+    ]);
+    await act(async () => {
+      await invoke(
+        view.root
+          .findByProps({ testID: 'identity-hub' })
+          .findByProps({ label: 'Open saved passport checks' }),
+        'onPress',
+      );
+    });
+    expect(JSON.stringify(view.toJSON())).toContain('Saved passport checks');
+    expect(view.root.findByProps({ testID: 'saved-passport-0' })).toBeDefined();
+    expect(view.root.findByProps({ testID: 'saved-passport-1' })).toBeDefined();
+    expect(mockSession.eraseResults).not.toHaveBeenCalled();
+    expect(mockSession.startMRZ).not.toHaveBeenCalled();
+  } finally {
+    await act(async () => view.unmount());
+  }
 });

@@ -173,7 +173,8 @@ navigation = ['@react-navigation/native@7.5.0', '@react-navigation/native-stack@
               '@react-navigation/bottom-tabs@7.20.0', 'react-native-screens@4.28.0',
               'react-native-safe-area-context@5.10.1']
 subprocess.run(['npm', 'install', '--save-exact'] + navigation, cwd=host, check=True)
-# The copied Jest suites render the navigator, whose packages ship ES modules.
+# Only *.test files are suites; __tests__ also contains shared support and fixtures.
+# The copied suites render the navigator, whose packages ship ES modules.
 jest_config = host / 'jest.config.js'
 preset = re.fullmatch(r"module\.exports = \{\s*preset: '([^']+)',?\s*\};?\s*", jest_config.read_text())
 if preset is None:
@@ -181,7 +182,8 @@ if preset is None:
                      '@react-navigation, react-native-screens and react-native-safe-area-context to its '
                      'transformIgnorePatterns by hand: ' + str(jest_config))
 jest_config.write_text(
-    "module.exports = {\n  preset: '" + preset.group(1) + "',\n  transformIgnorePatterns: [\n"
+    "module.exports = {\n  preset: '" + preset.group(1) + "',\n"
+    "  testMatch: ['<rootDir>/**/*.test.ts?(x)'],\n  transformIgnorePatterns: [\n"
     "    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-navigation"
     "|react-native-screens|react-native-safe-area-context)/)',\n  ],\n};\n")
 signing = []

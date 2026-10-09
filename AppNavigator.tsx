@@ -13,7 +13,7 @@ import {
   type NativeStackNavigationOptions,
   type NativeStackNavigationProp,
 } from '@react-navigation/native-stack';
-import { useCallback, useRef, useState } from 'react';
+import { type ComponentProps, useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { DriverLicenseFlow } from './DriverLicenseFlow';
 import { IdentityCaptureFlow } from './IdentityCaptureFlow';
@@ -27,6 +27,11 @@ import { PhoneFlow } from './PhoneFlow';
 import { copy, type SensorPage, title } from './SensorPresentation';
 import { SensorBoardScreen, SensorDetailScreen, SensorSession } from './SensorScreen';
 import { SSNFlow } from './SSNFlow';
+import {
+  ControllerCustodyContext,
+  createControllerCustody,
+  type IdentityCustody,
+} from './ui/ControllerCustody';
 import { appearanceColor, symbol } from './ui/tokens.generated';
 import { type IdentityFlow, useIdentityWorkspace } from './useIdentityWorkspace';
 
@@ -58,12 +63,17 @@ type IdentityNavigation = NativeStackNavigationProp<IdentityRoutes>;
 /** Native stacks own transitions. Page owns the visible header and every screen's layout. */
 const pushed: NativeStackNavigationOptions = { headerShown: false };
 
-/** The sensor session runs while the Sensors or the Settings tab is in front. */
+/** Only visible sensor surfaces own collection; identity modals and developer checks do not. */
 function sensorTabFocused(state: NavigationState | undefined): boolean {
-  const tabs = state?.routes.find((route) => route.name === 'Tabs')?.state;
+  const root = state?.routes[state.index];
+  if (root?.name !== 'Tabs') return false;
+  const tabs = root.state;
   if (!tabs || typeof tabs.index !== 'number') return false;
-  const focused = tabs.routes[tabs.index]?.name;
-  return focused === 'SensorsTab' || focused === 'SettingsTab';
+  const focused = tabs.routes[tabs.index];
+  if (focused?.name === 'SensorsTab') return true;
+  if (focused?.name !== 'SettingsTab') return false;
+  const settings = focused.state;
+  return !settings || settings.routes[settings.index ?? 0]?.name === 'SettingsHome';
 }
 
 /** React Navigation's theme in the brand's tint: the selected tab, the back button and bar buttons. */
@@ -80,15 +90,33 @@ const flowRoutes = {
   phone: 'PhoneCheck',
 } as const;
 
-export function AppNavigator({
-  configuration,
-  developerChecks,
-  configurationIssue,
-}: {
+type AppNavigatorProps = {
   configuration: Configuration;
   developerChecks: boolean;
   configurationIssue?: 'holderScopeUnreadable' | undefined;
-}) {
+};
+
+/** A configuration owns one mounted workspace. Replacing it removes the old screens and their
+ * state together; the shared custody barrier waits for their native controllers to close. */
+export function AppNavigator(props: AppNavigatorProps) {
+  const [holder, setHolder] = useState({ configuration: props.configuration, revision: 0 });
+  const [custody] = useState(createControllerCustody);
+  if (holder.configuration !== props.configuration) {
+    setHolder({ configuration: props.configuration, revision: holder.revision + 1 });
+  }
+  return (
+    <ControllerCustodyContext.Provider value={custody}>
+      <HolderNavigator key={holder.revision} {...props} custody={custody} />
+    </ControllerCustodyContext.Provider>
+  );
+}
+
+function HolderNavigator({
+  configuration,
+  developerChecks,
+  configurationIssue,
+  custody,
+}: AppNavigatorProps & { custody: IdentityCustody }) {
   const navigation = useNavigationContainerRef<RootRoutes>();
   const identityNavigation = useRef<IdentityNavigation | undefined>(undefined);
   const scheme = useColorScheme();
@@ -99,23 +127,23 @@ export function AppNavigator({
     if (identity && identity.getState().routes.length > 1) identity.popToTop();
   }, [navigation]);
   const openFlow = useCallback((flow: IdentityFlow) => navigation.navigate(flowRoutes[flow]), [navigation]);
-  const workspace = useIdentityWorkspace(configuration, home, openFlow);
+  const workspace = useIdentityWorkspace(configuration, home, openFlow, custody);
+  const registerIdentityNavigation = useCallback((value: IdentityNavigation | undefined) => {
+    identityNavigation.current = value;
+  }, []);
   function renderIdentityTab() {
     return (
       <IdentityStack.Navigator screenOptions={pushed}>
         <IdentityStack.Screen name="IdentityHome" options={{ title: t('hub.title') }}>
-          {({ navigation: identity }: { navigation: IdentityNavigation }) => {
-            identityNavigation.current = identity;
-            return (
-              <IdentityHome
-                configuration={configuration}
-                configurationIssue={configurationIssue}
-                workspace={workspace}
-                onLicenseResult={() => identity.navigate('LicenseResult')}
-                onPassportResult={(focus) => identity.navigate('PassportResult', { focus })}
-              />
-            );
-          }}
+          {({ navigation: identity }: { navigation: IdentityNavigation }) => (
+            <IdentityHomeRoute
+              navigation={identity}
+              register={registerIdentityNavigation}
+              configuration={configuration}
+              configurationIssue={configurationIssue}
+              workspace={workspace}
+            />
+          )}
         </IdentityStack.Screen>
         <IdentityStack.Screen name="PassportResult" options={{ title: t('hub.resultsTitle') }}>
           {({ route }) => (
@@ -215,6 +243,7 @@ export function AppNavigator({
                 configuration={configuration}
                 {...workspace.passport.input}
                 onComplete={workspace.passport.accept}
+                onClaim={workspace.passport.claim}
                 onExit={workspace.passport.exit}
               />
             )}
@@ -225,6 +254,7 @@ export function AppNavigator({
                 configuration={configuration}
                 {...workspace.license.input}
                 onComplete={workspace.license.accept}
+                onClaim={workspace.license.claim}
                 onExit={workspace.license.exit}
               />
             )}
@@ -235,6 +265,7 @@ export function AppNavigator({
                 configuration={configuration}
                 saved={workspace.ssn.input}
                 onComplete={workspace.ssn.accept}
+                onClaim={workspace.ssn.claim}
                 onExit={workspace.ssn.exit}
               />
             )}
@@ -245,6 +276,7 @@ export function AppNavigator({
                 configuration={configuration}
                 saved={workspace.phone.input}
                 onComplete={workspace.phone.accept}
+                onClaim={workspace.phone.claim}
                 onExit={workspace.phone.exit}
               />
             )}
@@ -253,5 +285,27 @@ export function AppNavigator({
       </NavigationContainer>
       <IdentityRecovery configuration={configuration} workspace={workspace} />
     </SensorSession>
+  );
+}
+
+/** Register only after this route commits; an abandoned render must not change navigation ownership. */
+function IdentityHomeRoute({
+  navigation,
+  register,
+  ...props
+}: Omit<ComponentProps<typeof IdentityHome>, 'onLicenseResult' | 'onPassportResult'> & {
+  navigation: IdentityNavigation;
+  register: (navigation: IdentityNavigation | undefined) => void;
+}) {
+  useLayoutEffect(() => {
+    register(navigation);
+    return () => register(undefined);
+  }, [navigation, register]);
+  return (
+    <IdentityHome
+      {...props}
+      onLicenseResult={() => navigation.navigate('LicenseResult')}
+      onPassportResult={(focus) => navigation.navigate('PassportResult', { focus })}
+    />
   );
 }

@@ -1,5 +1,5 @@
 import type { CaptureErrorCode, DocumentCheckFailureCode } from '@kenshiki/identity-capture';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { AppState, Text, TextInput, View } from 'react-native';
 import {
   DocumentCheckController,
@@ -11,6 +11,7 @@ import { t } from './locales/i18n';
 import { Action } from './ui/Action';
 import { NativeSheet } from './ui/NativeSheet';
 import { styles } from './ui/styles';
+import { useControllerState } from './ui/useControllerState';
 
 const labels = {
   recordMatched: t('documentCheck.outcome.recordMatched'),
@@ -74,40 +75,42 @@ export function DocumentCheckPanel(props: { session: DocumentCheckPort; configur
   return <DocumentCheckView key={`${props.session.id}:${props.configured}`} {...props} />;
 }
 
+const initialState: DocumentCheckState = { snapshot: undefined, busy: false, failure: undefined };
+
 /** Reopening restores local status. Only holder actions can dispatch a check. */
 function DocumentCheckView({ session, configured }: { session: DocumentCheckPort; configured: boolean }) {
-  const [controller, setController] = useState<DocumentCheckController>();
-  const [state, setState] = useState<DocumentCheckState>({
-    snapshot: undefined,
-    busy: false,
-    failure: undefined,
-  });
   const [sheet, setSheet] = useState<'failure' | 'correction'>();
   const [error, setError] = useState('');
   const [edits, setEdits] = useState<Record<string, string>>({});
-  useEffect(() => {
-    const active = new DocumentCheckController(session, (next) => {
-      setState(next);
-      if (next.failure) {
-        setError(errorText(errorCode(next.failure.cause), failures, t('documentCheck.failure.other')));
-        setSheet('failure');
-      } else if (!next.busy) setSheet(undefined);
-    });
-    setController(active);
-    setState(active.state);
-    if (configured) active.restore().catch(active.fail);
-    const listener = AppState.addEventListener('change', (next) => {
-      if (next === 'background') {
-        setEdits({});
-        setSheet(undefined);
-        active.pause().catch(active.fail);
-      }
-    });
-    return () => {
-      active.dispose();
-      listener.remove();
-    };
-  }, [session, configured]);
+  const connect = useCallback(
+    (publish: (state: DocumentCheckState) => void) => {
+      const active = new DocumentCheckController(session, (next) => {
+        publish(next);
+        if (next.failure) {
+          setError(errorText(errorCode(next.failure.cause), failures, t('documentCheck.failure.other')));
+          setSheet('failure');
+        } else if (!next.busy) setSheet(undefined);
+      });
+      if (configured) active.restore().catch(active.fail);
+      const listener = AppState.addEventListener('change', (next) => {
+        if (next === 'background') {
+          setEdits({});
+          setSheet(undefined);
+          active.pause().catch(active.fail);
+        }
+      });
+      return {
+        controller: active,
+        initialState: active.state,
+        dispose: (): undefined => {
+          active.dispose();
+          listener.remove();
+        },
+      };
+    },
+    [session, configured],
+  );
+  const { controller, state, failed } = useControllerState(initialState, connect);
   const { snapshot, busy } = state;
   const result = snapshot?.result;
   const needsReply =
@@ -130,6 +133,12 @@ function DocumentCheckView({ session, configured }: { session: DocumentCheckPort
     }
   }
   function renderCheckStatus() {
+    if (failed)
+      return (
+        <Text accessibilityRole="alert" style={styles.body}>
+          {t('common.sessionRecovery')}
+        </Text>
+      );
     if (!configured) {
       return <Text style={styles.body}>{t('documentCheck.notConfigured')}</Text>;
     }

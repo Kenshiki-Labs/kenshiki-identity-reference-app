@@ -1,6 +1,6 @@
 import type { Configuration, SensorBoardState } from '@kenshiki/identity-capture';
-import { createContext, type ReactElement, type ReactNode, useContext, useEffect, useState } from 'react';
-import { Alert, AppState } from 'react-native';
+import { createContext, type ReactElement, type ReactNode, useCallback, useContext, useState } from 'react';
+import { AppState } from 'react-native';
 import { t } from './locales/i18n';
 import { SensorBoardController, type SensorBoardPresentation } from './SensorBoardController';
 import { SensorDocuments } from './SensorBoardDocuments';
@@ -19,6 +19,7 @@ import {
 } from './SensorPresentation';
 import { ListGroupTitle, ListRow, ListSection, TextRow } from './ui/List';
 import { Page } from './ui/Page';
+import { useControllerState } from './ui/useControllerState';
 
 type SensorSessionValue = {
   state: SensorBoardPresentation;
@@ -46,36 +47,44 @@ export function SensorSession({
   open: boolean;
   children: ReactNode;
 }) {
-  const [controller, setController] = useState<SensorBoardController>();
-  const [state, setState] = useState<SensorBoardPresentation>(closed);
-  const [failure, setFailure] = useState<string | null>(null);
-  useEffect(() => {
-    if (!open) return;
-    let live = true;
-    const active = new SensorBoardController(configuration, (next) => {
-      if (live) setState(next);
-    });
-    setController(active);
-    setFailure(null);
-    active.open().catch(() => {
-      if (live) setFailure(t('sensors.failure.open'));
-    });
-    const subscription = AppState.addEventListener('change', (next) => {
-      if (next === 'inactive') return;
-      active.setActive(next === 'active').catch(() => {
-        if (live) setFailure(t('sensors.failure.activity'));
+  const [reportedFailure, setReportedFailure] = useState<{
+    controller: SensorBoardController | undefined;
+    message: string;
+  }>();
+  const connect = useCallback(
+    (publish: (state: SensorBoardPresentation) => void) => {
+      if (!open) return;
+      let live = true;
+      const active = new SensorBoardController(configuration, publish);
+      active.open().catch(() => {
+        if (live) setReportedFailure({ controller: active, message: t('sensors.failure.open') });
       });
-    });
-    return () => {
-      live = false;
-      subscription.remove();
-      setController(undefined);
-      setState(closed);
-      active.dispose().catch(() => {
-        Alert.alert(t('sensors.failure.closeTitle'), t('sensors.failure.closeBody'));
+      const subscription = AppState.addEventListener('change', (next) => {
+        if (next === 'inactive') return;
+        active.setActive(next === 'active').catch(() => {
+          if (live) setReportedFailure({ controller: active, message: t('sensors.failure.activity') });
+        });
       });
-    };
-  }, [configuration, open]);
+      return {
+        controller: active,
+        initialState: closed,
+        dispose: () => {
+          live = false;
+          subscription.remove();
+          return active.dispose();
+        },
+      };
+    },
+    [configuration, open],
+  );
+  const { controller, state, failed } = useControllerState(closed, connect);
+  const failure = failed
+    ? t('common.sessionRecovery')
+    : reportedFailure?.controller === controller
+      ? (reportedFailure?.message ?? null)
+      : null;
+  const setFailure = (message: string | null) =>
+    setReportedFailure(message ? { controller, message } : undefined);
   const perform: BoardActions['perform'] = (request) => {
     setFailure(null);
     controller?.perform(request).catch(() => setFailure(t('sensors.failure.request')));

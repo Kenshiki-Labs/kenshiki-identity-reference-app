@@ -45,6 +45,7 @@ export class PhoneFlowController {
   private unsubscribe?: (() => void) | undefined;
   private active?: Promise<void> | undefined;
   private drain?: Promise<void> | undefined;
+  private disposal?: Promise<void> | undefined;
   private epoch = 0;
   private closed = false;
   private eventRevision = 0;
@@ -67,12 +68,17 @@ export class PhoneFlowController {
   }
   private attach(session: CaptureSession) {
     this.current = session;
-    this.unsubscribe = session.subscribe((event) => {
-      if (event.type === 'phoneSnapshot' && this.current === session && !this.drain) {
-        ++this.eventRevision;
-        this.accept(event.snapshot);
-      }
-    });
+    this.unsubscribe = session.subscribe(
+      (event) => {
+        if (!this.closed && event.type === 'phoneSnapshot' && this.current === session && !this.drain) {
+          ++this.eventRevision;
+          this.accept(event.snapshot);
+        }
+      },
+      (failure) => {
+        if (!this.closed && this.current === session && !this.drain) this.fail(failure);
+      },
+    );
   }
   private accept(snapshot: PhoneCheckSnapshot) {
     this.update({ snapshot, paused: snapshot.pending ? this.state.paused : false });
@@ -211,14 +217,17 @@ export class PhoneFlowController {
     this.closed = true;
     return result;
   };
-  dispose = async () => {
-    if (this.closed) return;
+  dispose = (): Promise<void> => {
+    if (this.disposal) return this.disposal;
     this.closed = true;
     ++this.epoch;
     this.unsubscribe?.();
     this.unsubscribe = undefined;
     const session = this.current;
     this.current = undefined;
-    await Promise.allSettled([session?.release(), this.active, this.drain]);
+    this.disposal = Promise.allSettled([session?.release(), this.active, this.drain]).then(([released]) => {
+      if (released.status === 'rejected') throw released.reason;
+    });
+    return this.disposal;
   };
 }

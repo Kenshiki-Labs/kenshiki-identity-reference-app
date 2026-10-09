@@ -25,7 +25,7 @@ final class ArtifactIntegrationTests: XCTestCase {
 
     func reveal(_ element: XCUIElement, upward: Bool = true) {
       for _ in 0..<30 where !element.isHittable {
-        if upward { app.swipeUp() } else { app.swipeDown() }
+        if upward { app.scrollViews.firstMatch.swipeUp() } else { app.scrollViews.firstMatch.swipeDown() }
       }
       XCTAssertTrue(element.isHittable, "Expected navigation control: \(element.label)")
     }
@@ -168,18 +168,29 @@ final class ArtifactIntegrationTests: XCTestCase {
       XCTAssertTrue(app.staticTexts["Sensors"].firstMatch.waitForExistence(timeout: 10), "Edge swipe pops the detail")
       XCTAssertFalse(app.buttons["page-back"].exists)
 
-      // A capture is a full-screen modal over the tabs; Cancel closes it without starting the camera.
-      tabs.buttons["Identity"].tap()
-      XCTAssertTrue(license.waitForExistence(timeout: 10))
-      license.tap()
+      // Both entry points open the same modal. Settings owns a live sensor session before this
+      // transition, so its entry also exercises the change from sensor to identity ownership.
+      if appearance == .light {
+        tabs.buttons["Settings"].tap()
+        let savedLicense = app.buttons["settings-license-checks"]
+        for _ in 0..<20 where !savedLicense.isHittable { app.scrollViews.firstMatch.swipeUp() }
+        XCTAssertTrue(savedLicense.isHittable)
+        savedLicense.tap()
+      } else {
+        tabs.buttons["Identity"].tap()
+        XCTAssertTrue(license.waitForExistence(timeout: 10))
+        license.tap()
+      }
       let start = app.buttons["start-document-front"]
       XCTAssertTrue(start.waitForExistence(timeout: 10), "The license capture opens as a modal")
       XCTAssertFalse(tabs.isHittable, "A full-screen modal covers the tab bar")
       XCTAssertTrue(wordmark.exists)
       screenshot("capture-modal-\(suffix)")
       app.buttons["modal-cancel"].tap()
-      XCTAssertTrue(identity.waitForExistence(timeout: 10), "Cancel returns to Identity")
       XCTAssertFalse(start.waitForExistence(timeout: 2), "Cancel dismisses the capture")
+      XCTAssertTrue(tabs.isHittable, "Cancel restores the tab navigation")
+      tabs.buttons["Identity"].tap()
+      XCTAssertTrue(identity.waitForExistence(timeout: 10))
 
       // A destructive choice is an iOS action sheet, not a drawn overlay.
       ssn.tap()
@@ -390,8 +401,9 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(settings.waitForExistence(timeout: 30))
     settings.tap()
     let checks = app.buttons["open-sdk-checks"]
-    XCTAssertTrue(checks.waitForExistence(timeout: 30))
-    for _ in 0..<30 where !checks.isHittable { app.swipeUp() }
+    XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 30))
+    for _ in 0..<30 where !checks.isHittable { app.scrollViews.firstMatch.swipeUp() }
+    XCTAssertTrue(checks.isHittable)
     checks.tap()
     let run = app.buttons["run-sdk-checks"]
     XCTAssertTrue(run.waitForExistence(timeout: 30))
@@ -410,8 +422,9 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(settings.waitForExistence(timeout: 30))
     settings.tap()
     let checks = app.buttons["open-sdk-checks"]
-    XCTAssertTrue(checks.waitForExistence(timeout: 30))
-    for _ in 0..<30 where !checks.isHittable { app.swipeUp() }
+    XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 30))
+    for _ in 0..<30 where !checks.isHittable { app.scrollViews.firstMatch.swipeUp() }
+    XCTAssertTrue(checks.isHittable)
     checks.tap()
     let run = app.buttons["run-sdk-checks"]
     XCTAssertTrue(run.waitForExistence(timeout: 30), "Packaged React Native host did not load")

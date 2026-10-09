@@ -47,6 +47,7 @@ export class SSNFlowController {
   private closed = false;
   private epoch = 0;
   private active?: Promise<SSNSessionSnapshot> | undefined;
+  private disposal?: Promise<void> | undefined;
   private pausing = false;
   constructor(
     private readonly create: (configuration: Configuration) => Promise<CaptureSession>,
@@ -302,7 +303,8 @@ export class SSNFlowController {
     this.current = undefined;
     return result;
   };
-  dispose = async () => {
+  dispose = (): Promise<void> => {
+    if (this.disposal) return this.disposal;
     this.update({
       digits: '',
       snapshot: this.state.snapshot && redact(this.state.snapshot),
@@ -312,7 +314,10 @@ export class SSNFlowController {
     ++this.epoch;
     const session = this.current;
     this.current = undefined;
-    await Promise.allSettled([session?.release(), this.active]);
+    this.disposal = Promise.allSettled([session?.release(), this.active]).then(([released]) => {
+      if (released.status === 'rejected') throw released.reason;
+    });
+    return this.disposal;
   };
 }
 

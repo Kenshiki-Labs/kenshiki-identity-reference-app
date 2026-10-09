@@ -10,9 +10,10 @@
 // background, system colors, Dynamic Type text styles, SF Symbols. Each token says what it is for
 // and, where it replaced a hand-written value, which one.
 //
-// The brand is Kenshiki Pulse, taken from pulse-ios (Samples/KenshikiDeviceDemo). Its values live in
+// The product is Kenshiki SDK. The existing Kenshiki palette is retained. Brand values live in
 // three places only: the brand colors and the wordmark's type here, the wordmark's words in
-// locales/en.jsonc (`brand`), and the icon and launch screen in brand/. An app that signs this host
+// locales/en.jsonc (`brand`), and the icon in brand/. The launch screen is generated from the same
+// wordmark. An app that signs this host
 // under its own brand replaces those three and nothing else.
 {
   // Color roles. Every adaptive role names an iOS system color, resolved through React Native's
@@ -44,7 +45,7 @@
     // Brand: pulse-ios `KTheme.accent` (KenshikiTheme.swift, `Color(light: 0x0D2958, dark:
     // 0x8FB3E6)`), the navy identity ink. Replaces systemBlue, which replaced #173965.
     "tint": {"light": "#0D2958", "dark": "#8FB3E6"},
-    // The "Kenshiki Pulse" wordmark in the shared page header. Brand: pulse-ios `KTheme.text`
+    // The "Kenshiki SDK" wordmark in the shared page header. Brand: pulse-ios `KTheme.text`
     // (`Color(light: 0x1D1D1F, dark: 0xF5F5F7)`), the ink pulse-ios gives its h1 role
     // (`TextRole.defaultColor`), which reads on the light and the dark grouped background. The
     // launch screen's wordmark keeps pulse-ios's fixed 0.96 white: its background is always dark.
@@ -60,9 +61,9 @@
     // A destructive action's title, as UIKit's destructive style.
     "destructive": {"ios": "systemRed"},
 
-    // Sensor board. Warnings and unmet location terms, as SensorHost's `colors.warning` (SwiftUI
-    // orange) in sensor-presentation/config.json. Replaces #994700.
-    "warning": {"ios": "systemOrange"},
+    // Warning text must remain readable on grouped surfaces in both appearances. System orange
+    // is suitable for icon tiles, but does not provide enough contrast for small text on white.
+    "warning": {"light": "#994700", "dark": "#FFB366"},
     // The capture-window slider's unfilled track, as UISlider draws it. Replaces #d1d1d6.
     "sliderTrack": {"ios": "systemGray4"},
     // The slider thumb: white in both appearances, as UISlider's. Replaces #fff.

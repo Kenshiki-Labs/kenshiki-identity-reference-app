@@ -97,8 +97,14 @@ open ios/IdentitySDKHost.xcworkspace
 
 In Xcode select the `IdentitySDKHost` scheme and an **iPhone simulator**. In Edit Scheme → Run,
 set Build Configuration to **Release**, then Run. Release bundles JavaScript and needs no Metro
-server. For Debug instead, run `npm start` from the host root in a second terminal before Run.
+server. For Debug, set `IDENTITY_HOST_EMBEDDED_JAVASCRIPT=1` in the Run scheme's environment;
+the generator embeds JavaScript in Debug too.
 Open the `.xcworkspace`, not the `.xcodeproj`.
+
+The generated app removes the CLI's local-network ATS exception. For live Metro development,
+use a separate Debug-only Info.plist with `NSAllowsLocalNetworking=true`, assign it only to
+Debug's `INFOPLIST_FILE`, leave `IDENTITY_HOST_EMBEDDED_JAVASCRIPT` unset and run `npm start`
+from the host root. Release keeps the generated Info.plist with unrestricted loads disabled.
 
 The app opens on a native tab bar: Identity, Sensors and Settings, each its own navigation stack
 using the same `Page` container. The Identity tab lists Driver's license, Passport, Face match, Social Security
@@ -194,18 +200,25 @@ Supplier non-retention requires independent qualification.
 | `useIdentityWorkspace.ts` | Owns the current holder’s retained sessions, saved-result restoration, handoff and erasure. Receives stable navigation callbacks; imports no view or navigator. |
 | `IdentityHome.tsx`, `IdentityResults.tsx`, `IdentitySettings.tsx`, `IdentityRecovery.tsx` | Identity screen content and recovery presentation. Session ownership stays in the workspace hook. |
 | `ui/Page.tsx` | One container for every screen and recovery sheet: branding, heading, Back/Cancel, safe areas, scrolling and keyboard insets. Camera mode fills the viewport below the same header. |
+| `ui/useControllerState.ts`, `ui/ControllerCustody.tsx` | React external-store subscriptions acquire controllers after commit, invalidate stale publications on removal, and drain release before a successor acquires a native session. The custody barrier survives holder changes. |
 | `ui/Action.tsx`, `ui/styles.ts`, `ui/List.tsx`, `ui/NativeSheet.tsx` | Shared buttons, content styles, inset grouped rows and system modal presentation. Features do not import another feature for UI primitives. |
 | `ui/tokens.jsonc`, `locales/en.jsonc`, `generate-ui-resources.py` | Design tokens (iOS system colors, Dynamic Type styles, spacing, radii) and every UI string, compiled into `ui/tokens.generated.ts` and `locales/strings.generated.ts`; screens read text through `t()` in `locales/i18n.ts`. Edit the JSONC and rerun the generator; `--check` fails when the modules are stale |
-| `brand/`, `ui/Wordmark.tsx` | The Kenshiki Pulse brand from pulse-ios: app icon, launch screen and its assets, which `create-host.py` installs in the generated iOS app, and the wordmark in every page's shared header |
+| `brand/`, `ui/Wordmark.tsx` | The Kenshiki SDK app icon, generated native launch screen and its background, installed by `create-host.py`, and the wordmark in every page's shared header |
 
-The brand lives in three places only: the tint and wordmark tokens in `ui/tokens.jsonc`, `brand` in `locales/en.jsonc`, and the `brand/` folder; to sign the app under another brand, replace those and regenerate the host.
+The brand lives in the tint and wordmark tokens in `ui/tokens.jsonc`, `brand` in `locales/en.jsonc`, and the icon and background in `brand/`. `generate-ui-resources.py` generates and checks the native launch-screen label from the same `brand.wordmark` used by the shared page header. To change the brand, edit these sources and regenerate the host.
 
 Results and sensor detail pages are pushed screens. Page’s Back button uses the native navigation stack; the native edge swipe remains available.
 Each capture or check is a full-screen modal whose shared Page Cancel leaves it the way the
-check's own exit does. Recovery prompts are UIKit page sheets, never alerts; destructive choices
+check's own exit does. Journey recovery prompts are UIKit page sheets; destructive choices
 are iOS action sheets. Apple's permission, NFC and message composer interfaces remain
 system-owned. Active work cancels and drains on backgrounding; the user
 explicitly resumes. No remote check is purchased by opening saved results.
+
+A failed native release keeps the custody barrier rejected and presents one native notice to
+close and reopen the app. Acquisition and erasure recovery must respect that barrier. Sensor
+collection belongs to the visible Sensors or Settings page; an identity modal or developer-check
+page ends that ownership. Controllers publish immutable snapshots, and views subscribe through
+`useControllerState` instead of mirroring controller state in effects.
 
 `IdentityCaptureFlow.onComplete(result)` transfers the live session to its recipient. The recipient
 must call `result.session.release()` when it no longer needs decrypted native images. Merely unmounting
@@ -258,7 +271,7 @@ and offers a retry; it is never presented as a completed check.
 | `cannot load such file -- xcodeproj` | Run the Ruby preflight above; install the gem for the same Ruby used by the script. |
 | `pod` is missing or `pod install` fails | Check CocoaPods on PATH, selected Xcode, network access and the actual CocoaPods error. Do not alternate Ruby environments mid-install. |
 | Missing runtime framework / native module | Use the built 0.6.0 tarball, finish `pod install`, open the workspace and rebuild the native app. Reloading JavaScript cannot add native code. |
-| JavaScript bundle unavailable | Release must finish the bundle build phase; Debug needs Metro from this host root. Inspect `ios/.xcode.env` and `.xcode.env.local` for a stale Node path. |
+| JavaScript bundle unavailable | Finish the bundle build phase; for bundled Debug set `IDENTITY_HOST_EMBEDDED_JAVASCRIPT=1`. Live Metro needs the Debug-only setup above. Inspect `ios/.xcode.env` and `.xcode.env.local` for a stale Node path. |
 | Hardware recovery sheet on simulator | Expected. Use the physical-device path for real capture; do not remove the hardware gate. |
 | Passport trust unavailable or face models unavailable | Check supplied resource formats and their URLs in AppDelegate. Never replace missing trust/model inputs with an accepted result. |
 | SSN/phone/document service unavailable | Register the native adapter and matching provider ID/configuration. SDK installation alone supplies no live service credentials. |

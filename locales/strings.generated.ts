@@ -2,7 +2,7 @@
 
 /** One compiled message: plain text, or ICU parts. Rendered by `t` in i18n.ts. */
 export type Message = string | readonly Part[];
-export type Part = string | readonly ['#'] | readonly ['arg', string]
+type Part = string | readonly ['#'] | readonly ['arg', string]
   | readonly ['plural' | 'select', string, {readonly [selector: string]: Message}];
 
 /** Every message key, with the values its message needs (undefined: none). */
@@ -36,6 +36,7 @@ export type MessageValues = {
   readonly "common.reportedOutcome": undefined;
   readonly "common.compared": undefined;
   readonly "common.actionFailed": undefined;
+  readonly "common.sessionRecovery": undefined;
   readonly "common.cancel": undefined;
   readonly "common.back": undefined;
   readonly "common.labelAndStatus": {readonly label: string | number; readonly status: string | number};
@@ -675,7 +676,7 @@ export type MessageValues = {
   readonly "subscriber.label.unknown": undefined;
   readonly "subscriber.label.other": undefined;
   readonly "settings.identityData": undefined;
-  readonly "settings.nothingSaved": undefined;
+  readonly "settings.reviewSaved": undefined;
   readonly "settings.developer": undefined;
   readonly "sensors.opening": undefined;
   readonly "sensors.resumeCollection": undefined;
@@ -803,8 +804,8 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
     formatLocale: "en-US",
     plural: (count) => (count === 1 ? 'one' : 'other'),
     messages: {
-      "brand.wordmark": "Kenshiki Pulse",
-      "brand.appName": "Kenshiki Pulse",
+      "brand.wordmark": "Kenshiki SDK",
+      "brand.appName": "Kenshiki SDK",
       "common.backToIdentity": "Back to Identity",
       "common.backToResults": "Back to results",
       "common.done": "Done",
@@ -832,6 +833,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "common.reportedOutcome": "Reported outcome",
       "common.compared": "Compared",
       "common.actionFailed": "This action could not finish. Try again.",
+      "common.sessionRecovery": "Close and reopen the app before starting another check. Your saved results have not been erased.",
       "common.cancel": "Cancel",
       "common.back": "Back",
       "common.labelAndStatus": [["arg", "label"], ", ", ["arg", "status"]],
@@ -1471,7 +1473,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "subscriber.label.unknown": "Unknown",
       "subscriber.label.other": "Unrecognized value",
       "settings.identityData": "Saved identity data",
-      "settings.nothingSaved": "No passport, face or license results are saved on this phone.",
+      "settings.reviewSaved": "Open a check to review or erase its saved results. Results stay on this phone until you erase them.",
       "settings.developer": "Developer",
       "sensors.opening": "Opening sensors…",
       "sensors.resumeCollection": "Resume collection",

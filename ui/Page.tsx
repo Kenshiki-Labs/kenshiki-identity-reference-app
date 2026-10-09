@@ -1,7 +1,7 @@
 import { NavigationContext } from '@react-navigation/native';
 import { type ReactNode, useContext } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { t } from '../locales/i18n';
 import { Action } from './Action';
 import { color, size, spacing, text } from './tokens.generated';
@@ -44,7 +44,7 @@ export function Page({
     </Text>
   ) : null;
   return (
-    <>
+    <SafeAreaProvider>
       <SafeAreaView
         edges={['top', 'left', 'right']}
         style={pageStyles.root}
@@ -89,7 +89,7 @@ export function Page({
         )}
       </SafeAreaView>
       {overlay}
-    </>
+    </SafeAreaProvider>
   );
 }
 

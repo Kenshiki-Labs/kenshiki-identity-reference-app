@@ -119,6 +119,8 @@ export class CaptureFlowController {
   private current?: CaptureSession | undefined;
   private pendingComparison = false;
   private activeWork?: Promise<Partial<FlowState>> | undefined;
+  private releasing?: Promise<void>;
+  private disposal?: Promise<void>;
   constructor(
     private readonly create: (config: Configuration) => Promise<CaptureSession>,
     private readonly config: Configuration,
@@ -187,6 +189,8 @@ export class CaptureFlowController {
     }
   }
   private async session(epoch: number) {
+    if (this.releasing) await this.releasing;
+    if (epoch !== this.epoch || this.closed) throw { code: 'cancelled' };
     if (this.current) return this.current;
     const session = await this.create(this.config);
     if (epoch !== this.epoch || this.closed) {
@@ -199,9 +203,14 @@ export class CaptureFlowController {
     return session;
   }
   private listen(session: CaptureSession) {
-    this.off = session.subscribe((event) => {
-      if (!this.closed && this.current === session && !this.state.sheet) this.event(event);
-    });
+    this.off = session.subscribe(
+      (event) => {
+        if (!this.closed && this.current === session && !this.state.sheet) this.event(event);
+      },
+      (error) => {
+        if (!this.closed && this.current === session) this.fail(error);
+      },
+    );
   }
   private acceptCompletion(epoch: number, session: CaptureSession, patch: Partial<FlowState>) {
     if (epoch === this.epoch && !this.closed) this.update(patch);
@@ -407,13 +416,37 @@ export class CaptureFlowController {
     this.off = undefined;
     const old = this.current;
     this.current = undefined;
-    await Promise.allSettled([old?.release(), this.activeWork]);
-    if (epoch === this.epoch && !this.closed) {
-      this.state = initial();
-      this.changed(this.state);
+    this.releasing = this.release(old);
+    try {
+      await this.releasing;
+      if (epoch === this.epoch && !this.closed) {
+        this.state = initial();
+        this.changed(this.state);
+      }
+    } catch (error) {
+      if (!this.closed) {
+        // Native custody is already revoked. A failed cleanup cannot authorize a new check.
+        this.state = {
+          ...initial(),
+          sheet: { kind: 'recovery', recovery: 'details', message: t('common.sessionRecovery') },
+        };
+        this.closed = true;
+        this.changed(this.state);
+      }
+      throw error;
     }
   };
-  dispose = async () => {
+  private release(session: CaptureSession | undefined): Promise<void> {
+    const release = Promise.resolve().then(() => session?.release());
+    return Promise.allSettled([release, this.releasing, this.activeWork]).then(
+      ([released, previousRelease]) => {
+        if (released.status === 'rejected') throw released.reason;
+        if (previousRelease.status === 'rejected') throw previousRelease.reason;
+      },
+    );
+  }
+  dispose = (): Promise<void> => {
+    if (this.disposal) return this.disposal;
     this.pendingComparison = false;
     this.closed = true;
     ++this.epoch;
@@ -422,15 +455,28 @@ export class CaptureFlowController {
     const old = this.current;
     this.current = undefined;
     this.state = initial();
-    await Promise.allSettled([old?.release(), this.activeWork]);
+    this.disposal = this.release(old);
+    return this.disposal;
   };
-  /** Transfers ownership before the flow unmounts. No evidence is released by this method. */
+  /** Drain acquisition before transferring its retained evidence. Until that succeeds this
+   * controller still owns the session, so disposal can revoke an interrupted handoff. */
   handoff = async (): Promise<CompletedCapture> => {
-    if (this.closed || this.state.busy || !this.current || !this.state.passport) {
+    if (this.closed || !this.current || !this.state.passport) {
       throw new Error(t('passport.handoffNotReady'));
     }
+    const session = this.current;
+    ++this.epoch;
+    this.pendingComparison = false;
+    this.update({ busy: true, ready: false });
+    const [cancelled] = await Promise.allSettled([session.cancel(), this.activeWork]);
+    if (this.closed || this.current !== session) throw { code: 'cancelled' };
+    if (cancelled.status === 'rejected') {
+      this.update({ busy: false });
+      throw cancelled.reason;
+    }
+    if (!this.state.passport) throw new Error(t('passport.handoffNotReady'));
     const result = {
-      session: this.current,
+      session,
       mrz: this.state.passportMRZ,
       passport: this.state.passport,
       comparison: this.state.comparison,
@@ -442,7 +488,6 @@ export class CaptureFlowController {
     this.off = undefined;
     this.current = undefined;
     this.state = initial();
-    await result.session.cancel();
     return result;
   };
   fail = (error: unknown) => {

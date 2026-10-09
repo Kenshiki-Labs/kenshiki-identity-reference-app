@@ -1,14 +1,16 @@
-import { type Configuration, IdentityCaptureSession } from '@kenshiki/identity-capture';
-import { useEffect, useRef, useState } from 'react';
+import { type CaptureSession, type Configuration, IdentityCaptureSession } from '@kenshiki/identity-capture';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CaptureFlowController, type CompletedCapture } from './CaptureFlowController';
 import type { SavedDocumentCapture } from './DocumentFlowController';
 import { type ErrorText, errorCode, errorText } from './HolderText';
 import { t } from './locales/i18n';
 import type { SavedPhoneCheck } from './PhoneFlowController';
 import type { SavedSSNCheck } from './SSNFlowController';
+import type { IdentityCustody } from './ui/ControllerCustody';
 
 export type IdentityFlow = 'passport' | 'license' | 'ssn' | 'phone';
 type ClearTarget = 'passport' | 'document';
+type ClearRequest = { target: ClearTarget; session: CaptureSession | undefined };
 
 const clearErrors: ErrorText = {
   busy: t('hub.clearError.busy'),
@@ -30,7 +32,22 @@ export function useIdentityWorkspace(
   configuration: Configuration,
   onHome: () => void,
   openFlow: (flow: IdentityFlow) => void,
+  custody: IdentityCustody,
 ) {
+  const active = useRef(false);
+  const pending = useRef<Partial<Record<IdentityFlow, CaptureSession>>>({});
+  const claimPassport = useCallback(() => {
+    delete pending.current.passport;
+  }, []);
+  const claimDocument = useCallback(() => {
+    delete pending.current.license;
+  }, []);
+  const claimSSN = useCallback(() => {
+    delete pending.current.ssn;
+  }, []);
+  const claimPhone = useCallback(() => {
+    delete pending.current.phone;
+  }, []);
   const [result, setResult] = useState<CompletedCapture>();
   const owned = useRef<CompletedCapture | undefined>(undefined);
   const [input, setInput] = useState<{
@@ -49,57 +66,46 @@ export function useIdentityWorkspace(
   const [phone, setPhone] = useState<SavedPhoneCheck>();
   const ownedPhone = useRef<SavedPhoneCheck | undefined>(undefined);
   const [phoneInput, setPhoneInput] = useState<SavedPhoneCheck>();
-  const [confirmingClear, setConfirmingClear] = useState<ClearTarget>();
+  const [clearRequest, setClearRequest] = useState<ClearRequest>();
   const [clearFailure, setClearFailure] = useState<{ target: ClearTarget; message: string }>();
   const [clearing, setClearing] = useState(false);
-  const [openingResults, setOpeningResults] = useState(!!configuration.results);
+  const clearPending = useRef(false);
+  const [openingResults, setOpeningResults] = useState(true);
+  const opening = useRef(true);
   const [savedCount, setSavedCount] = useState(0);
   const [restoreFailure, setRestoreFailure] = useState<string>();
   const [restoreAttempt, setRestoreAttempt] = useState(0);
   const latestRestoreAttempt = useRef(0);
-  const releasing = useRef<Promise<unknown>>(Promise.resolve());
-  // One configuration is one holder's custody. Before the next holder's saved results open,
-  // release every session the previous holder's screens own, clear their personal state and
-  // return to the Identity list.
+  // The navigator mounts a fresh owner for every configuration. Invalidate callbacks before
+  // passive cleanup, and make the next owner's startup wait for retained-session release.
+  useLayoutEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+      const previous = new Set([
+        owned.current?.session,
+        ownedDocument.current?.session,
+        ownedSSN.current?.session,
+        ownedPhone.current?.session,
+        ...Object.values(pending.current),
+      ]);
+      pending.current = {};
+      owned.current = undefined;
+      ownedDocument.current = undefined;
+      ownedSSN.current = undefined;
+      ownedPhone.current = undefined;
+      custody.releasing = Promise.all([
+        custody.releasing,
+        ...[...previous].flatMap((session) => (session ? [session.release()] : [])),
+      ]);
+      // Keep a failed release in the shared barrier for the next owner's recovery screen.
+      custody.releasing.catch(custody.reportFailure);
+    };
+  }, [custody]);
   useEffect(() => {
-    const previous = [
-      owned.current?.session,
-      ownedDocument.current?.session,
-      ownedSSN.current?.session,
-      ownedPhone.current?.session,
-    ];
-    owned.current = undefined;
-    ownedDocument.current = undefined;
-    ownedSSN.current = undefined;
-    ownedPhone.current = undefined;
-    setResult(undefined);
-    setDocument(undefined);
-    setSSN(undefined);
-    setPhone(undefined);
-    setInput({});
-    setDocumentInput({});
-    setSSNInput(undefined);
-    setPhoneInput(undefined);
-    setConfirmingClear(undefined);
-    setClearFailure(undefined);
-    setSavedCount(0);
-    setRestoreFailure(undefined);
-    onHome();
-    setOpeningResults(!!configuration.results);
-    releasing.current = Promise.all(previous.flatMap((session) => (session ? [session.release()] : [])));
-    releasing.current.catch(() => setRestoreFailure(t('hub.closeFailed.previous')));
-  }, [configuration, onHome]);
-  useEffect(() => {
-    if (!configuration.results) {
-      setOpeningResults(false);
-      return;
-    }
-    let active = true;
-    latestRestoreAttempt.current = restoreAttempt;
-    const attempt = restoreAttempt;
-    const isActive = () => active && latestRestoreAttempt.current === attempt;
+    let restoring = true;
+    const isActive = () => active.current && restoring && latestRestoreAttempt.current === restoreAttempt;
     const controller = new CaptureFlowController(IdentityCaptureSession.create, configuration, () => {});
-    setOpeningResults(true);
     const reportRestoreFailure = (error: unknown) => {
       if (isActive())
         setRestoreFailure(errorText(errorCode(error), restoreErrors, t('hub.restoreError.other')));
@@ -115,100 +121,130 @@ export function useIdentityWorkspace(
         setResult(restored);
       }
     }
+    async function restoreSavedResult() {
+      await controller.open();
+      if (!isActive()) return;
+      const sheet = controller.state.sheet;
+      if (sheet) {
+        setRestoreFailure(sheet.message);
+        return;
+      }
+      setSavedCount(controller.state.saved?.length ?? (controller.state.passport ? 1 : 0));
+      await adoptRestoredResult();
+      if (isActive()) setRestoreFailure(undefined);
+    }
+    async function finishRestore() {
+      await controller.dispose();
+      if (!isActive()) return;
+      opening.current = false;
+      setOpeningResults(false);
+    }
     const restore = async () => {
       try {
-        await releasing.current;
-        if (!isActive()) return;
-        await controller.open();
-        if (!isActive()) return;
-        const sheet = controller.state.sheet;
-        if (sheet) {
-          setRestoreFailure(sheet.message);
-          return;
-        }
-        setSavedCount(controller.state.saved?.length ?? (controller.state.passport ? 1 : 0));
-        await adoptRestoredResult();
-        setRestoreFailure(undefined);
+        await custody.releasing;
+        if (isActive() && configuration.results) await restoreSavedResult();
       } catch (error) {
         reportRestoreFailure(error);
       } finally {
-        await controller.dispose();
-        if (isActive()) setOpeningResults(false);
+        await finishRestore();
       }
     };
     restore().catch(reportRestoreFailure);
     return () => {
-      active = false;
-      controller.dispose().catch(reportRestoreFailure);
+      restoring = false;
+      custody.releasing = Promise.all([custody.releasing, controller.dispose()]);
+      custody.releasing.catch((error: unknown) => {
+        reportRestoreFailure(error);
+        custody.reportFailure(error);
+      });
     };
-  }, [configuration, restoreAttempt]);
-  useEffect(
-    () => () => {
-      owned.current?.session.release().catch(() => setRestoreFailure(t('hub.closeFailed.check')));
-      ownedDocument.current?.session.release().catch(() => setRestoreFailure(t('hub.closeFailed.check')));
-      ownedSSN.current?.session.release().catch(() => setRestoreFailure(t('hub.closeFailed.check')));
-      ownedPhone.current?.session.release().catch(() => setRestoreFailure(t('hub.closeFailed.check')));
-    },
-    [],
-  );
+  }, [configuration, custody, restoreAttempt]);
+  function receive(session: CaptureSession) {
+    if (active.current) return true;
+    custody.releasing = Promise.all([custody.releasing, session.release()]);
+    custody.releasing.catch(custody.reportFailure);
+    return false;
+  }
   function accept(completed: CompletedCapture) {
+    if (!receive(completed.session)) return;
+    delete pending.current.passport;
     owned.current = completed;
     setResult(completed);
     setInput({});
     onHome();
   }
   function start(resume?: 'read' | 'selfie') {
+    if (!active.current || clearPending.current || opening.current) return;
     const completed = result;
+    if (completed) pending.current.passport = completed.session;
     owned.current = undefined;
     setResult(undefined);
     setInput({ completed, resume });
     openFlow('passport');
   }
   async function openSavedResults() {
-    if (openingResults) return;
+    if (!active.current || opening.current || clearPending.current) return;
+    opening.current = true;
     setOpeningResults(true);
+    const session = owned.current?.session;
     try {
-      await owned.current?.session.release();
+      await releaseRetainedSession(session);
+      if (!active.current || owned.current?.session !== session) return;
       owned.current = undefined;
       setResult(undefined);
       setInput({});
       openFlow('passport');
     } finally {
-      setOpeningResults(false);
+      if (active.current) {
+        opening.current = false;
+        setOpeningResults(false);
+      }
     }
   }
   function acceptDocument(saved: SavedDocumentCapture) {
+    if (!receive(saved.session)) return;
+    delete pending.current.license;
     ownedDocument.current = saved;
     setDocument(saved);
     setDocumentInput({});
     onHome();
   }
   function startDocument(resume?: 'front' | 'back') {
+    if (!active.current || clearPending.current || opening.current) return;
     const saved = document;
+    if (saved) pending.current.license = saved.session;
     ownedDocument.current = undefined;
     setDocument(undefined);
     setDocumentInput({ saved, resume });
     openFlow('license');
   }
   function openSSN() {
+    if (!active.current || clearPending.current || opening.current) return;
+    if (ssn) pending.current.ssn = ssn.session;
     ownedSSN.current = undefined;
     setSSNInput(ssn);
     setSSN(undefined);
     openFlow('ssn');
   }
   function acceptSSN(value: SavedSSNCheck) {
+    if (!receive(value.session)) return;
+    delete pending.current.ssn;
     ownedSSN.current = value;
     setSSN(value);
     setSSNInput(undefined);
     onHome();
   }
   function openPhone() {
+    if (!active.current || clearPending.current || opening.current) return;
+    if (phone) pending.current.phone = phone.session;
     ownedPhone.current = undefined;
     setPhoneInput(phone);
     setPhone(undefined);
     openFlow('phone');
   }
   function acceptPhone(value: SavedPhoneCheck) {
+    if (!receive(value.session)) return;
+    delete pending.current.phone;
     ownedPhone.current = value;
     setPhone(value);
     setPhoneInput(undefined);
@@ -216,44 +252,95 @@ export function useIdentityWorkspace(
   }
   /** Deleting saved evidence is a destructive choice: it is asked with the iOS action sheet. */
   function requestClear(target: ClearTarget) {
+    if (!active.current || clearPending.current) return;
     setClearFailure(undefined);
-    setConfirmingClear(target);
+    setClearRequest({ target, session: clearSession(target) });
   }
-  async function clear(target: ClearTarget) {
-    if (clearing) return;
+  function clearSession(target: ClearTarget) {
+    return target === 'document' ? ownedDocument.current?.session : owned.current?.session;
+  }
+  function releaseRetainedSession(session: CaptureSession | undefined) {
+    const release = Promise.resolve().then(() => session?.release());
+    custody.releasing = Promise.all([custody.releasing, release]);
+    custody.releasing.catch(custody.reportFailure);
+    // A second native release may resolve after the first failed. The shared barrier keeps
+    // that failure visible instead of treating a repeated no-op release as successful cleanup.
+    return custody.releasing;
+  }
+  async function clearDocument(session: CaptureSession | undefined) {
+    await session?.eraseDocuments();
+    if (!active.current) return false;
+    await releaseRetainedSession(session);
+    if (!active.current || ownedDocument.current?.session !== session) return false;
+    ownedDocument.current = undefined;
+    setDocument(undefined);
+    return true;
+  }
+  /** An unreadable store needs a temporary owner. Reserve its release before awaiting acquisition
+   * so a replacement holder waits even when session creation has not settled yet. */
+  async function clearUnreviewedPassport() {
+    const previousRelease = custody.releasing;
+    let completeRelease!: (release: Promise<void>) => void;
+    const released = new Promise<void>((resolve) => {
+      completeRelease = resolve;
+    });
+    custody.releasing = Promise.all([previousRelease, released]);
+    custody.releasing.catch(custody.reportFailure);
+    let session: CaptureSession | undefined;
+    try {
+      await previousRelease;
+      if (!active.current) return false;
+      session = await IdentityCaptureSession.create(configuration);
+      if (!active.current) return false;
+      if (configuration.results) await session.eraseResults();
+      return active.current;
+    } finally {
+      // The command's own rejection reaches clearFailure. Custody tracks only release: a refused
+      // erase followed by successful cleanup must not prevent later sessions from opening.
+      const release = Promise.resolve().then(() => session?.release());
+      completeRelease(release);
+      await release;
+    }
+  }
+  async function clearPassport(review: CaptureSession | undefined) {
+    if (review) {
+      if (configuration.results) await review.eraseResults();
+      if (!active.current) return false;
+      await releaseRetainedSession(review);
+    } else if (!(await clearUnreviewedPassport())) {
+      return false;
+    }
+    if (!active.current || owned.current?.session !== review) return false;
+    owned.current = undefined;
+    setResult(undefined);
+    setSavedCount(0);
+    setRestoreFailure(undefined);
+    return true;
+  }
+  async function clear(request: ClearRequest) {
+    const { target } = request;
+    if (!active.current || clearPending.current || clearSession(target) !== request.session) return;
+    clearPending.current = true;
     setClearing(true);
     try {
-      if (target === 'document') {
-        await ownedDocument.current?.session.eraseDocuments();
-        await ownedDocument.current?.session.release();
-        ownedDocument.current = undefined;
-        setDocument(undefined);
-      } else {
-        // An unreadable store has no review session; erase it through a session of its own.
-        const review = owned.current?.session;
-        const session = review ?? (await IdentityCaptureSession.create(configuration));
-        try {
-          if (configuration.results) await session.eraseResults();
-        } catch (error) {
-          if (!review) await session.release();
-          throw error;
-        }
-        await session.release();
-        owned.current = undefined;
-        setResult(undefined);
-        setSavedCount(0);
-        setRestoreFailure(undefined);
-      }
+      const cleared =
+        target === 'document' ? await clearDocument(request.session) : await clearPassport(request.session);
+      if (!cleared) return;
       setClearFailure(undefined);
       onHome();
     } catch (error) {
       reportClearFailure(target, error);
     } finally {
-      setClearing(false);
+      clearPending.current = false;
+      if (active.current) setClearing(false);
     }
   }
   function reportClearFailure(target: ClearTarget, error: unknown) {
-    setClearFailure({ target, message: errorText(errorCode(error), clearErrors, t('hub.clearError.other')) });
+    if (active.current)
+      setClearFailure({
+        target,
+        message: errorText(errorCode(error), clearErrors, t('hub.clearError.other')),
+      });
   }
   return {
     passport: {
@@ -261,12 +348,21 @@ export function useIdentityWorkspace(
       input,
       start,
       accept,
+      claim: claimPassport,
       openingResults,
       savedCount,
       openSaved: () => {
-        openSavedResults().catch(() => setRestoreFailure(t('hub.closeFailed.check')));
+        openSavedResults().catch(() => {
+          if (active.current) setRestoreFailure(t('hub.closeFailed.check'));
+        });
       },
       exit: () => {
+        if (!active.current) return;
+        if (input.completed && pending.current.passport === input.completed.session) {
+          owned.current = input.completed;
+          setResult(input.completed);
+          delete pending.current.passport;
+        }
         setInput({});
         onHome();
       },
@@ -276,7 +372,14 @@ export function useIdentityWorkspace(
       input: documentInput,
       start: startDocument,
       accept: acceptDocument,
+      claim: claimDocument,
       exit: () => {
+        if (!active.current) return;
+        if (documentInput.saved && pending.current.license === documentInput.saved.session) {
+          ownedDocument.current = documentInput.saved;
+          setDocument(documentInput.saved);
+          delete pending.current.license;
+        }
         setDocumentInput({});
         onHome();
       },
@@ -286,7 +389,14 @@ export function useIdentityWorkspace(
       input: ssnInput,
       start: openSSN,
       accept: acceptSSN,
+      claim: claimSSN,
       exit: () => {
+        if (!active.current) return;
+        if (ssnInput && pending.current.ssn === ssnInput.session) {
+          ownedSSN.current = ssnInput;
+          setSSN(ssnInput);
+          delete pending.current.ssn;
+        }
         setSSNInput(undefined);
         onHome();
       },
@@ -296,7 +406,14 @@ export function useIdentityWorkspace(
       input: phoneInput,
       start: openPhone,
       accept: acceptPhone,
+      claim: claimPhone,
       exit: () => {
+        if (!active.current) return;
+        if (phoneInput && pending.current.phone === phoneInput.session) {
+          ownedPhone.current = phoneInput;
+          setPhone(phoneInput);
+          delete pending.current.phone;
+        }
         setPhoneInput(undefined);
         onHome();
       },
@@ -305,16 +422,26 @@ export function useIdentityWorkspace(
       restoreFailure,
       clearFailure,
       clearing,
-      confirmingClear,
+      confirmingClear: clearRequest?.target,
       requestClear,
-      clear,
-      retryRestore: () => setRestoreAttempt((value) => value + 1),
-      dismissClearFailure: () => setClearFailure(undefined),
-      cancelClear: () => setConfirmingClear(undefined),
+      clear: (target: ClearTarget) => clear({ target, session: clearSession(target) }),
+      retryRestore: () => {
+        if (!active.current || opening.current || clearPending.current) return;
+        opening.current = true;
+        setOpeningResults(true);
+        latestRestoreAttempt.current += 1;
+        setRestoreAttempt(latestRestoreAttempt.current);
+      },
+      dismissClearFailure: () => {
+        if (active.current) setClearFailure(undefined);
+      },
+      cancelClear: () => {
+        if (active.current) setClearRequest(undefined);
+      },
       confirmClear: () => {
-        if (!confirmingClear) return;
-        setConfirmingClear(undefined);
-        clear(confirmingClear).catch((error: unknown) => reportClearFailure(confirmingClear, error));
+        if (!active.current || !clearRequest) return;
+        setClearRequest(undefined);
+        clear(clearRequest).catch((error: unknown) => reportClearFailure(clearRequest.target, error));
       },
     },
   };

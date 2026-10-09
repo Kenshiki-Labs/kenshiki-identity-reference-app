@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import { ActionSheetIOS, Modal } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Page } from './Page';
@@ -52,13 +52,14 @@ export type Confirmation = {
  * truth: the sheet appears when a request with a new key appears, and each choice calls back. */
 export function useConfirmation(request: Confirmation | undefined) {
   const latest = useRef(request);
-  useEffect(() => {
+  useLayoutEffect(() => {
     latest.current = request;
   });
   const key = request?.key;
-  useEffect(() => {
+  useLayoutEffect(() => {
     const asked = latest.current;
     if (key === undefined || asked === undefined) return;
+    let active = true;
     ActionSheetIOS.showActionSheetWithOptions(
       {
         title: asked.title,
@@ -67,8 +68,18 @@ export function useConfirmation(request: Confirmation | undefined) {
         destructiveButtonIndex: 0,
         cancelButtonIndex: 1,
       },
-      (index) => (index === 0 ? asked.onConfirm() : asked.onKeep()),
+      (index) => {
+        if (!active || latest.current?.key !== key) return;
+        active = false;
+        if (index === 0) asked.onConfirm();
+        else asked.onKeep();
+      },
     );
+    return () => {
+      if (!active) return;
+      active = false;
+      ActionSheetIOS.dismissActionSheet();
+    };
   }, [key]);
 }
 

@@ -32,7 +32,7 @@ function isLocaleCode(language: string): language is LocaleCode {
 
 /** The device language as iOS resolves it for this app (Hermes reads `NSLocale.currentLocale`).
  * iOS changes it only by relaunching the app, so it is read once. */
-export const locale = resolveLocale(new Intl.DateTimeFormat().resolvedOptions().locale);
+const locale = resolveLocale(new Intl.DateTimeFormat().resolvedOptions().locale);
 const active = locales[locale.code];
 
 /** The BCP 47 tag the active catalog formats dates with. */

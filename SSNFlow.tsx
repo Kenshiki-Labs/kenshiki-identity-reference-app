@@ -1,49 +1,60 @@
 import type { Configuration, SSNVerificationReceipt } from '@kenshiki/identity-capture';
 import { IdentityCaptureSession } from '@kenshiki/identity-capture';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { AppState, Keyboard, Text, TextInput, View } from 'react-native';
 import { formatCalendarDate, formatMoment } from './HolderText';
 import { t } from './locales/i18n';
 import { type SavedSSNCheck, SSNFlowController, type SSNFlowState } from './SSNFlowController';
 import { Action } from './ui/Action';
+import { ControllerStartup } from './ui/ControllerStartup';
 import { NativeSheet, useConfirmation } from './ui/NativeSheet';
 import { Page } from './ui/Page';
 import { styles } from './ui/styles';
+import { useControllerState } from './ui/useControllerState';
+
+const initialState: SSNFlowState = { digits: '', busy: false, editing: false };
 
 export function SSNFlow({
   configuration,
   saved,
   onComplete,
   onExit,
+  onClaim,
 }: {
   configuration: Configuration;
   saved?: SavedSSNCheck | undefined;
   onComplete: (value: SavedSSNCheck) => void;
   onExit: () => void;
+  onClaim?: (() => void) | undefined;
 }) {
-  const [controller, setController] = useState<SSNFlowController>();
-  const [state, setState] = useState<SSNFlowState>({ digits: '', busy: false, editing: false });
   const [finishing, setFinishing] = useState(false);
   // Bumped only when what was typed held something other than digits, so the entry restarts from
   // what the controller kept (see the entry below).
   const [entryGeneration, setEntryGeneration] = useState(0);
   const finishingRef = useRef(false);
-  useEffect(() => {
-    const active = new SSNFlowController(IdentityCaptureSession.create, configuration, setState, saved);
-    setController(active);
-    setState(active.state);
-    active.open().catch(active.fail);
-    const subscription = AppState.addEventListener('change', (next) => {
-      if (next !== 'active') {
-        Keyboard.dismiss();
-        active.pause().catch(active.fail);
-      }
-    });
-    return () => {
-      subscription.remove();
-      active.dispose().catch(active.fail);
-    };
-  }, [configuration, saved]);
+  const connect = useCallback(
+    (publish: (state: SSNFlowState) => void) => {
+      const active = new SSNFlowController(IdentityCaptureSession.create, configuration, publish, saved);
+      onClaim?.();
+      active.open().catch(active.fail);
+      const subscription = AppState.addEventListener('change', (next) => {
+        if (next !== 'active') {
+          Keyboard.dismiss();
+          active.pause().catch(active.fail);
+        }
+      });
+      return {
+        controller: active,
+        initialState: active.state,
+        dispose: () => {
+          subscription.remove();
+          return active.dispose();
+        },
+      };
+    },
+    [configuration, saved, onClaim],
+  );
+  const { controller, state, failed, cancelStartup } = useControllerState(initialState, connect);
   const finish = async () => {
     if (!controller || finishingRef.current) return;
     Keyboard.dismiss();
@@ -76,7 +87,15 @@ export function SSNFlow({
         }
       : undefined,
   );
-  if (!controller) return <Page title={t('common.socialSecurityNumber')} onClose={dismiss} />;
+  if (!controller)
+    return (
+      <ControllerStartup
+        title={t('common.socialSecurityNumber')}
+        onClose={onExit}
+        failed={failed}
+        cancelStartup={cancelStartup}
+      />
+    );
   const activeController = controller;
   const busy = state.busy || finishing;
   const snapshot = state.snapshot;
@@ -362,6 +381,6 @@ function ResultRow({ label, value }: { label: string; value: string }) {
     </View>
   );
 }
-export function formatNumber(digits: string): string {
+function formatNumber(digits: string): string {
   return [digits.slice(0, 3), digits.slice(3, 5), digits.slice(5, 9)].filter(Boolean).join('-');
 }

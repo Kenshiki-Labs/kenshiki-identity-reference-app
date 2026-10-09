@@ -22,12 +22,11 @@
   // The brand. An app that signs this host under its own brand replaces these words, the brand
   // values in ui/tokens.jsonc and the files in brand/.
   "brand": {
-    // The wordmark in the shared page header. The launch screen in brand/ draws the same
-    // words, set by pulse-ios's scripts/generate-launch-wordmark.swift.
-    "wordmark": "Kenshiki Pulse",
+    // The shared page header and generated native launch screen use this same wordmark.
+    "wordmark": "Kenshiki SDK",
     // The name under the app's icon on the Home Screen. create-host.py writes it into the
     // generated app's Info.plist as CFBundleDisplayName.
-    "appName": "Kenshiki Pulse"
+    "appName": "Kenshiki SDK"
   },
 
   // Words several screens share, with the same meaning everywhere.
@@ -69,6 +68,8 @@
     "compared": "Compared",
     // Shown under a button whose action failed before it could report its own error.
     "actionFailed": "This action could not finish. Try again.",
+    // A controller could not start or a previous session could not close safely.
+    "sessionRecovery": "Close and reopen the app before starting another check. Your saved results have not been erased.",
     // Dismisses a confirmation without acting.
     "cancel": "Cancel",
     // Returns from a detail page to its parent.
@@ -939,7 +940,7 @@
   "settings": {
     "identityData": "Saved identity data",
     // Shown under the saved identity data section when nothing has been saved yet.
-    "nothingSaved": "No passport, face or license results are saved on this phone.",
+    "reviewSaved": "Open a check to review or erase its saved results. Results stay on this phone until you erase them.",
     "developer": "Developer"
   },
 

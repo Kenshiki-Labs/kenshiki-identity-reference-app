@@ -4,56 +4,60 @@ import {
   IdentityCapturePreview,
   IdentityCaptureSession,
 } from '@kenshiki/identity-capture';
-import { useEffect, useRef, useState } from 'react';
-import { AppState, Linking, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { CaptureFlowController, type CompletedCapture, type FlowState } from './CaptureFlowController';
 import { formatMoment } from './HolderText';
 import { t } from './locales/i18n';
 import { Action } from './ui/Action';
+import { ControllerStartup } from './ui/ControllerStartup';
+import { connectBackground } from './ui/connectBackground';
 import { NativeSheet, useConfirmation } from './ui/NativeSheet';
 import { Page } from './ui/Page';
 import { styles } from './ui/styles';
 import { size } from './ui/tokens.generated';
+import { useControllerState } from './ui/useControllerState';
+
+const initialState: FlowState = { phase: 'intro', busy: false, ready: false, preview: 0 };
 
 /** Completion transfers the session to the adopter. Cancellation releases it. */
 export function IdentityCaptureFlow({
   configuration,
   onExit,
   onComplete,
+  onClaim,
   completed,
   resume,
 }: {
   configuration: Configuration;
   onExit: () => void;
   onComplete: (result: CompletedCapture) => void;
+  onClaim?: (() => void) | undefined;
   completed?: CompletedCapture | undefined;
   resume?: ('selfie' | 'read') | undefined;
 }) {
-  const [state, setState] = useState<FlowState>({ phase: 'intro', busy: false, ready: false, preview: 0 });
-  const [controller, setController] = useState<CaptureFlowController>();
   const [width, setWidth] = useState(0);
   const handoffStarted = useRef(false);
   const [finishing, setFinishing] = useState(false);
-  useEffect(() => {
-    const active = new CaptureFlowController(
-      IdentityCaptureSession.create,
-      configuration,
-      setState,
-      completed,
-    );
-    setController(active);
-    setState(active.state);
-    if (resume === 'selfie') active.selfie().catch(active.fail);
-    if (resume === 'read') active.read().catch(active.fail);
-    if (!resume) active.open().catch(active.fail);
-    const listener = AppState.addEventListener('change', (next) => {
-      if (next === 'background') active.pause().catch(active.fail);
-    });
-    return () => {
-      listener.remove();
-      active.dispose().catch(active.fail);
-    };
-  }, [configuration, completed, resume]);
+  const { controller, state, failed, cancelStartup } = useControllerState(
+    initialState,
+    useCallback(
+      (publish: (state: FlowState) => void) => {
+        const active = new CaptureFlowController(
+          IdentityCaptureSession.create,
+          configuration,
+          publish,
+          completed,
+        );
+        onClaim?.();
+        if (resume === 'selfie') active.selfie().catch(active.fail);
+        if (resume === 'read') active.read().catch(active.fail);
+        if (!resume) active.open().catch(active.fail);
+        return connectBackground(active);
+      },
+      [configuration, completed, resume, onClaim],
+    ),
+  );
   const finish = async () => {
     if (!controller || handoffStarted.current) return;
     handoffStarted.current = true;
@@ -92,7 +96,15 @@ export function IdentityCaptureFlow({
         }
       : undefined,
   );
-  if (!controller) return <Page title={t('hub.passport.title')} onClose={close} />;
+  if (!controller)
+    return (
+      <ControllerStartup
+        title={t('hub.passport.title')}
+        onClose={onExit}
+        failed={failed}
+        cancelStartup={cancelStartup}
+      />
+    );
   const activeController = controller;
   const { phase, sheet } = state;
   const camera = phase === 'scanning' || phase === 'selfie';
@@ -171,7 +183,12 @@ export function IdentityCaptureFlow({
         {(phase === 'passport' || phase === 'result') && result && (
           <>
             <CaptureResultDetails result={result} focus={phase === 'result' ? 'face' : 'passport'} />
-            {action(t('common.done'), finish, false, 'finish-capture')}
+            <Action
+              label={t('common.done')}
+              onPress={finish}
+              disabled={state.busy || finishing}
+              testID="finish-capture"
+            />
             {action(
               state.comparison ? t('passport.action.retakeSelfie') : t('passport.action.compareSelfie'),
               activeController.selfie,
@@ -255,7 +272,15 @@ export function IdentityCaptureFlow({
     return (
       <>
         {renderRecoveryChoice()}
-        {state.passport && action(t('passport.sheet.keepResults'), finish, false, 'keep-passport', true)}
+        {state.passport && (
+          <Action
+            label={t('passport.sheet.keepResults')}
+            onPress={finish}
+            disabled={state.busy || finishing}
+            testID="keep-passport"
+            secondary
+          />
+        )}
         {action(t('common.startOver'), activeController.restart, false, 'confirm-restart', true)}
       </>
     );

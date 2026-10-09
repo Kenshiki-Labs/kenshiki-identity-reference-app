@@ -76,7 +76,7 @@ export function ListGroupTitle({ title, note }: { title: string; note?: string |
 }
 
 /** The rounded, tinted square behind a row's SF Symbol, as in Settings. */
-export function IconTile({ name, background }: { name: string; background: ColorValue }) {
+function IconTile({ name, background }: { name: string; background: ColorValue }) {
   return (
     <View style={[listStyles.tile, { backgroundColor: background }]}>
       <IdentitySymbol name={name} tint={symbolTint.tile} style={listStyles.glyph} />

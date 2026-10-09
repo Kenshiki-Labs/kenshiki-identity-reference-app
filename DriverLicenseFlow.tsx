@@ -4,8 +4,8 @@ import {
   IdentityCapturePreview,
   IdentityCaptureSession,
 } from '@kenshiki/identity-capture';
-import { useEffect, useRef, useState } from 'react';
-import { AppState, Linking, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { DocumentCheckPanel } from './DocumentCheckPanel';
 import {
   DocumentFlowController,
@@ -14,9 +14,21 @@ import {
 } from './DocumentFlowController';
 import { t } from './locales/i18n';
 import { Action } from './ui/Action';
+import { ControllerStartup } from './ui/ControllerStartup';
+import { connectBackground } from './ui/connectBackground';
 import { NativeSheet } from './ui/NativeSheet';
 import { Page } from './ui/Page';
 import { styles } from './ui/styles';
+import { useControllerState } from './ui/useControllerState';
+
+const initialState: DocumentFlowState = {
+  phase: 'loading',
+  busy: false,
+  capturing: false,
+  ready: false,
+  preview: 0,
+  saved: [],
+};
 
 export function DriverLicenseFlow({
   configuration,
@@ -24,39 +36,29 @@ export function DriverLicenseFlow({
   resume,
   onComplete,
   onExit,
+  onClaim,
 }: {
   configuration: Configuration;
   saved?: SavedDocumentCapture | undefined;
   resume?: ('front' | 'back') | undefined;
   onComplete: (result: SavedDocumentCapture) => void;
   onExit: () => void;
+  onClaim?: (() => void) | undefined;
 }) {
-  const [controller, setController] = useState<DocumentFlowController>();
-  const [state, setState] = useState<DocumentFlowState>({
-    phase: 'loading',
-    busy: false,
-    capturing: false,
-    ready: false,
-    preview: 0,
-    saved: [],
-  });
   const [finishing, setFinishing] = useState(false);
   const finishingRef = useRef(false);
-  useEffect(() => {
-    const active = new DocumentFlowController(IdentityCaptureSession.create, configuration, setState, saved);
-    setController(active);
-    setState(active.state);
-    if (resume === 'front') active.startFront().catch(active.fail);
-    else if (resume === 'back') active.startBack().catch(active.fail);
-    else active.open().catch(active.fail);
-    const listener = AppState.addEventListener('change', (next) => {
-      if (next === 'background') active.pause().catch(active.fail);
-    });
-    return () => {
-      listener.remove();
-      active.dispose().catch(active.fail);
-    };
-  }, [configuration, saved, resume]);
+  const connect = useCallback(
+    (publish: (state: DocumentFlowState) => void) => {
+      const active = new DocumentFlowController(IdentityCaptureSession.create, configuration, publish, saved);
+      onClaim?.();
+      if (resume === 'front') active.startFront().catch(active.fail);
+      else if (resume === 'back') active.startBack().catch(active.fail);
+      else active.open().catch(active.fail);
+      return connectBackground(active);
+    },
+    [configuration, saved, resume, onClaim],
+  );
+  const { controller, state, failed, cancelStartup } = useControllerState(initialState, connect);
   const finish = async () => {
     if (!controller || finishingRef.current) return;
     finishingRef.current = true;
@@ -84,7 +86,15 @@ export function DriverLicenseFlow({
     onExit();
   };
   const dismiss = () => exit().catch((error: unknown) => controller?.fail(error));
-  if (!controller) return <Page title={t('license.title.default')} onClose={dismiss} />;
+  if (!controller)
+    return (
+      <ControllerStartup
+        title={t('license.title.default')}
+        onClose={onExit}
+        failed={failed}
+        cancelStartup={cancelStartup}
+      />
+    );
   const activeController = controller;
   const camera = state.phase === 'front' || state.phase === 'back';
   const action = (label: string, press: () => unknown, id?: string, secondary = false, disabled = false) => (
@@ -193,7 +203,12 @@ export function DriverLicenseFlow({
               session={state.session}
               configured={!!configuration.document?.check}
             />
-            {action(t('common.done'), finish, 'finish-document')}
+            <Action
+              label={t('common.done')}
+              onPress={finish}
+              disabled={state.busy || finishing}
+              testID="finish-document"
+            />
             {action(t('license.retake'), activeController.startFront, 'start-document-front', true)}
           </>
         )}

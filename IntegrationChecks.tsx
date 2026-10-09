@@ -120,13 +120,20 @@ export function IntegrationChecks({ configuration }: { configuration: Configurat
           off();
           reject(new Error(t('developer.missingCameraFailure')));
         }, 5000);
-        const off = primary.subscribe((event) => {
-          if (event.type === 'failure' && event.capability === 'selfie') {
+        const off = primary.subscribe(
+          (event) => {
+            if (event.type === 'failure' && event.capability === 'selfie') {
+              clearTimeout(timer);
+              off();
+              resolve(event.code);
+            }
+          },
+          (failure) => {
             clearTimeout(timer);
             off();
-            resolve(event.code);
-          }
-        });
+            reject(failure);
+          },
+        );
       });
       await primary.startSelfie(true);
       check((await cameraFailure) === 'cameraUnavailable', t('developer.check.cameraFailsClosed'));

@@ -76,6 +76,7 @@ export class DocumentFlowController {
   private current?: CaptureSession | undefined;
   private off?: (() => void) | undefined;
   private activeWork?: Promise<void> | undefined;
+  private disposal?: Promise<void> | undefined;
   private side: DocumentSide = 'front';
   constructor(
     private readonly create: (configuration: Configuration) => Promise<CaptureSession>,
@@ -101,9 +102,14 @@ export class DocumentFlowController {
     this.changed(this.state);
   }
   private listen(session: CaptureSession) {
-    this.off = session.subscribe((event) => {
-      if (!this.closed && this.current === session && !this.state.sheet) this.event(event);
-    });
+    this.off = session.subscribe(
+      (event) => {
+        if (!this.closed && this.current === session && !this.state.sheet) this.event(event);
+      },
+      (failure) => {
+        if (!this.closed && this.current === session) this.fail(failure);
+      },
+    );
   }
   private async session(epoch: number) {
     if (this.current) return this.current;
@@ -346,14 +352,18 @@ export class DocumentFlowController {
     this.current = undefined;
     return result;
   };
-  dispose = async () => {
+  dispose = (): Promise<void> => {
+    if (this.disposal) return this.disposal;
     this.closed = true;
     ++this.epoch;
     this.off?.();
     this.off = undefined;
     const session = this.current;
     this.current = undefined;
-    await Promise.allSettled([session?.release(), this.activeWork]);
+    this.disposal = Promise.allSettled([session?.release(), this.activeWork]).then(([released]) => {
+      if (released.status === 'rejected') throw released.reason;
+    });
+    return this.disposal;
   };
   private event(event: CaptureEvent) {
     if (event.type === 'previewChanged' && event.kind === 'document')
