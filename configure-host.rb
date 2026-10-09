@@ -47,6 +47,12 @@ unless tests
   tests.source_build_phase.add_file_reference(ref)
 end
 FileUtils.cp(File.join(__dir__, 'ArtifactIntegrationTests.swift'), File.join(host, 'ios/ArtifactIntegrationTests.swift'))
+device_test = File.join(host, 'ios/DeviceAcceptanceTests.swift')
+FileUtils.cp(File.join(__dir__, 'DeviceAcceptanceTests.swift'), device_test)
+unless project.files.any? { |ref| ref.path == 'DeviceAcceptanceTests.swift' }
+  ref = project.main_group.new_file('DeviceAcceptanceTests.swift')
+  tests.source_build_phase.add_file_reference(ref)
+end
 tests.build_configurations.each do |config|
     config.build_settings['PRODUCT_NAME'] = '$(TARGET_NAME)'
     config.build_settings['GENERATE_INFOPLIST_FILE'] = 'YES'

@@ -1,9 +1,10 @@
-import type {CaptureErrorCode} from '@kenshiki/identity-capture';
+import { type CaptureErrorCode, isCaptureErrorCode } from '@kenshiki/identity-capture';
 
 /** React Native rejects a native command with `{code}`; the bridge maps every native failure to
  * one CaptureErrorCode. Capture failure events carry the same vocabulary. */
 export function errorCode(error: unknown): CaptureErrorCode | undefined {
-  return (error as {code?: CaptureErrorCode} | null | undefined)?.code;
+  if (typeof error !== 'object' || error === null || !('code' in error)) return undefined;
+  return isCaptureErrorCode(error.code) ? error.code : undefined;
 }
 
 /** Holder-facing text for the codes one screen can receive. Keys are checked against the closed
@@ -15,8 +16,8 @@ export function errorText(code: CaptureErrorCode | undefined, texts: ErrorText, 
   return (code === undefined ? undefined : texts[code]) ?? otherwise;
 }
 
-const moment = new Intl.DateTimeFormat('en-US', {dateStyle: 'medium', timeStyle: 'short'});
-const calendar = new Intl.DateTimeFormat('en-US', {dateStyle: 'medium', timeZone: 'UTC'});
+const moment = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+const calendar = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' });
 
 /** Native timestamps are ISO-8601 instants. Shown in the device's time zone. */
 export function formatMoment(iso: string): string {

@@ -300,3 +300,7 @@ the reference app does not build them:
   every session and clears personal state before the next holder's configuration is mounted, and
   runs each capability's erase when the holder's records must be deleted, following the
   [logout and holder-switch sequence](../../ReactNative/identity-capture/README.md#logout-holder-switch-and-erasure).
+
+## Acceptance test plan
+
+Follow [How to test the React Native SDK](../../docs/react-native-testing.md) for the source gates, installed-package tests, opt-in physical-device smoke tests and provider acceptance cases. `DeviceAcceptanceTests.swift` is copied into the generated UI-test target; it does not run device cases without explicit test-scheme opt-in.
