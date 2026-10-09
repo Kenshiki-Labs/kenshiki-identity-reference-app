@@ -14,7 +14,7 @@ const mockReceipt: PhoneCheckReceipt = {challengeID: 'synthetic', sender: '12025
     evidence: {requestID: 'synthetic', providers: [{source: 'synthetic-source-a', answered: true, carrier: 'Synthetic carrier',
       smsFraudRiskScore: 0, numberValid: false}, {source: 'synthetic-source-b', answered: false, failure: 'timed_out'}],
       fields: [{field: 'givenName', source: 'synthetic-source-a', grade: 'no_match'}, {field: 'extra', source: 'synthetic-source-c', grade: 'future'}]},
-  }};
+  }, subscriberFailure: null};
 let mockSnapshot = mockReady;
 let mockListener: ((event: CaptureEvent) => void) | undefined;
 const mockSession = {
@@ -117,7 +117,7 @@ test('subscriber findings appear on the same result screen without another conse
   await act(async () => { view.unmount(); });
 });
 
-test.each(['outcomeUnknown', 'notDispatched'] as const)('subscriber %s preserves possession without automatic retry', async failure => {
+test.each(['outcomeUnknown', 'capabilityUnavailable'] as const)('subscriber %s preserves possession without automatic retry', async failure => {
   mockSnapshot = {...mockReady, stage: 'completed', receipt: {...mockReceipt, subjectComparison: undefined, subscriberFailure: failure}};
   const {view, tap} = await renderApp(); await tap('open-phone');
   const shown = JSON.stringify(view.toJSON());

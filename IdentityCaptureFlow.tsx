@@ -168,7 +168,9 @@ export function CaptureResultDetails({result, focus = 'passport'}: {result: Comp
     {focus === 'face' && faceCard}
     <View style={styles.card} testID="passport-result">
       <Text accessibilityRole="header" style={styles.sheetTitle}>Passport</Text>
-      {passport.savedResult && <Details label="Read at" value={formatMoment(passport.savedResult.recordedAt)} />}
+      {passport.protocolVerdicts.source === 'recorded'
+        ? <Details label="Chip checks recorded" value={`${formatMoment(passport.protocolVerdicts.recordedAt)}. Opening saved results does not repeat them.`} />
+        : passport.savedResult && <Details label="Read at" value={formatMoment(passport.savedResult.recordedAt)} />}
       {!!failed.length && <View style={styles.detail} testID="passport-protocol-failures">
         {failed.map(key => <Text key={key} style={styles.body}>{failureLabels[key]}</Text>)}
         <Text style={styles.body}>A failed chip check means this passport read should not be relied on. Read the chip again, or use another document.</Text>

@@ -12,7 +12,7 @@ const mrz: MRZObservation = {
   completeness: 'complete', missingFields: [], normalizedLines: [],
 };
 const passport: PassportObservation = {...mrz, portraitAvailable: true, portraitSHA256: 'reference',
-  personalNumber: null, dateOfIssue: null, issuingAuthority: null, placeOfBirth: null,
+  protocolVerdicts: {source: 'thisRead'}, personalNumber: null, dateOfIssue: null, issuingAuthority: null, placeOfBirth: null,
   correspondence: {documentNumber: 'matches'}, protocols: {
     basicAccessControl: 'succeeded', pace: 'notPerformed', activeAuthentication: 'notPerformed',
     chipAuthentication: 'notPerformed', countrySigningChain: 'succeeded', documentSignature: 'succeeded', dataGroupHashes: 'succeeded',
@@ -53,7 +53,7 @@ test('the journey uses SDK observations and keeps chip photos out of JavaScript'
 test('a native camera failure exposes recovery and waits for cancellation to drain', async () => {
   const {controller: c, native, emit} = fixture();
   const cancelled = deferred<void>(); native.cancel.mockImplementation(() => cancelled.promise);
-  await c.scan(); emit({type: 'failure', capability: 'mrz', code: 'interrupted'});
+  await c.scan(); emit({type: 'failure', capability: 'mrz', code: 'cameraInterrupted'});
   expect(c.state.sheet?.kind).toBe('recovery'); expect(c.state.busy).toBe(true);
   await c.recover(); expect(native.startMRZ).toHaveBeenCalledTimes(1);
   emit({type: 'mrzObservation', observation: mrz}); expect(c.state.mrz).toBeUndefined();
@@ -138,7 +138,7 @@ test('automatic comparison waits for the manual capture command to settle', asyn
   expect(native.compareFace).toHaveBeenCalledTimes(1); expect(c.state.phase).toBe('result');
 });
 test('failed comparison keeps the passport and targets a new selfie when capture is unusable', async () => {
-  const {controller: c, native, emit} = fixture(); native.compareFace.mockRejectedValueOnce({code: 'invalidCapture'});
+  const {controller: c, native, emit} = fixture(); native.compareFace.mockRejectedValueOnce({code: 'faceImageUnreadable'});
   await c.scan(); await c.review(); await c.read(); await c.selfie();
   emit({type: 'selfieCaptured', sha256: 'selfie', receipt: {}}); await settle();
   expect(c.state.sheet?.recovery).toBe('selfie'); expect(c.state.passport).toBe(passport);
@@ -160,7 +160,7 @@ test('failed reread leaves the old result available for handoff', async () => {
   expect(result.passport).toBe(passport); expect(result.comparison).toBe(comparison);
 });
 test('failed and cancelled retakes preserve the completed comparison', async () => {
-  const f = fixture(); await complete(f); f.native.startSelfie.mockRejectedValueOnce({code: 'unavailable'});
+  const f = fixture(); await complete(f); f.native.startSelfie.mockRejectedValueOnce({code: 'cameraUnavailable'});
   await f.controller.selfie(); expect(f.controller.state.sheet?.recovery).toBe('details');
   await f.controller.recover(); expect(f.controller.state.phase).toBe('result');
   expect(f.controller.state.comparison).toBe(comparison);

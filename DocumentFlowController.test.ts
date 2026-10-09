@@ -8,10 +8,10 @@ function deferred<T>() {
 }
 async function tick() { for (let i = 0; i < 12; ++i) await Promise.resolve(); }
 const front: DocumentObservation = {workflowID: 'first', front: {
-  captureID: 'front', sha256: 'front-digest', side: 'front', pdf417: null, pdf417Status: 'notRequested',
+  captureID: 'front', sha256: 'front-digest', side: 'front', pdf417: null, pdf417Status: 'notRequested', sideCorrespondence: null,
 }, back: null};
 const complete: DocumentObservation = {...front, back: {
-  captureID: 'back', sha256: 'back-digest', side: 'back', pdf417Status: 'readable',
+  captureID: 'back', sha256: 'back-digest', side: 'back', pdf417Status: 'readable', sideCorrespondence: {jurisdiction: 'matches', documentNumber: 'found', frontReading: 'read'},
   pdf417: {status: 'readable', fields: {DAC: 'SYNTHETIC', DCS: 'SPECIMEN', DAQ: 'TEST123'},
     version: 10, issuerIIN: '636000', jurisdictionVersion: 0, missingRequiredElements: []},
 }};

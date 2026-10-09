@@ -66,8 +66,8 @@ export class PhoneFlowController {
   }
   private accept(snapshot: PhoneCheckSnapshot) {
     this.update({snapshot, paused: snapshot.pending ? this.state.paused : false});
-    // The native snapshot failure is drawn from the same closed vocabulary as command rejections.
-    if (snapshot.failure) this.failure(snapshot.failure as CaptureErrorCode);
+    // PhonePossessionFailure is a subset of the command-rejection vocabulary.
+    if (snapshot.failure) this.failure(snapshot.failure);
   }
   /** Presents a rejected command or interrupted drain in this screen's sheet. */
   fail = (error: unknown) => this.failure(errorCode(error));

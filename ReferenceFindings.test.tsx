@@ -33,6 +33,7 @@ const passport: PassportObservation = {
   protocols: {basicAccessControl: 'succeeded', pace: 'notPerformed', activeAuthentication: 'notPerformed',
     chipAuthentication: 'notPerformed', countrySigningChain: 'succeeded', documentSignature: 'succeeded', dataGroupHashes: 'succeeded'},
   savedResult: {id: 'p', workflowID: 'w', kind: 'passport-read-v1', revision: 1, recordedAt: '2026-10-08T12:00:00Z', artifacts: []},
+  protocolVerdicts: {source: 'recorded', recordedAt: '2026-10-08T12:00:00Z'},
 };
 const depth = {imageSHA256: 'selfie', filtered: false, ageAtAdmission: 0.01, measurement: {sampleCount: 255, residualRMS: 0.019,
   policy: {identifier: 'policy', minimumResidualRMS: 0.004, minimumSamples: 64, maximumDepthAge: 0.25, nearLimit: 0.15, farLimit: 1.2, samplesPerAxis: 16}}};
@@ -44,7 +45,7 @@ const comparison: FaceComparison = {similarity: 0.55, outcome: 'pass', implement
 const phoneReady: PhoneCheckSnapshot = {stage: 'start', busy: false, failure: null, pending: false, sent: false,
   challengeReserved: false, receipt: null, recordedAt: null, sendAgainAt: null};
 const phoneReceipt: PhoneCheckReceipt = {challengeID: 'synthetic', sender: '12025550123', messageHash: 'a'.repeat(64),
-  receivedAt: '2026-10-08T12:00:00Z', completedAt: '2026-10-08T12:00:01Z'};
+  receivedAt: '2026-10-08T12:00:00Z', completedAt: '2026-10-08T12:00:01Z', subscriberFailure: null};
 const subscriber: SubscriberComparisonResult = {
   operationID: 'comparison', profileVersion: 'profile', subjectRevision: 'subject', numberVerificationReference: 'synthetic',
   completedAt: '2026-10-08T12:00:02Z',
@@ -183,9 +184,9 @@ describe('4 typed error handling', () => {
     expect(restricted.state.sheet?.message).toContain('restricted');
   });
   test('PDF417 notFound, ambiguous and failed and AAMVA malformed and unsupported each get their own text', async () => {
-    const front = {captureID: 'f', sha256: 'f', side: 'front' as const, pdf417: null, pdf417Status: 'notRequested' as const};
+    const front = {captureID: 'f', sha256: 'f', side: 'front' as const, pdf417: null, pdf417Status: 'notRequested' as const, sideCorrespondence: null};
     const back = (pdf417Status: 'notFound' | 'ambiguous' | 'failed' | 'readable', status?: 'malformed' | 'unsupported'): DocumentObservation => ({
-      workflowID: 'w', front, back: {captureID: 'b', sha256: 'b', side: 'back', pdf417Status,
+      workflowID: 'w', front, back: {captureID: 'b', sha256: 'b', side: 'back', pdf417Status, sideCorrespondence: null,
         pdf417: status ? {status, fields: {}, version: null, issuerIIN: null, jurisdictionVersion: null, missingRequiredElements: []} : null}});
     const shown: string[] = [];
     for (const document of [back('notFound'), back('ambiguous'), back('failed'), back('readable', 'malformed'), back('readable', 'unsupported')]) {
@@ -197,7 +198,8 @@ describe('4 typed error handling', () => {
   });
   test('every subscriber failure has its own text', async () => {
     const failures: SubscriberComparisonFailure[] = ['busy', 'consentRequired', 'invalidRequest', 'contextChanged', 'storageUnavailable',
-      'notDispatched', 'outcomeUnknown', 'invalidResponse'];
+      'outcomeUnknown', 'invalidResponse', 'notConfigured', 'unauthorized', 'forbidden', 'profileChanged', 'expiredRequest',
+      'invalidEvidence', 'rateLimited', 'capabilityUnavailable'];
     const shown = new Set<string>();
     for (const failure of failures) {
       const f = await render(<SubscriberResultDetails failure={failure} />);
@@ -277,6 +279,18 @@ describe('6 verdict wording', () => {
     expect(f.text()).toContain('revocation and expiry are not checked');
     await act(async () => { f.view.unmount(); });
   });
+  test('a reopened passport says its chip checks were recorded then and not repeated; a new read says read at', async () => {
+    const reopened = await render(<CaptureResultDetails result={{session: mockSession as unknown as IdentityCaptureSession, passport}} />);
+    const card = reopened.view.root.findByProps({testID: 'passport-result'});
+    expect(card.findAll(node => node.props.children === 'Chip checks recorded').length).toBeGreaterThan(0);
+    expect(reopened.text()).toContain('Opening saved results does not repeat them');
+    expect(reopened.text()).not.toContain('Read at');
+    await act(async () => { reopened.view.unmount(); });
+    const fresh = await render(<CaptureResultDetails result={{session: mockSession as unknown as IdentityCaptureSession,
+      passport: {...passport, protocolVerdicts: {source: 'thisRead'}}}} />);
+    expect(fresh.text()).toContain('Read at'); expect(fresh.text()).not.toContain('Chip checks recorded');
+    await act(async () => { fresh.view.unmount(); });
+  });
   test('the face card matches the code: every shown comparison carries accepted depth', async () => {
     const f = await render(<CaptureResultDetails result={{session: mockSession as unknown as IdentityCaptureSession, passport, comparison}} focus="face" />);
     expect(f.text()).not.toContain('TrueDepth liveness'); expect(f.text()).not.toContain('Depth evidence unavailable');
@@ -330,8 +344,9 @@ describe('9 privacy', () => {
         details: {source: 's', responseCode: 0, reportedStatus: 'r', region: 'CA', issueStart: '1978-01-01'}}} />,
       <PhoneResultDetails receipt={{...phoneReceipt, subscriberComparison: subscriber}} />,
       <DocumentResultDetails result={{session: mockSession as unknown as IdentityCaptureSession, document: {workflowID: 'w',
-        front: {captureID: 'f', sha256: 'f', side: 'front', pdf417: null, pdf417Status: 'notRequested'},
-        back: {captureID: 'b', sha256: 'b', side: 'back', pdf417Status: 'readable', pdf417: {status: 'readable',
+        front: {captureID: 'f', sha256: 'f', side: 'front', pdf417: null, pdf417Status: 'notRequested', sideCorrespondence: null},
+        back: {captureID: 'b', sha256: 'b', side: 'back', pdf417Status: 'readable',
+          sideCorrespondence: {jurisdiction: 'matches', documentNumber: 'found', frontReading: 'read'}, pdf417: {status: 'readable',
           fields: {DAQ: 'TEST123', DCS: 'SPECIMEN'}, version: 10, issuerIIN: '636000', jurisdictionVersion: 0, missingRequiredElements: []}}}}} />,
     ];
     for (const tree of trees) {

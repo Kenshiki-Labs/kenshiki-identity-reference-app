@@ -29,28 +29,32 @@ const messages: PassportReadOptions['messages'] = {
   failure: 'We could not finish reading your passport. Please try again.',
 };
 const errors: ErrorText = {
-  unavailable: 'This device cannot start this camera check.',
-  unsupported: 'This device cannot read a passport chip.',
+  cameraUnavailable: 'This device cannot start this camera check.',
+  nfcUnsupported: 'This device cannot read a passport chip.',
   cameraPermissionDenied: 'Allow camera access in Settings, then try again.',
   cameraPermissionRestricted: 'Camera use is restricted on this iPhone, for example by Screen Time or a device management profile. Ask whoever manages this iPhone to allow it.',
   trustAnchorsUnavailable: 'Passport chip checking is not set up in this app, so this passport cannot be checked here. Your other identity checks remain available.',
   trustAnchorNotFound: 'This app has no trusted issuer key for this passport’s country, so its chip cannot be checked here. Your other identity checks remain available.',
   invalidConfiguration: 'This check is not set up in this app. Return to Identity; your other identity checks remain available.',
-  modelUnavailable: 'Face comparison is not set up in this app. Your passport results are kept.',
+  passportNotConfigured: 'Passport chip checking is not set up in this app, so this passport cannot be checked here. Your other identity checks remain available.',
+  faceComparisonNotConfigured: 'Face comparison is not set up in this app. Your passport results are kept.',
+  faceModelUnavailable: 'Face comparison is not set up in this app. Your passport results are kept.',
+  faceComparisonUnavailable: 'Face comparison could not run on this iPhone. Your passport results are kept.',
   resultIntegrityFailure: 'Your saved passport and face results could not be verified on this phone. Try reopening them, or erase them and scan again.',
   depthEvidenceUnavailable: 'Your face depth could not be measured with that selfie. Take a new selfie looking straight at the camera.',
   connectionLost: 'The connection to your passport was lost. Hold the phone still and try again.',
   multipleTags: 'Move other contactless cards away and try again.',
-  dataIntegrityFailure: 'We could not verify the passport data. Try reading the passport again.',
+  passportDataIntegrityFailure: 'We could not verify the passport data. Try reading the passport again.',
   invalidAccessKey: 'The printed details could not open the chip. Scan your passport again.',
   cancelled: 'The check was stopped. You can try again when you are ready.',
   depthUnavailable: 'We could not measure your face. Clear the front camera and try again.',
   busy: 'The previous camera request is still finishing. Wait a moment, then try again.',
 };
 /** Codes with no in-flow remedy; the holder returns to results or Identity. */
-const details: CaptureErrorCode[] = ['unavailable', 'unsupported', 'cameraPermissionRestricted', 'trustAnchorsUnavailable',
-  'trustAnchorNotFound', 'invalidConfiguration', 'modelUnavailable'];
-const newSelfie: CaptureErrorCode[] = ['invalidCapture', 'depthEvidenceUnavailable', 'selfieUnavailable', 'comparisonUnavailable'];
+const details: CaptureErrorCode[] = ['cameraUnavailable', 'nfcUnsupported', 'cameraPermissionRestricted', 'trustAnchorsUnavailable',
+  'trustAnchorNotFound', 'invalidConfiguration', 'passportNotConfigured', 'faceComparisonNotConfigured',
+  'faceModelUnavailable', 'faceComparisonUnavailable'];
+const newSelfie: CaptureErrorCode[] = ['faceImageUnreadable', 'noFaceDetected', 'depthEvidenceUnavailable', 'selfieUnavailable', 'comparisonUnavailable'];
 const hints: Record<string, string> = {
   noFaceObserved: 'Place your face inside the oval.', outsideGuide: 'Move your face inside the oval.',
   multipleFacesObserved: 'Only one person should be in view.',
@@ -300,7 +304,7 @@ export class CaptureFlowController {
       ((event.capability === 'mrz' && this.state.phase === 'scanning') ||
        (event.capability === 'selfie' && this.state.phase === 'selfie'))) {
       // Capture failure events carry the same closed vocabulary as command rejections.
-      const code = event.code as CaptureErrorCode;
+      const code = event.code;
       void this.interrupt({kind: 'recovery', recovery: this.errorRecovery(code, this.recovery()),
         message: errorText(code, errors, 'The camera stopped. Please try again.')});
     }

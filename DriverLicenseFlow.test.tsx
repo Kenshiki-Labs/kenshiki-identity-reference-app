@@ -6,10 +6,10 @@ import App from './App';
 let mockEvent: (event: CaptureEvent) => void;
 let mockSnapshot: DocumentObservation | undefined;
 const mockFront: DocumentObservation = {workflowID: 'first', front: {
-  captureID: 'front', sha256: 'front-digest', side: 'front', pdf417: null, pdf417Status: 'notRequested',
+  captureID: 'front', sha256: 'front-digest', side: 'front', pdf417: null, pdf417Status: 'notRequested', sideCorrespondence: null,
 }, back: null};
 const mockComplete: DocumentObservation = {...mockFront, back: {
-  captureID: 'back', sha256: 'back-digest', side: 'back', pdf417Status: 'readable', pdf417: {
+  captureID: 'back', sha256: 'back-digest', side: 'back', pdf417Status: 'readable', sideCorrespondence: {jurisdiction: 'matches', documentNumber: 'found', frontReading: 'read'}, pdf417: {
     status: 'readable', fields: {DAC: 'SYNTHETIC', DCS: 'SPECIMEN', DAQ: 'TEST123', DAG: '123 SAMPLE ST'},
     version: 10, issuerIIN: '636000', jurisdictionVersion: 0, missingRequiredElements: [],
   },

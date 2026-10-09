@@ -1,5 +1,5 @@
 import type {
-  CaptureEvent, Configuration, DocumentObservation, DocumentRecordSummary, IdentityCaptureSession,
+  CaptureErrorCode, CaptureEvent, Configuration, DocumentObservation, DocumentRecordSummary, IdentityCaptureSession,
 } from '@kenshiki/identity-capture';
 import {errorCode, errorText, type ErrorText} from './HolderText';
 
@@ -20,7 +20,6 @@ type Sheet = NonNullable<DocumentFlowState['sheet']>;
 const cameraUnavailable: ErrorText = {
   backCameraUnavailable: 'This device has no back camera this app can use. You can return to your saved results.',
   cameraUnavailable: 'The camera could not start on this device. You can return to your saved results.',
-  unavailable: 'The camera could not start on this device. You can return to your saved results.',
   cannotAddCameraInput: 'The camera could not start on this device. You can return to your saved results.',
   cannotAddPhotoOutput: 'The camera could not take photos on this device. You can return to your saved results.',
   cannotAddVideoOutput: 'The camera could not start on this device. You can return to your saved results.',
@@ -35,7 +34,8 @@ const captureErrors: ErrorText = {
   recordingTerminated: 'The camera stopped before the photo was saved. Try again.',
   nativeControlsPaused: 'The camera paused. Continue when you are ready.',
 };
-const storageCodes = new Set(['documentCustodyFailed', 'documentCheckpointFailed', 'documentUnavailable', 'custodyErased']);
+const storageCodes = new Set<CaptureErrorCode>(['documentCustodyFailed', 'documentIntegrityFailure', 'documentCheckpointFailed',
+  'documentUnavailable', 'custodyErased', 'custodyInUse', 'custodyKeyMissing', 'custodyKeyInaccessible', 'custodyErasureRequired']);
 
 export const isCompleteDocument = (value?: DocumentObservation) => !!(value?.front && value.back);
 
@@ -154,7 +154,7 @@ export class DocumentFlowController {
       message: 'Camera use is restricted on this iPhone, for example by Screen Time or a device management profile. Ask whoever manages this iPhone to allow it. You can return to your saved results.',
       recovery: 'details'};
     if (code !== undefined && cameraUnavailable[code]) return {title: 'Camera unavailable', message: cameraUnavailable[code], recovery: 'details'};
-    if (code === 'invalidConfiguration' || code === 'configurationFailed') return {
+    if (code === 'invalidConfiguration' || code === 'documentNotConfigured' || code === 'cameraConfigurationFailed') return {
       title: 'Capture is not available', message: 'Driver’s license capture has not been set up for this app.', recovery: 'details'};
     if (code === 'documentSidesMismatch') return {title: 'This back belongs to a different license',
       message: 'The back you captured comes from a different license than the saved front. Capture the back of the same license, or retake the front.',

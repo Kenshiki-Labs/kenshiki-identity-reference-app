@@ -64,7 +64,7 @@ test('an unknown outcome requires a new explicitly marked review and makes no re
 });
 test('a response failure reads local uncertainty and offers fresh entry without resubmission', async () => {
   const f = fixture(); await prepare(f);
-  f.native.ssnConfirm.mockImplementationOnce(async () => { f.commit({...pending, failure: 'timedOut'}); throw {code: 'timedOut'}; });
+  f.native.ssnConfirm.mockImplementationOnce(async () => { f.commit({...pending, failure: 'outcomeUnknown'}); throw {code: 'outcomeUnknown'}; });
   await f.c.confirm(); expect(f.c.state.sheet).toMatchObject({kind: 'recovery', recovery: 'fresh'});
   expect(f.c.state.snapshot?.attempt?.operationID).toBe('operation');
   await f.c.retry(); expect(f.native.ssnRecover).not.toHaveBeenCalled();

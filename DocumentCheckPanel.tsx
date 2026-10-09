@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {AppState, ScrollView, Text, TextInput, View} from 'react-native';
-import type {CaptureErrorCode, DocumentCheckSnapshot, IdentityCaptureSession} from '@kenshiki/identity-capture';
+import type {CaptureErrorCode, DocumentCheckFailureCode, DocumentCheckSnapshot, IdentityCaptureSession} from '@kenshiki/identity-capture';
 import {IdentitySheet} from './IdentitySheetHost';
 import {Action, styles} from './IdentityCaptureFlow';
 import {errorCode, errorText, formatMoment, type ErrorText} from './HolderText';
@@ -8,11 +8,10 @@ import {errorCode, errorText, formatMoment, type ErrorText} from './HolderText';
 const labels = {recordMatched: 'Issuing record matched', recordNotMatched: 'Issuing record did not match',
   pending: 'Check still pending', unavailable: 'No answer available', needsCorrection: 'Review the requested details',
   inconclusive: 'No conclusive record comparison'};
-/** Snapshot failures and command rejections, by code. */
-const failures: ErrorText = {
+/** Text shared by the snapshot's failure field and command rejections. */
+const checkFailures = {
   readerUnbound: 'The document reader is not set up for this check. Your photos and barcode details remain available.',
   requestRejected: 'The checking service refused this request. Your photos and barcode details remain available.',
-  custodyUnavailable: 'The saved check could not be opened on this phone. Reopen its saved status.',
   serviceUnavailable: 'The checking service did not answer. You can ask for this check’s answer later; no new check is started.',
   replyRejected: 'The checking service answered, but the answer could not be verified and was not accepted.',
   requestConflict: 'The checking service already holds a different request for this license. Reopen the saved status.',
@@ -20,6 +19,15 @@ const failures: ErrorText = {
   correctionNotRequested: 'Only the details the checking service asked about can be corrected.',
   busy: 'The previous request is still finishing. Wait a moment, then try again.',
   cancelled: 'The check was stopped before it finished. Reopen its saved status.',
+} satisfies Partial<Record<Extract<DocumentCheckFailureCode, CaptureErrorCode>, string>>;
+/** `DocumentCheckSnapshot.failure` has its own closed vocabulary. */
+const snapshotFailures: Partial<Record<DocumentCheckFailureCode, string>> = {
+  ...checkFailures,
+  custodyUnavailable: 'The saved check could not be opened on this phone. Reopen its saved status.',
+};
+/** Command rejections, by code. */
+const failures: ErrorText = {
+  ...checkFailures,
   consentRequired: 'Agree to the record check before it is sent.',
   documentCheckNotConfigured: 'Record checking is not set up in this app. Your photos and barcode details remain available.',
   documentFrontRequired: 'Capture the front of the license before checking its record.',
@@ -69,8 +77,7 @@ export function DocumentCheckPanel({session, configured}: {session: IdentityCapt
   }, [session, configured]);
   const result = snapshot?.result;
   const needsReply = snapshot?.state === 'unanswered' || result?.outcome === 'pending' || result?.outcome === 'unavailable';
-  // The native snapshot failure is drawn from the document-check vocabulary of CaptureErrorCode.
-  const failure = snapshot?.failure ? errorText(snapshot.failure as CaptureErrorCode, failures, '') : '';
+  const failure = snapshot?.failure ? snapshotFailures[snapshot.failure] ?? '' : '';
   return <View style={styles.card} testID="document-check-panel">
     <Text accessibilityRole="header" style={styles.sheetTitle}>License record check</Text>
     {!configured ? <Text style={styles.body}>Record checking is not configured for this app. Your saved photos and barcode details remain available.</Text> : <>

@@ -9,6 +9,7 @@ const mockPassport: PassportObservation = {
   surname: 'SPECIMEN', givenNames: 'SYNTHETIC', nationality: 'UTO', issuingState: 'UTO', sex: 'F',
   portraitAvailable: true, portraitSHA256: 'reference', personalNumber: null, dateOfIssue: null,
   issuingAuthority: null, placeOfBirth: null, correspondence: {documentNumber: 'matches'},
+  protocolVerdicts: {source: 'thisRead'},
   protocols: {basicAccessControl: 'succeeded', pace: 'notPerformed', activeAuthentication: 'notPerformed',
     chipAuthentication: 'notPerformed', countrySigningChain: 'succeeded', documentSignature: 'succeeded', dataGroupHashes: 'succeeded'},
 };

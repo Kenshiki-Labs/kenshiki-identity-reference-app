@@ -13,6 +13,7 @@ const passportFor = (surname: string, givenNames: string): PassportObservation =
   surname, givenNames, nationality: 'UTO', issuingState: 'UTO', sex: 'F',
   portraitAvailable: true, portraitSHA256: 'portrait-' + surname, personalNumber: null, dateOfIssue: null,
   issuingAuthority: null, placeOfBirth: null, correspondence: {documentNumber: 'matches'},
+  protocolVerdicts: {source: 'recorded', recordedAt: '2026-10-08T12:00:00Z'},
   protocols: {basicAccessControl: 'succeeded', pace: 'notPerformed', activeAuthentication: 'notPerformed',
     chipAuthentication: 'notPerformed', countrySigningChain: 'succeeded', documentSignature: 'succeeded', dataGroupHashes: 'succeeded'},
 });
@@ -104,7 +105,8 @@ test('J4 the SSN screen offers erase through ssnErase after a confirmation', asy
 
 test('J5 a back from a different document is refused with its own message and the front-only draft is kept', async () => {
   let listener!: (event: CaptureEvent) => void;
-  const front = {captureID: 'front-of-holder-A', sha256: 'a', side: 'front' as const, pdf417: null, pdf417Status: 'notRequested' as const};
+  const front = {captureID: 'front-of-holder-A', sha256: 'a', side: 'front' as const, pdf417: null, pdf417Status: 'notRequested' as const,
+    sideCorrespondence: null};
   const draft: DocumentObservation = {workflowID: 'w-A', front, back: null};
   const session = {
     id: 'doc', subscribe: jest.fn((l: (event: CaptureEvent) => void) => { listener = l; return jest.fn(); }),

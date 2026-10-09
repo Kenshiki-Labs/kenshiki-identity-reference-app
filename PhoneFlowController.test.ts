@@ -10,6 +10,7 @@ const complete: PhoneCheckSnapshot = {...ready, stage: 'completed', receipt: {
   subjectComparison: {status: 'contradicted', fieldsCompared: ['givenName'], checkedAt: '2026-10-08T12:00:01Z',
     evidence: {requestID: 'synthetic', providers: [{source: 'synthetic-source', answered: true, numberValid: false, smsFraudRiskScore: 0}],
       fields: [{field: 'newField', source: 'newSource', grade: 'newGrade'}]}},
+  subscriberFailure: null,
 }};
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(done => { resolve = done; }); return {promise, resolve}; }
 async function tick() { for (let i = 0; i < 15; ++i) await Promise.resolve(); }
