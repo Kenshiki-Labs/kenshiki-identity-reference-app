@@ -90,7 +90,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     tabs.buttons["Identity"].tap()
     XCTAssertTrue(app.staticTexts["Identity"].firstMatch.waitForExistence(timeout: 10))
     tabs.buttons["Sensors"].tap()
-    XCTAssertTrue(loadedBoard.waitForExistence(timeout: 20), "Returning reopens the real sensor session")
+    XCTAssertTrue(loadedBoard.waitForExistence(timeout: 20), "Returning restores the sensor board")
     XCTAssertFalse(app.buttons["Pause sensors"].exists)
     assertNoSensorFailure()
     screenshot("sensor-board-reopened")
@@ -149,7 +149,9 @@ final class ArtifactIntegrationTests: XCTestCase {
       XCTAssertFalse(app.buttons["page-back"].exists, "A tab root has no Back button")
       screenshot("sensor-board-\(suffix)")
       let motion = app.buttons["About Motion"]
-      for _ in 0..<30 where !motion.isHittable { app.swipeUp() }
+      let board = app.scrollViews.firstMatch
+      for _ in 0..<12 where !motion.isHittable { board.swipeUp() }
+      XCTAssertTrue(motion.isHittable, "The Motion action must be reachable inside the page scroller")
       motion.tap()
       XCTAssertTrue(app.staticTexts["Motion"].firstMatch.waitForExistence(timeout: 10), "A pushed detail")
       XCTAssertTrue(wordmark.exists)
