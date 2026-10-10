@@ -90,7 +90,7 @@ test('passport completion returns to cards and results reopen without repeating 
   await act(async () => {
     mockEvent({ type: 'mrzObservation', observation: mockMRZ });
   });
-  await tap('capture-mrz');
+  expect(mockSession.captureMRZ).toHaveBeenCalledTimes(1);
   await tap('read-passport');
   expect(JSON.stringify(view.toJSON())).toContain('SYNTHETIC SPECIMEN');
   expect(JSON.stringify(view.toJSON())).toContain('PRINTED DETAILS AND CHIP');

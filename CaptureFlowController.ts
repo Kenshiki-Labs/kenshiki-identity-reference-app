@@ -283,6 +283,7 @@ export class CaptureFlowController {
       if (this.activeWork === pending) this.activeWork = undefined;
       if (epoch === this.epoch) {
         this.update({ busy: false });
+        this.captureMRZWhenReady();
         this.compareWhenReady();
       }
     }
@@ -513,6 +514,17 @@ export class CaptureFlowController {
       },
     });
   };
+  private captureMRZWhenReady() {
+    if (
+      !this.closed &&
+      !this.state.busy &&
+      !this.state.sheet &&
+      this.state.phase === 'scanning' &&
+      this.state.mrz?.completeness === 'complete'
+    ) {
+      this.review().catch(this.fail);
+    }
+  }
   private compareWhenReady() {
     if (this.pendingComparison && !this.closed && !this.state.busy && !this.state.sheet) {
       this.pendingComparison = false;
@@ -545,6 +557,7 @@ export class CaptureFlowController {
   private event(event: CaptureEvent) {
     if (event.type === 'mrzObservation' && this.state.phase === 'scanning') {
       this.update({ mrz: event.observation });
+      this.captureMRZWhenReady();
     } else if (event.type === 'passportProgress' && this.state.phase === 'reading') {
       this.showPassportProgress(event);
     } else if (event.type === 'previewChanged' && this.state.phase === 'selfie') {

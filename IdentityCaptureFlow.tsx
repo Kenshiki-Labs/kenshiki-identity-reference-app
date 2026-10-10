@@ -296,12 +296,6 @@ export function IdentityCaptureFlow({
                 ? t('passport.camera.keepInView')
                 : t('passport.camera.holdSteady')}
           </Text>
-          {action(
-            t('passport.camera.captureDetails'),
-            activeController.review,
-            state.mrz?.completeness !== 'complete',
-            'capture-mrz',
-          )}
         </>
       );
     }

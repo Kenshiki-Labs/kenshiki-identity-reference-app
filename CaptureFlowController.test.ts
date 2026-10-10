@@ -93,9 +93,17 @@ function fixture() {
 }
 test('the journey uses SDK observations and keeps chip photos out of JavaScript', async () => {
   const { controller: c, native, emit } = fixture();
-  await c.scan();
+  const startup = deferred<void>();
+  native.startMRZ.mockImplementationOnce(() => startup.promise);
+  const scanning = c.scan();
+  await settle();
   emit({ type: 'mrzObservation', observation: mrz });
-  await c.review();
+  emit({ type: 'mrzObservation', observation: mrz });
+  expect(native.captureMRZ).not.toHaveBeenCalled();
+  startup.resolve();
+  await scanning;
+  await settle();
+  expect(native.captureMRZ).toHaveBeenCalledTimes(1);
   expect(c.state.phase).toBe('review');
   await c.read();
   expect(c.state.phase).toBe('passport');
@@ -395,7 +403,7 @@ test('abandoning a reviewed rescan hands off and rereads the MRZ paired with the
   f.native.captureMRZ.mockResolvedValueOnce(draft);
   await f.controller.scan();
   f.emit({ type: 'mrzObservation', observation: draft });
-  await f.controller.review();
+  await settle();
   expect(f.controller.state.mrz).toBe(draft);
   const result = await f.controller.handoff();
   expect(result.mrz).toBe(mrz);

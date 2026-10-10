@@ -329,7 +329,7 @@
     },
     "camera": {
       "scanHint": "Put the two lines at the bottom of the photo page inside the clear band.",
-      "ready": "Printed details found. Ready to capture.",
+      "ready": "Printed details found. Capturing…",
       "keepInView": "Keep both lines in view.",
       "holdSteady": "Hold the passport steady.",
       "captureDetails": "Capture details",

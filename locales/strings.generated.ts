@@ -1136,7 +1136,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "passport.action.compareSelfie": "Compare with a selfie",
       "passport.action.readChipAgain": "Read chip again",
       "passport.camera.scanHint": "Put the two lines at the bottom of the photo page inside the clear band.",
-      "passport.camera.ready": "Printed details found. Ready to capture.",
+      "passport.camera.ready": "Printed details found. Capturing…",
       "passport.camera.keepInView": "Keep both lines in view.",
       "passport.camera.holdSteady": "Hold the passport steady.",
       "passport.camera.captureDetails": "Capture details",
