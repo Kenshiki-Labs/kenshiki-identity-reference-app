@@ -6,9 +6,9 @@ Run them from the generated app directory. Install Xcode, Node, CocoaPods, Ruby 
 
 ## Set up your account
 
-Register your own bundle identifier and enable NFC Tag Reading and App Attest. Create and install an **App Store distribution** profile for that identifier and an Apple Distribution certificate with its private key in your Keychain. An Ad Hoc or development profile cannot be used by these lanes. The build requests NFC TAG and production App Attest; your servers must recognize your app identifier and production attestation environment.
+Register your own bundle identifier and enable NFC Tag Reading, App Attest and WeatherKit. Create and install an **App Store distribution** profile for that identifier and an Apple Distribution certificate with its private key in your Keychain. An Ad Hoc or development profile cannot be used by these lanes. The build requests NFC TAG, production App Attest and WeatherKit; your servers must recognize your app identifier and production attestation environment.
 
-Access WiFi Information is optional. It gives the sensor board the current Wi-Fi network name and familiarity token; identity capture does not use it. To include it, enable it on the identifier and set `APP_OPTIONAL_ENTITLEMENTS=wifi-info`, and the lanes then require it in the profile and the signed app. The SDK does not use WeatherKit.
+Access WiFi Information is optional. It gives the sensor board the current Wi-Fi network name and familiarity token; identity capture does not use it. To include it, enable it on the identifier and set `APP_OPTIONAL_ENTITLEMENTS=wifi-info`, and the lanes then require it in the profile and the signed app.
 
 Create the app record in your App Store Connect account and record its numeric Apple ID. Creating that record requires the website or Apple ID login; an App Store Connect API key does not create it. Give the upload key the access required for this app. Store its `.p8` file outside the repository.
 
