@@ -110,7 +110,7 @@ The app opens on a native tab bar: Fusion, Sensors, Identity and Settings, each 
 All four tabs use the same `Page` container for their header, branding and layout; native stacks own navigation transitions.
 Fusion presents Air Check, Continuity, their native calculation terms, illustrative
 Over Time projections, Three Proofs and Glossary. Fusion, Sensors and Settings share one session.
-Air Check and continuity evaluation are explicit actions; continuity evaluates the signed Sensors
+Air Check starts when its screen opens; continuity evaluation is explicit and evaluates the signed Sensors
 reading without recapturing it. Forget continuity history requires confirmation and does not erase
 unrelated evidence or replace keys. Local receipt verification is not server acceptance.
 
@@ -160,6 +160,13 @@ Run that command from the release folder used in step 2. The `.mlmodelc` inputs 
 model directories compatible with the SDK, not arbitrary models or `.mlmodel` files. The PEM must
 contain the intended passport trust anchors. These licensed/configured resources are **not included**
 in the delivery. Request their compatible versions and provenance from your integration owner.
+For U.S. passport device integration, this source checkout includes the existing U.S. CA bundle
+at `passport-us/masterList.pem`. Pass that path with `--trust-anchors` when generating the device
+host. `passport-us/provenance.json` pins its source and all seven certificate fingerprints.
+This is a device-integration profile: original acquisition, signed master-list provenance and
+current revocation coverage remain unverified. It is not a production trust-source approval.
+Do not change the SDK's signature or trust-failure handling to make a passport pass.
+
 The script copies them into `ios/CaptureResources`; AppDelegate resolves their bundle URLs and
 passes them to the SDK explicitly. A trust result is only as appropriate as the supplied anchors.
 

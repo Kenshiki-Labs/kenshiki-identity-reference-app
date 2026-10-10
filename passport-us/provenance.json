@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "scope": "US passport device integration; not a production trust-source approval",
+  "sourceRepository": "Kenshiki-Labs/pulse-ios",
+  "sourceRevision": "b40f49eef6f9ce0bc1b1140cd0855d7b761dd43c",
+  "sourcePath": "Samples/KenshikiDeviceDemo/csca_us.pem",
+  "sha256": "a3a9b886a9f7a1efd7d9c5e23b8c4e361a3c134e82b1a509c4ea37017f6610ae",
+  "certificateCount": 7,
+  "certificates": [
+    {
+      "sha256": "0050a0d54816ff55dca4b10d11efae77f57c51c8096377f7d0677cd63789d52a",
+      "serialNumber": "0x419e6523",
+      "notBefore": "2004-11-19T20:57:05+00:00",
+      "notAfter": "2025-06-19T21:27:05+00:00"
+    },
+    {
+      "sha256": "11376340978abdc95463d369d779f451a217ee3dc3e1ef748ef7fd4ed16471c1",
+      "serialNumber": "0x45de28dd",
+      "notBefore": "2010-01-08T16:06:27+00:00",
+      "notAfter": "2030-08-08T16:36:27+00:00"
+    },
+    {
+      "sha256": "dddccce0b82f0ab801ae97d6b4843b6411e08925a10ac0867c33d09148798ff9",
+      "serialNumber": "0x4e322929",
+      "notBefore": "2014-12-18T16:21:01+00:00",
+      "notAfter": "2035-07-18T16:51:01+00:00"
+    },
+    {
+      "sha256": "f14133b234df67e677297c3adf2ec8414efd3503e24768b37ee7d4fc61e0f11e",
+      "serialNumber": "0x4e32d006",
+      "notBefore": "2019-11-14T16:37:12+00:00",
+      "notAfter": "2040-05-14T17:07:12+00:00"
+    },
+    {
+      "sha256": "452a644d458bbb5cb51abffb9442b9de335a537334adf60c99e1d8a5f0657d70",
+      "serialNumber": "0x5dce72e1",
+      "notBefore": "2024-09-30T16:38:20+00:00",
+      "notAfter": "2045-03-30T17:08:20+00:00"
+    },
+    {
+      "sha256": "1b521c065931aaaa2cb851521801087e963521b68b3694d3a3cd425b50871d21",
+      "serialNumber": "0x4e32d03f",
+      "notBefore": "2019-11-14T16:37:12+00:00",
+      "notAfter": "2040-05-14T17:07:12+00:00"
+    },
+    {
+      "sha256": "de9fc8e969a14c7ba5c7b6a8ca099f26e69dd7472b3855ce7e8ab0e55f041b24",
+      "serialNumber": "0x5dce72e3",
+      "notBefore": "2024-09-30T16:38:20+00:00",
+      "notAfter": "2045-03-30T17:08:20+00:00"
+    }
+  ],
+  "limitations": [
+    "Original acquisition and signed master-list verification are not established by repository evidence.",
+    "This bundle does not provide current document-signer revocation information.",
+    "The historical 2004 certificate expired in 2025; retained unchanged from the existing bundle. Runtime verification policy is unchanged."
+  ]
+}
