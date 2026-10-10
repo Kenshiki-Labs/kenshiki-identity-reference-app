@@ -13,7 +13,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   var reactNativeFactory: RCTReactNativeFactory?
   private var privacyCover: UIView?
 
-  func application(_ application: UIApplication,
+  func application(_ _: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
     #if DEBUG
     // The UI tests run Debug with its embedded bundle and no Metro server. React Native's own switch
@@ -109,7 +109,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   }
 
   // iOS captures the app-switcher snapshot after this returns. Cover personal data first.
-  func applicationDidEnterBackground(_ application: UIApplication) {
+  func applicationDidEnterBackground(_ _: UIApplication) {
     guard let window, privacyCover == nil else { return }
     let cover = UIView(frame: window.bounds)
     cover.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -119,7 +119,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     privacyCover = cover
   }
 
-  func applicationWillEnterForeground(_ application: UIApplication) {
+  func applicationWillEnterForeground(_ _: UIApplication) {
     privacyCover?.removeFromSuperview()
     privacyCover = nil
   }
@@ -176,20 +176,20 @@ struct ReferenceHolder {
 #if targetEnvironment(simulator)
 private final class ArtifactDocumentProvider: NSObject, DocumentCheckProvider {
   // The artifact check must fail at missing retained capture before any provider method runs.
-  func readDocument(_ original: Data, captureID: String, sourceSHA256: String) async throws -> DocumentProviderReading {
+  func readDocument(_ _: Data, captureID _: String, sourceSHA256 _: String) async throws -> DocumentProviderReading {
     throw NSError(domain: "unexpectedArtifactRead", code: 1)
   }
-  func documentRequest(_ observations: Data, format: String, captureID: String) throws -> DocumentProviderRequest {
+  func documentRequest(_ _: Data, format _: String, captureID _: String) throws -> DocumentProviderRequest {
     throw NSError(domain: "unexpectedArtifactRequest", code: 1)
   }
-  func correctedDocumentRequest(_ request: DocumentProviderRequest, reply: DocumentProviderReply,
-                                corrections: [String: String]) throws -> DocumentProviderRequest {
+  func correctedDocumentRequest(_ _: DocumentProviderRequest, reply _: DocumentProviderReply,
+                                corrections _: [String: String]) throws -> DocumentProviderRequest {
     throw NSError(domain: "unexpectedArtifactCorrection", code: 1)
   }
-  func sendDocumentRequest(_ request: DocumentProviderRequest) async throws -> DocumentProviderReply {
+  func sendDocumentRequest(_ _: DocumentProviderRequest) async throws -> DocumentProviderReply {
     throw NSError(domain: "unexpectedArtifactDispatch", code: 1)
   }
-  func documentResult(_ reply: DocumentProviderReply, request: DocumentProviderRequest) throws -> Data {
+  func documentResult(_ _: DocumentProviderReply, request _: DocumentProviderRequest) throws -> Data {
     throw NSError(domain: "unexpectedArtifactResult", code: 1)
   }
 }
@@ -201,10 +201,10 @@ private final class ArtifactPhoneProvider: NSObject, PhoneCheckProvider {
     }
     return #"{"credentialID":"synthetic","documentOperationID":"00000000-0000-4000-8000-000000000001","documentSubject":{"givenName":"Synthetic"}}"#
   }
-  func startPhoneCheck(_ request: String) async throws -> String {
+  func startPhoneCheck(_ _: String) async throws -> String {
     throw NSError(domain: "IDPhoneCheckProvider", code: PhoneCheckProviderFailure.unavailable.rawValue)
   }
-  func completePhoneCheck(_ request: String) async throws -> String? {
+  func completePhoneCheck(_ _: String) async throws -> String? {
     throw NSError(domain: "IDPhoneCheckProvider", code: PhoneCheckProviderFailure.unavailable.rawValue)
   }
 }
@@ -223,7 +223,7 @@ private final class ArtifactSSNProvider: NSObject, SSNIssuanceProvider {
 }
 #endif
 class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
-  override func sourceURL(for bridge: RCTBridge) -> URL? { bundleURL() }
+  override func sourceURL(for _: RCTBridge) -> URL? { bundleURL() }
   override func bundleURL() -> URL? {
     #if DEBUG
     // The UI tests run Debug with the bundle FORCE_BUNDLING embeds, and no Metro server. Asking for
