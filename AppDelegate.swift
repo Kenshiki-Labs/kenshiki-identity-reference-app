@@ -47,7 +47,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       in: .userDomainMask).first, let identity = Bundle.main.bundleIdentifier {
       configuration["sensors"] = [
         "airCheck": [
-          "timeoutSeconds": 30, "maximumObservationAgeSeconds": 5400,
+          // The SDK requests National Weather Service observations directly. Use "host" with a
+          // registered IDAirCheckWeatherProvider to supply the reading from your own service.
+          "weather": "nws", "timeoutSeconds": 30, "maximumObservationAgeSeconds": 5400,
           "maximumStationDistanceMeters": 50000,
           "weatherUserAgent": "KenshikiSensorHost/1.0 (https://github.com/Kenshiki-Labs)"
         ],
