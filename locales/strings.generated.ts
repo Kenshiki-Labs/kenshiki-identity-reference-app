@@ -297,7 +297,14 @@ export type MessageValues = {
   readonly "passport.paceDiagnostic.notRecorded": undefined;
   readonly "passport.paceDiagnostic.stage": undefined;
   readonly "passport.paceDiagnostic.statusWord": undefined;
+  readonly "passport.paceDiagnostic.mseSetAT": undefined;
+  readonly "passport.paceDiagnostic.nonce": undefined;
+  readonly "passport.paceDiagnostic.mapping": undefined;
+  readonly "passport.paceDiagnostic.keyExchange": undefined;
+  readonly "passport.paceDiagnostic.tokenVerification": undefined;
+  readonly "passport.paceDiagnostic.secureMessaging": undefined;
   readonly "passport.paceDiagnostic.masterFile": undefined;
+  readonly "passport.paceDiagnostic.cardAccessRead": undefined;
   readonly "passport.paceDiagnostic.cardAccess": undefined;
   readonly "passport.paceDiagnostic.parameters": undefined;
   readonly "passport.paceDiagnostic.authentication": undefined;
@@ -1232,7 +1239,14 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "passport.paceDiagnostic.notRecorded": "The reason was not recorded with this saved read",
       "passport.paceDiagnostic.stage": "PACE stage",
       "passport.paceDiagnostic.statusWord": "Chip response (status word)",
+      "passport.paceDiagnostic.mseSetAT": "Selecting the PACE authentication mechanism",
+      "passport.paceDiagnostic.nonce": "Receiving and decrypting the chip nonce",
+      "passport.paceDiagnostic.mapping": "Mapping the PACE domain parameters",
+      "passport.paceDiagnostic.keyExchange": "Exchanging ephemeral public keys",
+      "passport.paceDiagnostic.tokenVerification": "Verifying the chip authentication token",
+      "passport.paceDiagnostic.secureMessaging": "Starting the protected connection",
       "passport.paceDiagnostic.masterFile": "Selecting the chip master file",
+      "passport.paceDiagnostic.cardAccessRead": "Reading the selected CardAccess file",
       "passport.paceDiagnostic.cardAccess": "Reading the chip's PACE capabilities",
       "passport.paceDiagnostic.parameters": "Decoding and selecting PACE parameters",
       "passport.paceDiagnostic.authentication": "Establishing the PACE connection",
