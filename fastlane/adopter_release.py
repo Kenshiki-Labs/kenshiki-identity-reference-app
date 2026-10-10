@@ -52,8 +52,9 @@ def prepare(args):
     check_source(args.source, args.revision)
     profile = plistlib.loads(subprocess.check_output(['security', 'cms', '-D', '-i', str(args.profile.resolve())]))
     identities = signing.usable_identities(signing.command('security', 'find-identity', '-v', '-p', 'codesigning'))
+    required = signing.required_entitlements(args.entitlement)
     selected = signing.profile_result(profile, args.profile, args.team, args.bundle, identities,
-                                      datetime.datetime.now(datetime.timezone.utc))
+                                      datetime.datetime.now(datetime.timezone.utc), required)
     require(not selected['errors'], '; '.join(selected['errors']))
     selected['uuid'] = profile['UUID']
     delivery = args.host / 'vendor'
@@ -63,7 +64,7 @@ def prepare(args):
     manifest, _ = verified_sdk(args.host, artifact, reference)
     preflight = {'status': 'prerequisites_present', 'revision': args.revision, 'team': args.team,
                  'bundle_id': args.bundle, 'selected_profile': selected,
-                 'required_entitlements': signing.REQUIRED_ENTITLEMENTS}
+                 'required_entitlements': required}
     inputs = {'sourceRevision': args.revision, 'appSourceRevision': args.revision,
               'sdkBinarySourceCommit': manifest['sdkCommit'], 'bundleIdentifier': args.bundle,
               'version': args.version, 'buildNumber': args.build,
@@ -99,6 +100,8 @@ def main():
         p.add_argument('--' + name, type=Path)
     for name in ['revision', 'team', 'bundle', 'version', 'build']:
         p.add_argument('--' + name)
+    p.add_argument('--entitlement', action='append', default=[], choices=sorted(signing.OPTIONAL_ENTITLEMENTS),
+                   help='Also require an optional capability; repeat for each')
     a = p.parse_args()
     if a.action == 'prepare':
         prepare(a)

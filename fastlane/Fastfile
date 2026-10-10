@@ -57,7 +57,8 @@ platform :ios do
     Dir.chdir(File.join(host, 'ios')) { adopter_child('pod', 'install', '--deployment') }
     adopter_tool('prepare', '--source', source, '--host', host, '--out', out, '--revision', revision,
       '--profile', File.expand_path(ENV.fetch('APP_STORE_PROFILE')), '--team', ENV.fetch('APPLE_TEAM_ID'),
-      '--bundle', ENV.fetch('APP_IDENTIFIER'), '--version', version, '--build', number)
+      '--bundle', ENV.fetch('APP_IDENTIFIER'), '--version', version, '--build', number,
+      *ENV.fetch('APP_OPTIONAL_ENTITLEMENTS', '').split(',').map(&:strip).reject(&:empty?).flat_map { |name| ['--entitlement', name] })
     report = JSON.parse(File.read(File.join(out, 'preflight.json')))
     inputs = JSON.parse(File.read(File.join(out, 'inputs.json')))
     adopter_child('ruby', release_helper('configure_release.rb'), host, File.join(out, 'preflight.json'),
