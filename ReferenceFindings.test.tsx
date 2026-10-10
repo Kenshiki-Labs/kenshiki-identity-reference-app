@@ -711,7 +711,11 @@ describe('6 verdict wording', () => {
           passport: {
             ...passport,
             declaredDataGroups: ['DG1', 'DG2'],
-            protocols: { ...passport.protocols, chipAuthentication: 'notPerformed' },
+            protocols: {
+              ...passport.protocols,
+              chipAuthentication: 'notPerformed',
+              activeAuthentication: 'notPerformed',
+            },
             paceFailure: { stage: 'cardAccess', code: 'cardAccessAbsent', statusWord: 0x6a82 },
           },
         }}
@@ -719,6 +723,7 @@ describe('6 verdict wording', () => {
     );
     await f.press('View check details');
     expect(f.text()).not.toContain('Chip authentication');
+    expect(f.text()).not.toContain('Active authentication');
     expect(f.text()).toContain('CardAccess file was not found');
     expect(f.text()).toContain('6A82');
     await act(async () => {
@@ -741,6 +746,7 @@ describe('6 verdict wording', () => {
     expect(f.text()).not.toContain('PACE connection failed');
     await f.press('View check details');
     expect(f.text()).toContain('Did not complete; BAC succeeded');
+    expect(f.text()).toContain('The reason was not recorded with this saved read');
     await act(async () => {
       f.view.unmount();
     });

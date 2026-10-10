@@ -426,16 +426,16 @@ export function CaptureResultDetails({
   }
   const bacFallback =
     passport.protocols.pace === 'failed' && passport.protocols.basicAccessControl === 'succeeded';
-  const visibleProtocols = protocolKeys.filter(
-    (key) =>
-      !(
-        key === 'chipAuthentication' &&
-        passport.protocols[key] === 'notPerformed' &&
-        passport.declaredDataGroups !== undefined &&
-        passport.declaredDataGroups.length > 0 &&
-        !passport.declaredDataGroups.includes('DG14')
-      ),
-  );
+  const visibleProtocols = protocolKeys.filter((key) => {
+    const group = key === 'chipAuthentication' ? 'DG14' : key === 'activeAuthentication' ? 'DG15' : null;
+    return !(
+      group &&
+      passport.protocols[key] === 'notPerformed' &&
+      passport.declaredDataGroups &&
+      passport.declaredDataGroups.length > 0 &&
+      !passport.declaredDataGroups.includes(group)
+    );
+  });
   const failed = protocolKeys.filter(
     (key) => passport.protocols[key] === 'failed' && !(key === 'pace' && bacFallback),
   );
@@ -461,6 +461,30 @@ export function CaptureResultDetails({
             }
           />
         ))}
+        {passport.paceFailure && (
+          <>
+            <Details
+              label={t('passport.paceDiagnostic.reason')}
+              value={t(`passport.paceDiagnostic.${passport.paceFailure.code}`)}
+            />
+            <Details
+              label={t('passport.paceDiagnostic.stage')}
+              value={t(`passport.paceDiagnostic.${passport.paceFailure.stage}`)}
+            />
+            {passport.paceFailure.statusWord !== null && (
+              <Details
+                label={t('passport.paceDiagnostic.statusWord')}
+                value={passport.paceFailure.statusWord.toString(16).toUpperCase().padStart(4, '0')}
+              />
+            )}
+          </>
+        )}
+        {bacFallback && !passport.paceFailure && (
+          <Details
+            label={t('passport.paceDiagnostic.reason')}
+            value={t('passport.paceDiagnostic.notRecorded')}
+          />
+        )}
         {comparison && depth && (
           <>
             <Details label={t('face.technical.route')} value={comparison.route} />
@@ -552,24 +576,6 @@ export function CaptureResultDetails({
           )
         )}
         {bacFallback && <Text style={styles.body}>{t('passport.result.bacFallback')}</Text>}
-        {passport.paceFailure && (
-          <>
-            <Details
-              label={t('passport.paceDiagnostic.reason')}
-              value={t(`passport.paceDiagnostic.${passport.paceFailure.code}`)}
-            />
-            <Details
-              label={t('passport.paceDiagnostic.stage')}
-              value={t(`passport.paceDiagnostic.${passport.paceFailure.stage}`)}
-            />
-            {passport.paceFailure.statusWord !== null && (
-              <Details
-                label={t('passport.paceDiagnostic.statusWord')}
-                value={passport.paceFailure.statusWord.toString(16).toUpperCase().padStart(4, '0')}
-              />
-            )}
-          </>
-        )}
         {!!failed.length && (
           <View style={styles.detail} testID="passport-protocol-failures">
             {failed.map((key) => (

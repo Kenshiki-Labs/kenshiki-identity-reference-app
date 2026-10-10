@@ -294,12 +294,14 @@ export type MessageValues = {
   readonly "passport.protocolFailed.pace": undefined;
   readonly "passport.protocolFailed.basicAccessControl": undefined;
   readonly "passport.paceDiagnostic.reason": undefined;
+  readonly "passport.paceDiagnostic.notRecorded": undefined;
   readonly "passport.paceDiagnostic.stage": undefined;
   readonly "passport.paceDiagnostic.statusWord": undefined;
   readonly "passport.paceDiagnostic.masterFile": undefined;
   readonly "passport.paceDiagnostic.cardAccess": undefined;
   readonly "passport.paceDiagnostic.parameters": undefined;
   readonly "passport.paceDiagnostic.authentication": undefined;
+  readonly "passport.paceDiagnostic.noRecognizedPACEInfo": undefined;
   readonly "passport.paceDiagnostic.cardAccessAbsent": undefined;
   readonly "passport.paceDiagnostic.cardResponse": undefined;
   readonly "passport.paceDiagnostic.unsupportedParameters": undefined;
@@ -1227,12 +1229,14 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "passport.protocolFailed.pace": "PACE connection failed",
       "passport.protocolFailed.basicAccessControl": "BAC connection failed",
       "passport.paceDiagnostic.reason": "PACE reason",
+      "passport.paceDiagnostic.notRecorded": "The reason was not recorded with this saved read",
       "passport.paceDiagnostic.stage": "PACE stage",
       "passport.paceDiagnostic.statusWord": "Chip response (status word)",
       "passport.paceDiagnostic.masterFile": "Selecting the chip master file",
       "passport.paceDiagnostic.cardAccess": "Reading the chip's PACE capabilities",
       "passport.paceDiagnostic.parameters": "Decoding and selecting PACE parameters",
       "passport.paceDiagnostic.authentication": "Establishing the PACE connection",
+      "passport.paceDiagnostic.noRecognizedPACEInfo": "No recognized PACE parameters were found in CardAccess",
       "passport.paceDiagnostic.cardAccessAbsent": "The chip reported that the CardAccess file was not found",
       "passport.paceDiagnostic.cardResponse": "The chip returned an unsuccessful status word",
       "passport.paceDiagnostic.unsupportedParameters": "The reader does not support the supplied PACE parameters",
