@@ -9,6 +9,7 @@ import type {
   PassportObservation,
   PassportReadOptions,
 } from '@kenshiki/identity-capture';
+import { CaptureFlowError } from './CaptureFlowError';
 import { type ErrorText, errorCode, errorText } from './HolderText';
 import { t } from './locales/i18n';
 import { SessionAcquisition } from './SessionAcquisition';
@@ -192,7 +193,7 @@ export class CaptureFlowController {
   }
   private async session(epoch: number) {
     if (this.releasing !== undefined) await this.releasing;
-    if (epoch !== this.epoch || this.closed) throw { code: 'cancelled' };
+    if (epoch !== this.epoch || this.closed) throw new CaptureFlowError('cancelled');
     if (this.current) return this.current;
     const session = await this.acquisition.open(
       () => this.create(this.config),
@@ -203,7 +204,7 @@ export class CaptureFlowController {
         this.update({ session: created });
       },
     );
-    if (!session) throw { code: 'cancelled' };
+    if (!session) throw new CaptureFlowError('cancelled');
     return session;
   }
   private listen(session: CaptureSession) {
@@ -298,7 +299,7 @@ export class CaptureFlowController {
   read = () =>
     this.run('reading', 'read', async (session) => {
       const mrz = this.state.mrz;
-      if (!mrz) throw { code: 'invalidAccessKey' };
+      if (!mrz) throw new CaptureFlowError('invalidAccessKey');
       this.update({ progress: t('passport.progress.connecting') });
       return {
         passport: await session.readPassport({ ...mrz, consent: true, messages }),
@@ -479,7 +480,7 @@ export class CaptureFlowController {
     this.pendingComparison = false;
     this.update({ busy: true, ready: false });
     const [cancelled] = await Promise.allSettled([session.cancel(), this.activeWork]);
-    if (this.closed || this.current !== session) throw { code: 'cancelled' };
+    if (this.closed || this.current !== session) throw new CaptureFlowError('cancelled');
     if (cancelled.status === 'rejected') {
       this.update({ busy: false });
       throw cancelled.reason;

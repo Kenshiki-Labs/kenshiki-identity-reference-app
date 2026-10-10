@@ -79,7 +79,7 @@ export function SubscriberResultDetails({
 function Row({
   label: title,
   value,
-}: Readonly<{ label: string; value?: (string | boolean | null) | undefined }>) {
+}: Readonly<{ label: string; value: string | boolean | null | undefined }>) {
   const text =
     value == null || value === ''
       ? t('common.notReturned')

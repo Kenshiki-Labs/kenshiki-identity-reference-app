@@ -4,6 +4,7 @@ import type {
   Configuration,
   SSNSessionSnapshot,
 } from '@kenshiki/identity-capture';
+import { CaptureFlowError } from './CaptureFlowError';
 import { type ErrorText, errorCode, errorText } from './HolderText';
 import { t } from './locales/i18n';
 import { SessionAcquisition } from './SessionAcquisition';
@@ -77,7 +78,7 @@ export class SSNFlowController {
         this.update({ session: created });
       },
     );
-    if (!session) throw { code: 'cancelled' };
+    if (!session) throw new CaptureFlowError('cancelled');
     return session;
   }
   private accept(snapshot: SSNSessionSnapshot, allowConfirmation: boolean) {

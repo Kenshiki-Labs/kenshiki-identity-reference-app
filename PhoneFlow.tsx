@@ -380,7 +380,7 @@ function NumberCheck({ provider, index }: Readonly<{ provider: PhoneProviderObse
 function Row({
   label,
   value,
-}: Readonly<{ label: string; value?: (string | number | boolean | null) | undefined }>) {
+}: Readonly<{ label: string; value: string | number | boolean | null | undefined }>) {
   const text =
     value == null || value === ''
       ? t('common.notReturned')

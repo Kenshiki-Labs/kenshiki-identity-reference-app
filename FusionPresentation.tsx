@@ -159,11 +159,11 @@ export function MathDetails({
   label,
   metrics,
   explanation,
-}: {
+}: Readonly<{
   label: string;
   metrics: FusionMetric[];
   explanation: string[];
-}) {
+}>) {
   const [snapshot, setSnapshot] = useState<FusionMetric[] | null>(null);
   return (
     <>
