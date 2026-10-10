@@ -12,6 +12,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   var reactNativeDelegate: ReactNativeDelegate?
   var reactNativeFactory: RCTReactNativeFactory?
   private var privacyCover: UIView?
+  private var readerProbe: Task<Void, Never>?
 
   func application(_ _: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
@@ -64,6 +65,33 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         var document = holder.store("Documents", service: "documents", account: "capture-evidence-v1")
         document["requiresLocation"] = false
         configuration["document"] = document
+        #if KENSHIKI_LIVE_REFERENCE
+        // Owner-authorized nonproduction composition; absent from the binary reference delivery.
+        // The runtime resolves the selected checked document from encrypted native custody.
+        do {
+          guard let directory = Bundle.main.url(forResource: "Regula", withExtension: nil,
+            subdirectory: "LocalCaptureResources") else { throw CocoaError(.fileReadNoSuchFile) }
+          try IDCaptureSharedRuntime().configureReferenceServices(
+            credentialService: holder.service + ".registration", regulaDirectory: directory)
+          if ProcessInfo.processInfo.arguments.contains("--reference-reader-probe") {
+            readerProbe = Task {
+              let outcome = await CaptureRuntime.probeReferenceReader(directory)
+              print("REFERENCE_READER_PROBE outcome=\(outcome)")
+            }
+          }
+          document["check"] = ["providerID": "reference-live", "recordDomain": "reference-live-v1"]
+          configuration["document"] = document
+          var phone = holder.store("Phone", service: "phone", account: "phone-evidence-v1")
+          phone["providerID"] = "reference-live"
+          phone["checkedDocumentID"] = "selected-document"
+          phone["workflowID"] = holder.workflowID("phone")
+          phone["policy"] = ["pollInterval": 3.0, "rateLimitBackoff": 15.0, "resendDelay": 45.0]
+          configuration["phone"] = phone
+        } catch {
+          // Leave the affected capabilities unconfigured; never manufacture a working provider.
+          properties["configurationIssue"] = "liveServicesUnavailable"
+        }
+        #endif
         #if targetEnvironment(simulator)
         if ProcessInfo.processInfo.arguments.contains("--document-check-artifact-fixture") {
           var registrationError: NSError?

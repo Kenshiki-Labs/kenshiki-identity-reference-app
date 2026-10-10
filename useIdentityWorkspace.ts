@@ -1,9 +1,15 @@
-import { type CaptureSession, type Configuration, IdentityCaptureSession } from '@kenshiki/identity-capture';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  type CaptureSession,
+  type Configuration,
+  type DocumentCheckSnapshot,
+  IdentityCaptureSession,
+} from '@kenshiki/identity-capture';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CaptureFlowController, type CompletedCapture } from './CaptureFlowController';
+import type { DocumentCheckPort, DocumentCheckState } from './DocumentCheckController';
 import type { SavedDocumentCapture } from './DocumentFlowController';
 import { type ErrorText, errorCode, errorText } from './HolderText';
-import { ssnPrerequisite } from './IdentityPrerequisites';
+import { phonePrerequisite, ssnPrerequisite } from './IdentityPrerequisites';
 import { t } from './locales/i18n';
 import type { SavedPhoneCheck } from './PhoneFlowController';
 import type { SavedSSNCheck } from './SSNFlowController';
@@ -67,15 +73,62 @@ export function useIdentityWorkspace(
   const [phone, setPhone] = useState<SavedPhoneCheck>();
   // A changed document requires native revalidation before this phone result unlocks SSN.
   const [phoneDocument, setPhoneDocument] = useState<string>();
+  const [checkedDocument, setCheckedDocument] = useState<{
+    owner: SavedDocumentCapture;
+    snapshot: DocumentCheckSnapshot;
+  }>();
+  const documentCheckEpoch = useRef(0);
+  const documentCheckChanged = useCallback((session: DocumentCheckPort, state: DocumentCheckState) => {
+    const owner = ownedDocument.current;
+    if (!active.current || !owner || owner.session !== session) return;
+    ++documentCheckEpoch.current;
+    setCheckedDocument(
+      !state.busy && !state.failure && state.snapshot ? { owner, snapshot: state.snapshot } : undefined,
+    );
+  }, []);
+  const phoneBlocked = phonePrerequisite(
+    configuration,
+    document?.document,
+    checkedDocument?.owner === document ? checkedDocument?.snapshot : undefined,
+  );
+  const checkedCaptureID = phoneBlocked ? undefined : checkedDocument?.snapshot.captureID;
+  // The phone session owns its own lifecycle. It receives only the accepted capture's opaque
+  // reference; native code resolves that reference against the retained document owner's custody.
+  const phoneConfiguration = useMemo<Configuration>(() => {
+    if (!checkedCaptureID || !configuration.phone) return configuration;
+    return { ...configuration, phone: { ...configuration.phone, checkedDocumentID: checkedCaptureID } };
+  }, [configuration, checkedCaptureID]);
   const documentRevision = JSON.stringify([
     document?.document.front?.captureID,
     document?.document.front?.sha256,
     document?.document.back?.captureID,
     document?.document.back?.sha256,
+    checkedDocument?.owner === document ? checkedDocument?.snapshot.result?.operationID : undefined,
   ]);
+  // Read only: restoring acceptance never starts a provider check. Late answers from an
+  // old capture cannot enable the replacement document or survive unmount.
+  useEffect(() => {
+    let current = true;
+    const epoch = ++documentCheckEpoch.current;
+    if (document && configuration.document?.check) {
+      document.session
+        .documentCheckRestore()
+        .then((snapshot) => {
+          if (current && epoch === documentCheckEpoch.current)
+            setCheckedDocument({ owner: document, snapshot });
+        })
+        .catch(() => {
+          if (current && epoch === documentCheckEpoch.current) setCheckedDocument(undefined);
+        });
+    }
+    return () => {
+      current = false;
+    };
+  }, [document, configuration.document?.check]);
   const ssnBlocked = ssnPrerequisite(
     configuration,
     phoneDocument === documentRevision ? phone?.snapshot : undefined,
+    phoneBlocked === undefined,
   );
   const ownedPhone = useRef<SavedPhoneCheck | undefined>(undefined);
   const [phoneInput, setPhoneInput] = useState<SavedPhoneCheck>();
@@ -249,7 +302,7 @@ export function useIdentityWorkspace(
     onHome();
   }
   function openPhone() {
-    if (!configuration.phone) return;
+    if (phoneBlocked) return;
     if (!active.current || clearPending.current || opening.current) return;
     if (phone) pending.current.phone = phone.session;
     ownedPhone.current = undefined;
@@ -385,6 +438,7 @@ export function useIdentityWorkspace(
     },
     license: {
       result: document,
+      checkChanged: documentCheckChanged,
       input: documentInput,
       start: startDocument,
       accept: acceptDocument,
@@ -419,6 +473,8 @@ export function useIdentityWorkspace(
       },
     },
     phone: {
+      configuration: phoneConfiguration,
+      blocked: phoneBlocked,
       result: phone,
       input: phoneInput,
       start: openPhone,

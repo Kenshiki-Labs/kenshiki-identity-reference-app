@@ -1,13 +1,42 @@
-import type { Configuration, PhoneCheckSnapshot } from '@kenshiki/identity-capture';
+import type {
+  Configuration,
+  DocumentCheckSnapshot,
+  DocumentObservation,
+  PhoneCheckSnapshot,
+} from '@kenshiki/identity-capture';
 import { phoneCheckStopped } from './PhonePolicy';
+
+/** A restored native answer must describe one of the current capture's exact originals.
+ * Captured fields and provider configuration alone are not an accepted document check. */
+export function phonePrerequisite(
+  configuration: Configuration,
+  document: DocumentObservation | undefined,
+  checked: DocumentCheckSnapshot | undefined,
+): 'document' | 'service' | undefined {
+  if (
+    !document ||
+    !checked ||
+    checked.state !== 'checked' ||
+    checked.failure ||
+    checked.result?.outcome !== 'recordMatched' ||
+    !checked.result.operationID ||
+    ![document.front, document.back].some(
+      (side) => side && side.captureID === checked.captureID && side.sha256 === checked.sourceSHA256,
+    )
+  )
+    return 'document';
+  if (!configuration.phone?.checkedDocumentID) return 'service';
+  return undefined;
+}
 
 /** Presentation gates only. Native providers must resolve and revalidate the bound document
  * and phone receipt before dispatch; a visible card or JavaScript snapshot grants no authority. */
 export function ssnPrerequisite(
   configuration: Configuration,
   phone: PhoneCheckSnapshot | undefined,
+  documentReady = false,
 ): 'document' | 'phone' | 'service' | undefined {
-  if (!configuration.phone?.checkedDocumentID) return 'document';
+  if (!documentReady || !configuration.phone?.checkedDocumentID) return 'document';
   if (
     !phone?.receipt ||
     phone.pending ||

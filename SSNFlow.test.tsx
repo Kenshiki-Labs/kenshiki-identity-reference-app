@@ -1,5 +1,6 @@
 import type { Configuration, SSNSessionSnapshot, SSNVerificationReceipt } from '@kenshiki/identity-capture';
 import renderer, { act } from 'react-test-renderer';
+import { documentConfiguration, documentSessionMethods } from './__tests__/documentFixture';
 import { completedPhone, phoneConfiguration } from './__tests__/phoneFixture';
 import { ssnBinding, ssnOperationID, ssnReceipt } from './__tests__/ssnFixture';
 import { invoke, required } from './__tests__/support';
@@ -19,6 +20,8 @@ const mockReady: SSNSessionSnapshot = {
 };
 let mockSnapshot = mockReady;
 const mockSession = {
+  ...documentSessionMethods(),
+  cancel: jest.fn(async () => {}),
   id: 'ssn',
   subscribe: jest.fn(() => () => {}),
   phoneSnapshot: jest.fn(async () => completedPhone),
@@ -73,6 +76,7 @@ beforeEach(() => {
   mockSnapshot = mockReady;
 });
 const configuration: Configuration = {
+  document: documentConfiguration,
   phone: phoneConfiguration,
   ssn: {
     contextID: 'test-holder',
@@ -104,6 +108,8 @@ async function renderApp(config = configuration) {
     });
   }
   if (config.phone) {
+    await tap('open-driver-license');
+    await tap('finish-document');
     await tap('open-phone');
     await tap('phone-done');
   }

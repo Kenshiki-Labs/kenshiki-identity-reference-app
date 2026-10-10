@@ -11,6 +11,11 @@ import { styles } from './ui/styles';
 import { color, symbol } from './ui/tokens.generated';
 import type { IdentityWorkspace } from './useIdentityWorkspace';
 
+const configurationIssues = {
+  holderScopeUnreadable: 'hub.configurationIssue',
+  liveServicesUnavailable: 'hub.liveServicesUnavailable',
+} as const;
+
 export function IdentityHome({
   configuration,
   configurationIssue,
@@ -19,7 +24,7 @@ export function IdentityHome({
   onPassportResult,
 }: Readonly<{
   configuration: Configuration;
-  configurationIssue?: 'holderScopeUnreadable' | undefined;
+  configurationIssue?: 'holderScopeUnreadable' | 'liveServicesUnavailable' | undefined;
   workspace: IdentityWorkspace;
   onLicenseResult: () => void;
   onPassportResult: (focus: 'passport' | 'face') => void;
@@ -37,7 +42,7 @@ export function IdentityHome({
     blocked ||
     !(result?.comparison || (faceReady && result?.passport.portraitAvailable) || (!result && savedCount > 0));
   const ssnBlocked = workspace.ssn.blocked;
-  const phoneDisabled = blocked || !configuration.phone;
+  const phoneDisabled = blocked || !!workspace.phone.blocked;
   const covered = !!clearFailure || !!restoreFailure;
   /** Why a dimmed check cannot open, for the section footer. Nothing while results are opening. */
   function unavailableReasons() {
@@ -91,9 +96,9 @@ export function IdentityHome({
   const saved = !!configuration.results && !!result;
   return (
     <Page title={t('hub.title')} testID="identity-hub" covered={covered}>
-      {configurationIssue === 'holderScopeUnreadable' && (
+      {configurationIssue && (
         <Text style={styles.label} testID="configuration-issue">
-          {t('hub.configurationIssue')}
+          {t(configurationIssues[configurationIssue])}
         </Text>
       )}
       <ListSection header={t('hub.section.checks')} footer={unavailableReasons()} icons>
@@ -131,7 +136,7 @@ export function IdentityHome({
         <ListRow
           rowID="open-phone"
           label={t('hub.phone.title')}
-          status={phoneDisabled ? t('prerequisite.document') : phoneStatus()}
+          status={workspace.phone.blocked ? t(`prerequisite.${workspace.phone.blocked}`) : phoneStatus()}
           icon={{ name: symbol.phone, background: color.swiftTeal }}
           disabled={phoneDisabled}
           onPress={openPhone}

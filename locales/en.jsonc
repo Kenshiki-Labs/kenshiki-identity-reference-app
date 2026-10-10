@@ -225,6 +225,7 @@
     "title": "Identity",
     "resultsTitle": "Your results",
     "licenseTitle": "Your driver’s license",
+    "liveServicesUnavailable": "Identity services could not be set up. Document, phone and Social Security number checks are unavailable in this build.",
     "configurationIssue": "Saved checks are unavailable because this app’s local holder record could not be read. New checks are not saved.",
     "license": {
       "title": "Driver’s license",

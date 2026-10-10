@@ -70,18 +70,21 @@ const correctionText: Record<string, string> = {
   invalid: t('documentCheck.correction.invalid'),
 };
 
+type DocumentCheckProps = Readonly<{
+  session: DocumentCheckPort;
+  configured: boolean;
+  onState?: (session: DocumentCheckPort, state: DocumentCheckState) => void;
+}>;
+
 /** Remount the presentation when custody changes; no old holder state is rendered. */
-export function DocumentCheckPanel(props: Readonly<{ session: DocumentCheckPort; configured: boolean }>) {
+export function DocumentCheckPanel(props: DocumentCheckProps) {
   return <DocumentCheckView key={`${props.session.id}:${props.configured}`} {...props} />;
 }
 
 const initialState: DocumentCheckState = { snapshot: undefined, busy: false, failure: undefined };
 
 /** Reopening restores local status. Only holder actions can dispatch a check. */
-function DocumentCheckView({
-  session,
-  configured,
-}: Readonly<{ session: DocumentCheckPort; configured: boolean }>) {
+function DocumentCheckView({ session, configured, onState }: DocumentCheckProps) {
   const [sheet, setSheet] = useState<'failure' | 'correction'>();
   const [error, setError] = useState('');
   const [edits, setEdits] = useState<Record<string, string>>({});
@@ -89,6 +92,7 @@ function DocumentCheckView({
     (publish: (state: DocumentCheckState) => void) => {
       const active = new DocumentCheckController(session, (next) => {
         publish(next);
+        onState?.(session, next);
         if (next.failure) {
           setError(errorText(errorCode(next.failure.cause), failures, t('documentCheck.failure.other')));
           setSheet('failure');
@@ -111,7 +115,7 @@ function DocumentCheckView({
         },
       };
     },
-    [session, configured],
+    [session, configured, onState],
   );
   const { controller, state, failed } = useControllerState(initialState, connect);
   const { snapshot, busy } = state;

@@ -25,6 +25,7 @@ export function LicenseResult({
       <DocumentCheckPanel
         key={document.document.front?.captureID}
         session={document.session}
+        onState={workspace.license.checkChanged}
         configured={!!configuration.document?.check}
       />
       <Action

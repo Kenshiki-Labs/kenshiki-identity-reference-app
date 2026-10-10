@@ -13,6 +13,7 @@ import type {
 import type React from 'react';
 import { AppState, StyleSheet } from 'react-native';
 import renderer, { act, type ReactTestInstance } from 'react-test-renderer';
+import { documentConfiguration, documentSessionMethods } from './__tests__/documentFixture';
 import { phoneConfiguration } from './__tests__/phoneFixture';
 import { ssnReceipt } from './__tests__/ssnFixture';
 import {
@@ -281,6 +282,17 @@ describe('1 developer checks', () => {
   });
 });
 
+async function openDocumentBoundPhone() {
+  Object.assign(mockSession, documentSessionMethods());
+  const f = await render(
+    <App configuration={{ phone: phoneConfiguration, document: documentConfiguration }} />,
+  );
+  await f.tap('open-driver-license');
+  await f.tap('finish-document');
+  await f.tap('open-phone');
+  return f;
+}
+
 describe('2 contradicted carrier verdict stops', () => {
   test.each([
     [
@@ -298,8 +310,7 @@ describe('2 contradicted carrier verdict stops', () => {
   ])('%s stops with a retry instead of confirming possession and offering Done', async (_name, receipt) => {
     phoneSnapshot = { ...phoneReady, stage: 'completed', receipt };
     const sheets = actionSheets();
-    const f = await render(<App configuration={{ phone: phoneConfiguration }} />);
-    await f.tap('open-phone');
+    const f = await openDocumentBoundPhone();
     expect(f.text()).not.toContain('Phone possession confirmed');
     expect(f.view.root.findAllByProps({ testID: 'phone-done' })).toHaveLength(0);
     expect(f.view.root.findAllByProps({ testID: 'phone-stopped' }).length).toBeGreaterThan(0);
@@ -328,8 +339,7 @@ describe('2 contradicted carrier verdict stops', () => {
         },
       },
     };
-    const f = await render(<App configuration={{ phone: phoneConfiguration }} />);
-    await f.tap('open-phone');
+    const f = await openDocumentBoundPhone();
     await f.tap('modal-cancel');
     expect(f.text()).toContain('Check stopped');
     expect(f.text()).not.toContain('Result available');

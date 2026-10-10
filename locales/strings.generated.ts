@@ -163,6 +163,7 @@ export type MessageValues = {
   readonly "hub.title": undefined;
   readonly "hub.resultsTitle": undefined;
   readonly "hub.licenseTitle": undefined;
+  readonly "hub.liveServicesUnavailable": undefined;
   readonly "hub.configurationIssue": undefined;
   readonly "hub.license.title": undefined;
   readonly "hub.license.viewResults": {readonly name: string | number};
@@ -1124,6 +1125,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "hub.title": "Identity",
       "hub.resultsTitle": "Your results",
       "hub.licenseTitle": "Your driver’s license",
+      "hub.liveServicesUnavailable": "Identity services could not be set up. Document, phone and Social Security number checks are unavailable in this build.",
       "hub.configurationIssue": "Saved checks are unavailable because this app’s local holder record could not be read. New checks are not saved.",
       "hub.license.title": "Driver’s license",
       "hub.license.viewResults": [["arg", "name"], " · View results"],

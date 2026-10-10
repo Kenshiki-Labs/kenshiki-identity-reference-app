@@ -4,9 +4,11 @@ import type {
   PhoneCheckSnapshot,
   SubscriberComparisonResult,
 } from '@kenshiki/identity-capture';
+import { IdentityCaptureSession } from '@kenshiki/identity-capture';
 import type { AppStateStatus } from 'react-native';
 import { AppState } from 'react-native';
 import renderer, { act } from 'react-test-renderer';
+import { documentConfiguration, documentSessionMethods } from './__tests__/documentFixture';
 import { phoneConfiguration } from './__tests__/phoneFixture';
 import { actionSheets, invoke, required, settle, without } from './__tests__/support';
 import App from './App';
@@ -74,11 +76,27 @@ const mockSession = {
   phoneErase: jest.fn(async () => {}),
   release: jest.fn(async () => {}),
 };
+const mockDocumentSession = {
+  ...documentSessionMethods(),
+  id: 'synthetic-document-session',
+  subscribe: jest.fn(() => () => {}),
+  cancel: jest.fn(async () => {}),
+  release: jest.fn(async () => {}),
+};
+let mockDocumentSessionPending = true;
 jest.mock('@kenshiki/identity-capture', () => ({
   isCaptureErrorCode: jest.requireActual<typeof import('../../ReactNative/identity-capture/src/codes')>(
     '../../ReactNative/identity-capture/src/codes',
   ).isCaptureErrorCode,
-  IdentityCaptureSession: { create: jest.fn(async () => mockSession) },
+  IdentityCaptureSession: {
+    create: jest.fn(async () => {
+      if (mockDocumentSessionPending) {
+        mockDocumentSessionPending = false;
+        return mockDocumentSession;
+      }
+      return mockSession;
+    }),
+  },
   IdentityCapturePreview: 'MockCapturePreview',
   IdentityCaptureImage: 'MockCaptureImage',
   IdentitySymbol: 'MockSymbol',
@@ -86,6 +104,7 @@ jest.mock('@kenshiki/identity-capture', () => ({
 beforeEach(() => {
   jest.clearAllMocks();
   mockSnapshot = mockReady;
+  mockDocumentSessionPending = true;
   mockListener = undefined;
   jest.spyOn(AppState, 'addEventListener').mockImplementation(() => ({ remove: jest.fn() }));
 });
@@ -93,7 +112,9 @@ afterEach(() => jest.restoreAllMocks());
 async function renderApp() {
   let view!: renderer.ReactTestRenderer;
   await act(async () => {
-    view = renderer.create(<App configuration={{ phone: phoneConfiguration }} />);
+    view = renderer.create(
+      <App configuration={{ phone: phoneConfiguration, document: documentConfiguration }} />,
+    );
   });
   async function tap(id: string) {
     await act(async () => {
@@ -106,11 +127,17 @@ async function renderApp() {
       await invoke(button, 'onPress');
     });
   }
+  await tap('open-driver-license');
+  await tap('finish-document');
   return { view, tap };
 }
 test('Phone opens from Identity, sending waits for receipt, Done and reopen keep all findings', async () => {
   const { view, tap } = await renderApp();
   await tap('open-phone');
+  expect(jest.mocked(IdentityCaptureSession.create).mock.calls.at(-1)?.[0]?.phone?.checkedDocumentID).toBe(
+    'synthetic-front',
+  );
+  expect(mockDocumentSession.release).not.toHaveBeenCalled();
   expect(mockSession.phoneSend).not.toHaveBeenCalled();
   await tap('phone-send');
   expect(JSON.stringify(view.toJSON())).toContain('Waiting for your text');

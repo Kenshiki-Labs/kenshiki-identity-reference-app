@@ -104,7 +104,7 @@ const flowRoutes = {
 type AppNavigatorProps = {
   configuration: Configuration;
   developerChecks: boolean;
-  configurationIssue?: 'holderScopeUnreadable' | undefined;
+  configurationIssue?: 'holderScopeUnreadable' | 'liveServicesUnavailable' | undefined;
 };
 
 /** A configuration owns one mounted workspace. Replacing it removes the old screens and their
@@ -328,12 +328,9 @@ function HolderNavigator({
           </Root.Screen>
           <Root.Screen name="PhoneCheck" options={modal}>
             {() => (
-              <IdentityPrerequisiteGate
-                reason={configuration.phone ? undefined : 'document'}
-                onExit={workspace.phone.exit}
-              >
+              <IdentityPrerequisiteGate reason={workspace.phone.blocked} onExit={workspace.phone.exit}>
                 <PhoneFlow
-                  configuration={configuration}
+                  configuration={workspace.phone.configuration}
                   saved={workspace.phone.input}
                   onComplete={workspace.phone.accept}
                   onClaim={workspace.phone.claim}

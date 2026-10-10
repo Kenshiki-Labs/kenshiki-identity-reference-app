@@ -6,6 +6,7 @@ import type {
 } from '@kenshiki/identity-capture';
 import { AppState } from 'react-native';
 import renderer, { act } from 'react-test-renderer';
+import { documentConfiguration, documentSessionMethods } from './__tests__/documentFixture';
 import { completedPhone, phoneConfiguration } from './__tests__/phoneFixture';
 import { actionSheets, invoke, mockSession as makeSession, required, settle } from './__tests__/support';
 import App from './App';
@@ -76,6 +77,7 @@ function mockSessionFor(holder: Holder) {
     busy: false,
   };
   return {
+    ...documentSessionMethods(),
     id: `session-${holder}`,
     subscribe: jest.fn((_listener: (event: CaptureEvent) => void) => jest.fn()),
     listResults: jest.fn(async () =>
@@ -117,6 +119,7 @@ jest.mock('@kenshiki/identity-capture', () => ({
 const holderConfig = (holder: Holder): Configuration => {
   const scope = holder === 'A' ? 'holder-a' : 'holder-b';
   return {
+    document: { ...documentConfiguration, keychainService: `app.identity.${scope}.documents` },
     phone: phoneConfiguration,
     trustAnchorsURL: 'file:///anchors.pem',
     results: {
@@ -159,6 +162,8 @@ test('J1 a holder switch clears the previous holder from the screen and releases
   await act(async () => {
     view = renderer.create(<App configuration={holderConfig('A')} />);
   });
+  await press(view, 'open-driver-license');
+  await press(view, 'finish-document');
   await press(view, 'open-phone');
   await press(view, 'phone-done');
   await press(view, 'open-ssn');
@@ -207,6 +212,8 @@ test('J4 the SSN screen offers erase through ssnErase after a confirmation', asy
     view = renderer.create(<App configuration={holderConfig('A')} />);
   });
   const sheets = actionSheets();
+  await press(view, 'open-driver-license');
+  await press(view, 'finish-document');
   await press(view, 'open-phone');
   await press(view, 'phone-done');
   await press(view, 'open-ssn');

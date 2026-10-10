@@ -16,7 +16,7 @@ export default function App({
 }: Readonly<{
   configuration?: Configuration | undefined;
   developerChecks?: boolean | undefined;
-  configurationIssue?: 'holderScopeUnreadable' | undefined;
+  configurationIssue?: 'holderScopeUnreadable' | 'liveServicesUnavailable' | undefined;
   firstRunPermissions?: boolean | undefined;
 }>) {
   return (
