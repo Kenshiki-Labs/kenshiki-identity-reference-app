@@ -413,6 +413,7 @@ export function CaptureResultDetails({
             {comparison.savedResult && (
               <Details label={t('face.checkedAt')} value={formatMoment(comparison.savedResult.recordedAt)} />
             )}
+            <Details label={t('face.technical.similarity')} value={String(comparison.similarity)} />
             <Details label={t('face.depth')} value={t('face.depthMeasured')} />
             <Details
               label={t('face.expression')}
@@ -423,7 +424,11 @@ export function CaptureResultDetails({
       </View>
     );
   }
-  const failed = protocolKeys.filter((key) => passport.protocols[key] === 'failed');
+  const bacFallback =
+    passport.protocols.pace === 'failed' && passport.protocols.basicAccessControl === 'succeeded';
+  const failed = protocolKeys.filter(
+    (key) => passport.protocols[key] === 'failed' && !(key === 'pace' && bacFallback),
+  );
   function renderTechnicalDetails() {
     if (!technical) return null;
     return (
@@ -436,11 +441,18 @@ export function CaptureResultDetails({
           <Details label={t('passport.field.personalNumber')} value={passport.personalNumber} />
         )}
         {protocolKeys.map((key) => (
-          <Details key={key} label={protocolLabels[key]} value={protocolStatus[passport.protocols[key]]} />
+          <Details
+            key={key}
+            label={protocolLabels[key]}
+            value={
+              key === 'pace' && bacFallback
+                ? t('passport.protocolStatus.bacFallback')
+                : protocolStatus[passport.protocols[key]]
+            }
+          />
         ))}
         {comparison && depth && (
           <>
-            <Details label={t('face.technical.similarity')} value={String(comparison.similarity)} />
             <Details label={t('face.technical.route')} value={comparison.route} />
             {depth && (
               <>
@@ -528,6 +540,11 @@ export function CaptureResultDetails({
               value={formatMoment(passport.savedResult.recordedAt)}
             />
           )
+        )}
+        {bacFallback && <Text style={styles.body}>{t('passport.result.bacFallback')}</Text>}
+        {(passport.protocols.activeAuthentication === 'notPerformed' ||
+          passport.protocols.chipAuthentication === 'notPerformed') && (
+          <Text style={styles.body}>{t('passport.result.authenticationNotPerformed')}</Text>
         )}
         {!!failed.length && (
           <View style={styles.detail} testID="passport-protocol-failures">

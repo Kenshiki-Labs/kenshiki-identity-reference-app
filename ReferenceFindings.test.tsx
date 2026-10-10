@@ -703,6 +703,26 @@ describe('6 verdict wording', () => {
       f.view.unmount();
     });
   });
+  test('successful BAC fallback is not presented as a failed chip integrity check', async () => {
+    const f = await render(
+      <CaptureResultDetails
+        result={{
+          session: makeSession(mockSession),
+          passport: {
+            ...passport,
+            protocols: { ...passport.protocols, pace: 'failed', basicAccessControl: 'succeeded' },
+          },
+        }}
+      />,
+    );
+    expect(f.text()).toContain('The chip was opened using BAC');
+    expect(f.text()).not.toContain('PACE connection failed');
+    await f.press('View check details');
+    expect(f.text()).toContain('Did not complete; BAC succeeded');
+    await act(async () => {
+      f.view.unmount();
+    });
+  });
   test('active and chip authentication failures show on the passport card without opening check details', async () => {
     const failed = {
       ...passport,
@@ -773,7 +793,9 @@ describe('6 verdict wording', () => {
     );
     expect(f.text()).not.toContain('TrueDepth liveness');
     expect(f.text()).not.toContain('Depth evidence unavailable');
-    expect(f.text()).toContain('Face depth measured with this selfie');
+    expect(f.text()).toContain('Passed — paired TrueDepth face relief accepted');
+    expect(f.text()).toContain('Cosine similarity score');
+    expect(f.text()).toContain('0.55');
     await act(async () => {
       f.view.update(
         <CaptureResultDetails

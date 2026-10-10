@@ -267,6 +267,8 @@ export type MessageValues = {
   readonly "passport.result.chipChecksRecorded": undefined;
   readonly "passport.result.chipChecksRecordedAt": {readonly moment: string | number};
   readonly "passport.result.readAt": undefined;
+  readonly "passport.result.bacFallback": undefined;
+  readonly "passport.result.authenticationNotPerformed": undefined;
   readonly "passport.result.failedNotice": undefined;
   readonly "passport.result.chipPhoto": undefined;
   readonly "passport.result.passportPhoto": undefined;
@@ -295,6 +297,7 @@ export type MessageValues = {
   readonly "passport.protocolStatus.succeeded": undefined;
   readonly "passport.protocolStatus.failed": undefined;
   readonly "passport.protocolStatus.notPerformed": undefined;
+  readonly "passport.protocolStatus.bacFallback": undefined;
   readonly "passport.details.show": undefined;
   readonly "passport.details.hide": undefined;
   readonly "passport.details.title": undefined;
@@ -1185,6 +1188,8 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "passport.result.chipChecksRecorded": "Chip checks recorded",
       "passport.result.chipChecksRecordedAt": [["arg", "moment"], ". Opening saved results does not repeat them."],
       "passport.result.readAt": "Read at",
+      "passport.result.bacFallback": "The chip was opened using BAC after PACE did not complete. The signing and data integrity checks are reported separately.",
+      "passport.result.authenticationNotPerformed": "This read did not perform every chip authentication method. Signing and data integrity checks do not by themselves prove that a chip is not a copy.",
       "passport.result.failedNotice": "A failed chip check means this passport read should not be relied on. Read the chip again, or use another document.",
       "passport.result.chipPhoto": "Passport chip photo",
       "passport.result.passportPhoto": "Passport photo",
@@ -1213,6 +1218,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "passport.protocolStatus.succeeded": "Succeeded",
       "passport.protocolStatus.failed": "Failed",
       "passport.protocolStatus.notPerformed": "Not performed",
+      "passport.protocolStatus.bacFallback": "Did not complete; BAC succeeded",
       "passport.details.show": "View check details",
       "passport.details.hide": "Hide check details",
       "passport.details.title": "Check details",
@@ -1283,12 +1289,12 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "face.outcome.manualReview": "Needs another look",
       "face.outcome.other": "Unrecognized comparison result",
       "face.checkedAt": "Checked at",
-      "face.depth": "Face depth (TrueDepth camera)",
-      "face.depthMeasured": "Face depth measured with this selfie",
+      "face.depth": "Presentation attack detection (PAD)",
+      "face.depthMeasured": "Passed — paired TrueDepth face relief accepted",
       "face.expression": "Expression",
       "face.blinkCompleted": "Blink completed; eyes reopened",
       "face.notAvailable": "Not available",
-      "face.technical.similarity": "Similarity",
+      "face.technical.similarity": "Cosine similarity score",
       "face.technical.route": "Comparison route",
       "face.technical.relief": "Face relief (RMS, metres)",
       "face.technical.unavailable": "Unavailable",

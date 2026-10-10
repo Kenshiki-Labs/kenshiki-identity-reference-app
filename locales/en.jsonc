@@ -384,6 +384,8 @@
       // {moment} is when the chip checks were first recorded.
       "chipChecksRecordedAt": "{moment}. Opening saved results does not repeat them.",
       "readAt": "Read at",
+      "bacFallback": "The chip was opened using BAC after PACE did not complete. The signing and data integrity checks are reported separately.",
+      "authenticationNotPerformed": "This read did not perform every chip authentication method. Signing and data integrity checks do not by themselves prove that a chip is not a copy.",
       "failedNotice": "A failed chip check means this passport read should not be relied on. Read the chip again, or use another document.",
       "chipPhoto": "Passport chip photo",
       "passportPhoto": "Passport photo",
@@ -419,7 +421,8 @@
     "protocolStatus": {
       "succeeded": "Succeeded",
       "failed": "Failed",
-      "notPerformed": "Not performed"
+      "notPerformed": "Not performed",
+      "bacFallback": "Did not complete; BAC succeeded"
     },
     "details": {
       "show": "View check details",
@@ -517,14 +520,14 @@
       "other": "Unrecognized comparison result"
     },
     "checkedAt": "Checked at",
-    "depth": "Face depth (TrueDepth camera)",
-    "depthMeasured": "Face depth measured with this selfie",
+    "depth": "Presentation attack detection (PAD)",
+    "depthMeasured": "Passed — paired TrueDepth face relief accepted",
     "expression": "Expression",
     "blinkCompleted": "Blink completed; eyes reopened",
     "notAvailable": "Not available",
     // Technical rows under "Check details". Units are in brackets.
     "technical": {
-      "similarity": "Similarity",
+      "similarity": "Cosine similarity score",
       "route": "Comparison route",
       "relief": "Face relief (RMS, metres)",
       "unavailable": "Unavailable",
