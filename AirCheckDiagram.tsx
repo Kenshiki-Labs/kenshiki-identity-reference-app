@@ -15,7 +15,7 @@ function line(start: Point, end: Point) {
     transform: [{ rotate: `${Math.atan2(end.y - start.y, end.x - start.x)}rad` }],
   };
 }
-export function AirCheckDiagram({ residual, tolerance }: { residual: number; tolerance: number }) {
+export function AirCheckDiagram({ residual, tolerance }: Readonly<{ residual: number; tolerance: number }>) {
   if (!Number.isFinite(residual) || !Number.isFinite(tolerance) || tolerance <= 0) return null;
   const scale = Math.min(
     size.fusionMaximumScale,

@@ -47,7 +47,7 @@ const iconSections: Record<string, string> = {
 };
 const icons: Record<string, { symbol: string; color: string }> = sensorConfig.sections;
 /** SensorHost's tile for a section, scaled with the text beside it, as `PageSectionHeader` does. */
-function SectionIcon({ section }: { section: string }) {
+function SectionIcon({ section }: Readonly<{ section: string }>) {
   const { sessionId, enabled } = useContext(SensorIconContext);
   const icon = icons[iconSections[section] ?? ''];
   if (!enabled || !sessionId || !icon) return null;
@@ -87,12 +87,12 @@ export function Section({
   heading = true,
   footer,
   children,
-}: {
+}: Readonly<{
   section: string;
   heading?: boolean;
   footer?: string | undefined;
   children: ReactNode;
-}) {
+}>) {
   const fromCopy = copy(`${section}.footer`, '');
   return (
     <ListSection
@@ -106,7 +106,7 @@ export function Section({
 }
 
 /** A label and its value. */
-export function Row({ label, value }: { label: string; value: unknown }) {
+export function Row({ label, value }: Readonly<{ label: string; value: unknown }>) {
   return <ValueRow label={label} value={plain(value)} />;
 }
 

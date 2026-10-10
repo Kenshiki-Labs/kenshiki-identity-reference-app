@@ -17,13 +17,13 @@ export function IdentityHome({
   workspace,
   onLicenseResult,
   onPassportResult,
-}: {
+}: Readonly<{
   configuration: Configuration;
   configurationIssue?: 'holderScopeUnreadable' | undefined;
   workspace: IdentityWorkspace;
   onLicenseResult: () => void;
   onPassportResult: (focus: 'passport' | 'face') => void;
-}) {
+}>) {
   const { result, start, openingResults, savedCount } = workspace.passport;
   const { result: document, start: startDocument } = workspace.license;
   const { result: ssn, start: openSSN } = workspace.ssn;

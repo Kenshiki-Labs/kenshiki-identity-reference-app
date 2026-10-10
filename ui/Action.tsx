@@ -10,7 +10,7 @@ export function Action({
   testID,
   secondary = false,
   destructive = false,
-}: {
+}: Readonly<{
   label: string;
   onPress: () => unknown;
   disabled?: boolean | undefined;
@@ -19,7 +19,7 @@ export function Action({
   secondary?: boolean | undefined;
   /** A plain red button: an action that deletes or discards. */
   destructive?: boolean | undefined;
-}) {
+}>) {
   const [failure, setFailure] = useState(false);
   const press = () => {
     setFailure(false);

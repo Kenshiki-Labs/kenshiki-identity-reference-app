@@ -22,7 +22,7 @@ const messages = {
   failure: t('developer.nfc.failure'),
 };
 /** Simulator Debug only (see AppDelegate). Uses its own isolated custody names, never the holder's stores. */
-export function IntegrationChecks({ configuration }: { configuration: Configuration }) {
+export function IntegrationChecks({ configuration }: Readonly<{ configuration: Configuration }>) {
   const [session, setSession] = useState<CaptureSession>();
   const [status, setStatus] = useState(t('developer.status.ready'));
   const [results, setResults] = useState<string[]>([]);

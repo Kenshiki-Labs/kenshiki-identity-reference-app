@@ -9,12 +9,12 @@ export function ControllerStartup({
   failed,
   cancelStartup,
   onClose,
-}: {
+}: Readonly<{
   title: string;
   failed: boolean;
   cancelStartup: () => void;
   onClose: () => void;
-}) {
+}>) {
   return (
     <Page
       title={title}

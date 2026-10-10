@@ -8,11 +8,11 @@ export function IdentitySettings({
   workspace,
   developerChecks,
   onDeveloperChecks,
-}: {
+}: Readonly<{
   workspace: IdentityWorkspace;
   developerChecks: boolean;
   onDeveloperChecks: () => void;
-}) {
+}>) {
   const { result, savedCount, openingResults, openSaved } = workspace.passport;
   const { result: document } = workspace.license;
   const { requestClear } = workspace.recovery;

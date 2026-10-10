@@ -9,10 +9,10 @@ import type { IdentityWorkspace } from './useIdentityWorkspace';
 export function IdentityRecovery({
   configuration,
   workspace,
-}: {
+}: Readonly<{
   configuration: Configuration;
   workspace: IdentityWorkspace;
-}) {
+}>) {
   const { openingResults } = workspace.passport;
   const { restoreFailure, clearFailure, clearing, confirmingClear, requestClear, clear } = workspace.recovery;
   useConfirmation(

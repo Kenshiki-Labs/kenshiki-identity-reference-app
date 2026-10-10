@@ -37,14 +37,14 @@ export function DriverLicenseFlow({
   onComplete,
   onExit,
   onClaim,
-}: {
+}: Readonly<{
   configuration: Configuration;
   saved?: SavedDocumentCapture | undefined;
   resume?: ('front' | 'back') | undefined;
   onComplete: (result: SavedDocumentCapture) => void;
   onExit: () => void;
   onClaim?: (() => void) | undefined;
-}) {
+}>) {
   const [finishing, setFinishing] = useState(false);
   const finishingRef = useRef(false);
   const connect = useCallback(
@@ -296,7 +296,7 @@ export function documentName(document: DocumentObservation): string {
     fields.DAA || [fields.DAC, fields.DAD, fields.DCS].filter(Boolean).join(' ') || t('license.title.default')
   );
 }
-export function DocumentResultDetails({ result }: { result: SavedDocumentCapture }) {
+export function DocumentResultDetails({ result }: Readonly<{ result: SavedDocumentCapture }>) {
   const { document, session } = result;
   const [details, setDetails] = useState(false);
   const barcode = document.back?.pdf417;
@@ -435,7 +435,7 @@ function barcodeStatus(back: DocumentSideObservation): string {
       }
   }
 }
-function Detail({ label, value }: { label: string; value: string }) {
+function Detail({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <View style={styles.detail}>
       <Text style={styles.label}>{label}</Text>

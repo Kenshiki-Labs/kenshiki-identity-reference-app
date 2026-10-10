@@ -108,7 +108,7 @@ type AppNavigatorProps = {
 
 /** A configuration owns one mounted workspace. Replacing it removes the old screens and their
  * state together; the shared custody barrier waits for their native controllers to close. */
-export function AppNavigator(props: AppNavigatorProps) {
+export function AppNavigator(props: Readonly<AppNavigatorProps>) {
   const [holder, setHolder] = useState({ configuration: props.configuration, revision: 0 });
   const [custody] = useState(createControllerCustody);
   if (holder.configuration !== props.configuration) {

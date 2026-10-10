@@ -31,7 +31,7 @@ export function AirCheckScreen() {
     </FusionPage>
   );
 }
-function AirFailure({ air }: { air: FusionAirCheck }) {
+function AirFailure({ air }: Readonly<{ air: FusionAirCheck }>) {
   if (air.state === 'idle' || air.state === 'running' || air.state === 'compared') return null;
   const reason = !('reason' in air)
     ? copy('airCheck.result.noFix')
@@ -67,7 +67,7 @@ function AirFailure({ air }: { air: FusionAirCheck }) {
     </ListSection>
   );
 }
-function AirComparison({ comparison: c }: { comparison: FusionAirComparison }) {
+function AirComparison({ comparison: c }: Readonly<{ comparison: FusionAirComparison }>) {
   return (
     <>
       <ListSection header={copy('airCheck.result.header')} footer={copy('airCheck.result.notAVerdict')}>

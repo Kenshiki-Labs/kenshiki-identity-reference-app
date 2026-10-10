@@ -12,10 +12,10 @@ import type { IdentityWorkspace } from './useIdentityWorkspace';
 export function LicenseResult({
   configuration,
   workspace,
-}: {
+}: Readonly<{
   configuration: Configuration;
   workspace: IdentityWorkspace;
-}) {
+}>) {
   const { result: document, start: startDocument } = workspace.license;
   const { requestClear } = workspace.recovery;
   if (!document) return null;
@@ -45,11 +45,11 @@ export function PassportResult({
   configuration,
   workspace,
   focus,
-}: {
+}: Readonly<{
   configuration: Configuration;
   workspace: IdentityWorkspace;
   focus: 'passport' | 'face';
-}) {
+}>) {
   const { result, start } = workspace.passport;
   const { requestClear } = workspace.recovery;
   const faceReady = !!configuration.embedderURL && !!configuration.detectorURL;

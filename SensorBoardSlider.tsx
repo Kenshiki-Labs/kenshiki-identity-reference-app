@@ -19,12 +19,12 @@ export function SensorWindowSlider({
   value,
   disabled,
   onCommit,
-}: {
+}: Readonly<{
   label: string;
   value: number;
   disabled: boolean;
   onCommit: (value: number) => void;
-}) {
+}>) {
   const [width, setWidth] = useState(1);
   const [draft, setDraft] = useState<number>();
   const shown = draft ?? value;

@@ -195,13 +195,13 @@ function PermissionControl({
   value,
   permission,
   props,
-}: {
+}: Readonly<{
   title: string;
   state: SensorPermission;
   value: boolean;
   permission: Permission;
   props: SettingsProps;
-}) {
+}>) {
   const change = (wanted: boolean) => {
     const canRequest =
       wanted &&

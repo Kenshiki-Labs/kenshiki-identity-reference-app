@@ -13,12 +13,12 @@ export default function App({
   developerChecks = false,
   configurationIssue,
   firstRunPermissions = false,
-}: {
+}: Readonly<{
   configuration?: Configuration | undefined;
   developerChecks?: boolean | undefined;
   configurationIssue?: 'holderScopeUnreadable' | undefined;
   firstRunPermissions?: boolean | undefined;
-}) {
+}>) {
   return (
     <SafeAreaProvider>
       <FirstRunPermissions configuration={configuration} enabled={firstRunPermissions}>

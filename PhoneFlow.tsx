@@ -23,13 +23,13 @@ export function PhoneFlow({
   onComplete,
   onExit,
   onClaim,
-}: {
+}: Readonly<{
   configuration: Configuration;
   saved?: SavedPhoneCheck | undefined;
   onComplete: (value: SavedPhoneCheck) => void;
   onExit: () => void;
   onClaim?: (() => void) | undefined;
-}) {
+}>) {
   const [leaving, setLeaving] = useState(false);
   const [now, setNow] = useState(Date.now);
   const leavingRef = useRef(false);
@@ -249,7 +249,7 @@ export function PhoneFlow({
   );
 }
 
-export function PhoneResultDetails({ receipt }: { receipt: PhoneCheckReceipt }) {
+export function PhoneResultDetails({ receipt }: Readonly<{ receipt: PhoneCheckReceipt }>) {
   const [showReceipt, setShowReceipt] = useState(false);
   const comparison = receipt.subjectComparison;
   const evidence = comparison?.evidence;
@@ -345,7 +345,7 @@ export function PhoneResultDetails({ receipt }: { receipt: PhoneCheckReceipt }) 
   );
 }
 /** Observations are labelled by what they measure. Rows appear only for values a check returned. */
-function NumberCheck({ provider, index }: { provider: PhoneProviderObservation; index: number }) {
+function NumberCheck({ provider, index }: Readonly<{ provider: PhoneProviderObservation; index: number }>) {
   return (
     <View style={styles.card}>
       <Text accessibilityRole="header" style={styles.sheetTitle}>
@@ -377,7 +377,10 @@ function NumberCheck({ provider, index }: { provider: PhoneProviderObservation; 
     </View>
   );
 }
-function Row({ label, value }: { label: string; value?: (string | number | boolean | null) | undefined }) {
+function Row({
+  label,
+  value,
+}: Readonly<{ label: string; value?: (string | number | boolean | null) | undefined }>) {
   const text =
     value == null || value === ''
       ? t('common.notReturned')

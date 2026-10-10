@@ -19,14 +19,14 @@ export function ListSection({
   footer,
   icons = false,
   testID,
-}: {
+}: Readonly<{
   children: ReactNode;
   header?: string | undefined;
   headerIcon?: ReactNode;
   footer?: string | undefined;
   icons?: boolean | undefined;
   testID?: string | undefined;
-}) {
+}>) {
   const rows = Children.toArray(children).filter(Boolean);
   if (!rows.length) return null;
   return (
@@ -64,7 +64,7 @@ export function ListSection({
 }
 
 /** A heading between groups of sections, with its note: "No permission needed", for example. */
-export function ListGroupTitle({ title, note }: { title: string; note?: string | undefined }) {
+export function ListGroupTitle({ title, note }: Readonly<{ title: string; note?: string | undefined }>) {
   return (
     <View style={listStyles.groupTitle}>
       <Text accessibilityRole="header" style={listStyles.groupTitleText}>
@@ -76,7 +76,7 @@ export function ListGroupTitle({ title, note }: { title: string; note?: string |
 }
 
 /** The rounded, tinted square behind a row's SF Symbol, as in Settings. */
-function IconTile({ name, background }: { name: string; background: ColorValue }) {
+function IconTile({ name, background }: Readonly<{ name: string; background: ColorValue }>) {
   return (
     <View style={[listStyles.tile, { backgroundColor: background }]}>
       <IdentitySymbol name={name} tint={symbolTint.tile} style={listStyles.glyph} />
@@ -97,7 +97,7 @@ export function ListRow({
   disabled = false,
   destructive = false,
   chevron = true,
-}: {
+}: Readonly<{
   label: string;
   status?: string | undefined;
   onPress: () => void;
@@ -106,7 +106,7 @@ export function ListRow({
   disabled?: boolean | undefined;
   destructive?: boolean | undefined;
   chevron?: boolean | undefined;
-}) {
+}>) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -133,7 +133,7 @@ export function ListRow({
 
 /** A label and its value, as Settings shows one: the label in body text, the value trailing in the
  * secondary color, with digits of equal width so a value that changes every second does not jitter. */
-export function ValueRow({ label, value }: { label: string; value: string }) {
+export function ValueRow({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <View style={[listStyles.row, listStyles.content]}>
       <ValueLine label={label} value={value} />
@@ -142,7 +142,7 @@ export function ValueRow({ label, value }: { label: string; value: string }) {
 }
 
 /** The label and value of a `ValueRow`, for a cell that also holds a control, such as a slider. */
-export function ValueLine({ label, value }: { label: string; value: string }) {
+export function ValueLine({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <View style={listStyles.valueLine}>
       <Text style={listStyles.valueLabel}>{label}</Text>
@@ -152,7 +152,7 @@ export function ValueLine({ label, value }: { label: string; value: string }) {
 }
 
 /** A titled statement inside a section: the title in body text, the detail under it. */
-export function TitleRow({ title, detail }: { title: string; detail: string }) {
+export function TitleRow({ title, detail }: Readonly<{ title: string; detail: string }>) {
   return (
     <View style={[listStyles.row, listStyles.block]}>
       <Text style={listStyles.title}>{title}</Text>
@@ -166,11 +166,11 @@ export function TextRow({
   text: words,
   tone = 'secondary',
   alert = false,
-}: {
+}: Readonly<{
   text: string;
   tone?: 'secondary' | 'warning' | undefined;
   alert?: boolean | undefined;
-}) {
+}>) {
   return (
     <View style={[listStyles.row, listStyles.content]}>
       <Text
@@ -185,12 +185,12 @@ export function TextRow({
 
 /** A row holding a control or a picture of its own, such as a slider or a map, with any rows of
  * text above or below it inside the same cell. */
-export function ContentRow({ children }: { children: ReactNode }) {
+export function ContentRow({ children }: Readonly<{ children: ReactNode }>) {
   return <View style={[listStyles.row, listStyles.block]}>{children}</View>;
 }
 
 /** The small print under a control inside its cell. */
-export function RowNote({ text: words }: { text: string }) {
+export function RowNote({ text: words }: Readonly<{ text: string }>) {
   return <Text style={listStyles.rowNote}>{words}</Text>;
 }
 
@@ -204,14 +204,14 @@ export function ButtonRow({
   disabled = false,
   destructive = false,
   testID,
-}: {
+}: Readonly<{
   label: string;
   onPress: () => void;
   note?: string | undefined;
   disabled?: boolean | undefined;
   destructive?: boolean | undefined;
   testID?: string | undefined;
-}) {
+}>) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -241,14 +241,14 @@ export function SwitchRow({
   value,
   disabled,
   onChange,
-}: {
+}: Readonly<{
   title: string;
   state: string;
   note?: string | undefined;
   value: boolean;
   disabled: boolean;
   onChange: (wanted: boolean) => void;
-}) {
+}>) {
   return (
     <View style={[listStyles.row, listStyles.block]}>
       <View style={listStyles.switchLine}>
@@ -269,12 +269,12 @@ export function CheckRow({
   selected,
   onPress,
   disabled = false,
-}: {
+}: Readonly<{
   label: string;
   selected: boolean;
   onPress: () => void;
   disabled?: boolean | undefined;
-}) {
+}>) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -300,12 +300,12 @@ export function LinkRow({
   caption,
   quote,
   onPress,
-}: {
+}: Readonly<{
   code?: string | undefined;
   caption?: string | undefined;
   quote?: string | undefined;
   onPress: () => void;
-}) {
+}>) {
   return (
     <Pressable
       accessibilityRole="link"
@@ -328,12 +328,12 @@ export function BarButton({
   onPress,
   testID,
   disabled = false,
-}: {
+}: Readonly<{
   label: string;
   onPress: () => void;
   testID?: string;
   disabled?: boolean | undefined;
-}) {
+}>) {
   return (
     <Pressable
       accessibilityRole="button"

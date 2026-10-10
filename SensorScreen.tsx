@@ -46,11 +46,11 @@ export function SensorSession({
   configuration,
   open,
   children,
-}: {
+}: Readonly<{
   configuration: Configuration;
   open: boolean;
   children: ReactNode;
-}) {
+}>) {
   const [reportedFailure, setReportedFailure] = useState<{
     controller: SensorBoardController | undefined;
     message: string;
@@ -102,7 +102,7 @@ export function SensorSession({
 
 /** The board: every sensor section, grouped by whether iOS asks permission first, as SensorHost's
  * Sensors tab lists them. Each section's last row opens its page. */
-export function SensorBoardScreen({ onOpenPage }: { onOpenPage: (page: SensorPage) => void }) {
+export function SensorBoardScreen({ onOpenPage }: Readonly<{ onOpenPage: (page: SensorPage) => void }>) {
   const { state, perform } = useContext(SensorSessionContext);
   const board = state.board;
   const now = useSecondClock();
@@ -140,7 +140,7 @@ export function SensorBoardScreen({ onOpenPage }: { onOpenPage: (page: SensorPag
 
 /** One sensor's page: its section without a header, since the page's title names it, then Apple's
  * documentation for it and, where the SDK computes the value, how. */
-export function SensorDetailScreen({ page }: { page: SensorPage }) {
+export function SensorDetailScreen({ page }: Readonly<{ page: SensorPage }>) {
   const { state, perform, setFailure } = useContext(SensorSessionContext);
   const board = state.board;
   const now = useSecondClock();
@@ -158,7 +158,7 @@ export function SensorDetailScreen({ page }: { page: SensorPage }) {
 
 /** Export, units, permissions, reading time, erase, stores, where data is kept and limits, followed
  * by whatever settings of its own the app adds. */
-export function SensorSettingsScreen({ children }: { children?: ReactNode }) {
+export function SensorSettingsScreen({ children }: Readonly<{ children?: ReactNode }>) {
   const { state, perform, setFailure } = useContext(SensorSessionContext);
   const board = state.board;
   return (
@@ -178,12 +178,12 @@ function SensorScroll({
   enabledIcons,
   testID,
   children,
-}: {
+}: Readonly<{
   title: string;
   enabledIcons: boolean;
   testID: string;
   children: ReactNode;
-}) {
+}>) {
   const { state, failure } = useContext(SensorSessionContext);
   const shown = failure || state.failure;
   return (

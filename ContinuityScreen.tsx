@@ -7,7 +7,7 @@ import { useSensorSession } from './SensorScreen';
 import { ButtonRow, ListRow, ListSection, TextRow, TitleRow, ValueRow } from './ui/List';
 import { confirmDestructive } from './ui/NativeSheet';
 
-export function ContinuityScreen({ onOverTime }: { onOverTime: () => void }) {
+export function ContinuityScreen({ onOverTime }: Readonly<{ onOverTime: () => void }>) {
   const { state, perform } = useSensorSession();
   const continuity = state.board?.fusion.continuity;
   const result = continuity?.state === 'evaluated' ? continuity.result : null;
@@ -73,7 +73,7 @@ export function ContinuityScreen({ onOverTime }: { onOverTime: () => void }) {
     </FusionPage>
   );
 }
-function ContinuityDetails({ result: r }: { result: FusionContinuityResult }) {
+function ContinuityDetails({ result: r }: Readonly<{ result: FusionContinuityResult }>) {
   return (
     <>
       <ListSection header={copy('continuity.score.header')} footer={copy('continuity.score.note')}>

@@ -71,14 +71,17 @@ const correctionText: Record<string, string> = {
 };
 
 /** Remount the presentation when custody changes; no old holder state is rendered. */
-export function DocumentCheckPanel(props: { session: DocumentCheckPort; configured: boolean }) {
+export function DocumentCheckPanel(props: Readonly<{ session: DocumentCheckPort; configured: boolean }>) {
   return <DocumentCheckView key={`${props.session.id}:${props.configured}`} {...props} />;
 }
 
 const initialState: DocumentCheckState = { snapshot: undefined, busy: false, failure: undefined };
 
 /** Reopening restores local status. Only holder actions can dispatch a check. */
-function DocumentCheckView({ session, configured }: { session: DocumentCheckPort; configured: boolean }) {
+function DocumentCheckView({
+  session,
+  configured,
+}: Readonly<{ session: DocumentCheckPort; configured: boolean }>) {
   const [sheet, setSheet] = useState<'failure' | 'correction'>();
   const [error, setError] = useState('');
   const [edits, setEdits] = useState<Record<string, string>>({});

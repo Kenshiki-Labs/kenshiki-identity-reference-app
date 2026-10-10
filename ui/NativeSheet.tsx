@@ -11,12 +11,12 @@ export function NativeSheet({
   testID,
   onDismiss,
   children,
-}: {
+}: Readonly<{
   title: string;
   testID?: string | undefined;
   onDismiss?: (() => void) | undefined;
   children: ReactNode;
-}) {
+}>) {
   return (
     <Modal
       visible

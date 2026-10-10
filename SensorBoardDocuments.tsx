@@ -11,10 +11,10 @@ import { NativeSheet } from './ui/NativeSheet';
 export function SensorDocuments({
   page,
   onFailure,
-}: {
+}: Readonly<{
   page: SensorPage;
   onFailure: (message: string) => void;
-}) {
+}>) {
   const docs = pageDoc(page);
   const [algorithm, setAlgorithm] = useState(false);
   if (!docs) return null;

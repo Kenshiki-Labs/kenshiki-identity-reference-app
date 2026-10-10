@@ -64,11 +64,11 @@ export function FusionPage({
   children,
   testID,
   title,
-}: {
+}: Readonly<{
   children: ReactNode;
   testID: string;
   title: string;
-}) {
+}>) {
   const { state, failure } = useSensorSession();
   return (
     <Page testID={testID} title={title}>
@@ -81,10 +81,10 @@ export function FusionPage({
     </Page>
   );
 }
-export function TimestampRow({ label, value }: { label: string; value: string | null }) {
+export function TimestampRow({ label, value }: Readonly<{ label: string; value: string | null }>) {
   return <ValueRow label={label} value={moment(value)} />;
 }
-export function ReceiptSection({ receipt }: { receipt: FusionReceipt | null }) {
+export function ReceiptSection({ receipt }: Readonly<{ receipt: FusionReceipt | null }>) {
   return (
     <ListSection header={copy('continuity.anchor.header')} footer={t('fusionUI.receiptLimit')}>
       {receipt ? (
@@ -130,11 +130,11 @@ function MathSheet({
   metrics,
   explanation,
   onDismiss,
-}: {
+}: Readonly<{
   metrics: FusionMetric[];
   explanation: string[];
   onDismiss: () => void;
-}) {
+}>) {
   return (
     <NativeSheet title={t('fusionUI.mathTitle')} testID="fusion-math" onDismiss={onDismiss}>
       <ListSection footer={t('fusionUI.working')}>

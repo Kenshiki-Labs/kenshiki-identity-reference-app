@@ -27,10 +27,10 @@ const failures: Record<SubscriberComparisonFailure, string> = {
 export function SubscriberResultDetails({
   result,
   failure,
-}: {
+}: Readonly<{
   result?: SubscriberComparisonResult | undefined;
   failure?: (SubscriberComparisonFailure | null) | undefined;
-}) {
+}>) {
   if (!result)
     return <Text style={styles.body}>{failure ? failures[failure] : t('subscriber.noResult')}</Text>;
   return (
@@ -76,7 +76,10 @@ export function SubscriberResultDetails({
   );
 }
 
-function Row({ label: title, value }: { label: string; value?: (string | boolean | null) | undefined }) {
+function Row({
+  label: title,
+  value,
+}: Readonly<{ label: string; value?: (string | boolean | null) | undefined }>) {
   const text =
     value == null || value === ''
       ? t('common.notReturned')

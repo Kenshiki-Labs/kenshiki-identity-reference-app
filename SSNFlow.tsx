@@ -20,13 +20,13 @@ export function SSNFlow({
   onComplete,
   onExit,
   onClaim,
-}: {
+}: Readonly<{
   configuration: Configuration;
   saved?: SavedSSNCheck | undefined;
   onComplete: (value: SavedSSNCheck) => void;
   onExit: () => void;
   onClaim?: (() => void) | undefined;
-}) {
+}>) {
   const [finishing, setFinishing] = useState(false);
   // Bumped only when what was typed held something other than digits, so the entry restarts from
   // what the controller kept (see the entry below).
@@ -322,12 +322,12 @@ function SSNEntry({
   autoFocus,
   editable,
   onChangeText,
-}: {
+}: Readonly<{
   initialDigits: string;
   autoFocus: boolean;
   editable: boolean;
   onChangeText: (text: string) => void;
-}) {
+}>) {
   const [seed] = useState(initialDigits);
   return (
     <TextInput
@@ -357,7 +357,7 @@ export function ssnSummary(receipt: SSNVerificationReceipt): string {
       ? t('ssn.summary.notIssued')
       : t('ssn.summary.unavailable');
 }
-export function SSNResultDetails({ receipt }: { receipt: SSNVerificationReceipt }) {
+export function SSNResultDetails({ receipt }: Readonly<{ receipt: SSNVerificationReceipt }>) {
   const details = receipt.details;
   const reported = (value?: string | null) => value?.trim() || t('common.notReturned');
   return (
@@ -405,7 +405,7 @@ export function SSNResultDetails({ receipt }: { receipt: SSNVerificationReceipt 
     </View>
   );
 }
-function ResultRow({ label, value }: { label: string; value: string }) {
+function ResultRow({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <View style={styles.detail}>
       <Text style={styles.label}>{label}</Text>

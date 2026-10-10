@@ -28,14 +28,14 @@ export function IdentityCaptureFlow({
   onClaim,
   completed,
   resume,
-}: {
+}: Readonly<{
   configuration: Configuration;
   onExit: () => void;
   onComplete: (result: CompletedCapture) => void;
   onClaim?: (() => void) | undefined;
   completed?: CompletedCapture | undefined;
   resume?: ('selfie' | 'read') | undefined;
-}) {
+}>) {
   const [width, setWidth] = useState(0);
   const handoffStarted = useRef(false);
   const [finishing, setFinishing] = useState(false);
@@ -396,10 +396,10 @@ const protocolStatus = {
 export function CaptureResultDetails({
   result,
   focus = 'passport',
-}: {
+}: Readonly<{
   result: CompletedCapture;
   focus?: ('passport' | 'face') | undefined;
-}) {
+}>) {
   const { passport, comparison, session } = result;
   const [technical, setTechnical] = useState(false);
   const depth = comparison?.admissionReceipt.depthEvidence;
@@ -632,7 +632,7 @@ function displayDate(raw: string): string {
     ? t('format.mrzDate', { day: Number(raw.slice(4)), month: `m${raw.slice(2, 4)}`, year: raw.slice(0, 2) })
     : raw;
 }
-function Details({ label, value }: { label: string; value: string }) {
+function Details({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <View style={styles.detail}>
       <Text style={styles.label}>{label}</Text>

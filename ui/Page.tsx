@@ -34,7 +34,7 @@ export function Page({
   testID,
   covered = false,
   overlay,
-}: PageProps) {
+}: Readonly<PageProps>) {
   const navigation = useContext(NavigationContext);
   const route = useContext(NavigationRouteContext);
   const stack = navigation?.getState();

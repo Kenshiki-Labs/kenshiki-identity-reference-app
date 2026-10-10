@@ -5,7 +5,7 @@ import { useSensorSession } from './SensorScreen';
 import { ListRow, ListSection, TextRow, ValueRow } from './ui/List';
 
 export type FusionDestination = 'AirCheck' | 'Continuity' | 'ThreeProofs' | 'Glossary' | 'OverTime';
-export function FusionScreen({ onOpen }: { onOpen: (page: FusionDestination) => void }) {
+export function FusionScreen({ onOpen }: Readonly<{ onOpen: (page: FusionDestination) => void }>) {
   const { state } = useSensorSession();
   const fusion = state.board?.fusion;
   const air = fusion?.airCheck;

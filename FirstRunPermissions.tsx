@@ -21,11 +21,11 @@ export function FirstRunPermissions({
   configuration,
   enabled,
   children,
-}: {
+}: Readonly<{
   configuration: Configuration;
   enabled: boolean;
   children: ReactNode;
-}) {
+}>) {
   const [completed, setCompleted] = useState(() => !enabled || Settings.get(completionKey) === 'completed');
   if (completed) return children;
   return (
@@ -42,10 +42,10 @@ export function FirstRunPermissions({
 function PermissionIntroduction({
   configuration,
   onComplete,
-}: {
+}: Readonly<{
   configuration: Configuration;
   onComplete: () => void;
-}) {
+}>) {
   const session = useRef<CaptureSession | null>(null);
   const opening = useRef<Promise<void> | null>(null);
   const working = useRef(false);
@@ -182,7 +182,7 @@ function PermissionPrimer({
   onNext,
   onRequest,
   onSettings,
-}: {
+}: Readonly<{
   board: SensorBoardState | null;
   permission: Permission;
   askedAlways: boolean;
@@ -191,7 +191,7 @@ function PermissionPrimer({
   onNext: () => void;
   onRequest: () => void;
   onSettings: () => void;
-}) {
+}>) {
   const { status, granted, approximate, settingsNeeded, whileUsing } = permissionPresentation(
     board,
     permission,
