@@ -95,6 +95,20 @@ if args.trust_anchors is not None:
             raise ValueError
     except ValueError:
         raise SystemExit('Trust anchors must be PEM certificates (BEGIN CERTIFICATE blocks): ' + str(args.trust_anchors))
+# Do not maintain a second copy list: every delivered root TypeScript module belongs to the host.
+host_prefix = 'Examples/ReactNativeCaptureHost/'
+typescript_sources = sorted(
+    Path(name).name for name in delivery['fileSHA256']
+    if name.startswith(host_prefix) and len(Path(name).parts) == 3
+    and Path(name).suffix in {'.ts', '.tsx'}
+)
+if 'App.tsx' not in typescript_sources:
+    raise SystemExit('The integration manifest has no reference app entry point')
+for filename in typescript_sources:
+    source = Path(__file__).with_name(filename)
+    expected = delivery['fileSHA256'][host_prefix + filename]
+    if not source.is_file() or hashlib.sha256(source.read_bytes()).hexdigest() != expected:
+        raise SystemExit('Reference source differs from the integration manifest: ' + filename)
 # The screens import typed modules compiled from ui/tokens.jsonc and locales/*.jsonc. Refuse to
 # copy modules that differ from their sources, before anything is created.
 generator = Path(__file__).with_name('generate-ui-resources.py')
@@ -119,26 +133,12 @@ subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'I
                 '--skip-install', '--skip-git-init'], check=True)
 with (host / '.gitignore').open('a') as ignored:
     ignored.write('\n# Local Fastlane output and signing credentials\n/fastlane/report.xml\n/fastlane/README.md.generated\n/fastlane/Preview.html\n*.p8\n*.p12\n*.mobileprovision\n.env\n.env.*\n')
-for filename in ['FusionScreen.tsx', 'FusionPresentation.tsx', 'FusionExplanations.tsx',
-                 'AirCheckScreen.tsx', 'AirCheckDiagram.tsx', 'ContinuityScreen.tsx', 'FusionScreen.test.tsx',
-                 'FirstRunPermissions.tsx', 'FirstRunPermissions.test.tsx',
-                 'App.tsx', 'AppNavigator.tsx', 'useIdentityWorkspace.ts', 'SessionAcquisition.ts',
-                 'IdentityHome.tsx', 'IdentityResults.tsx', 'IdentitySettings.tsx', 'IdentityRecovery.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
-                 'DriverLicenseFlow.tsx', 'DocumentFlowController.ts', 'DocumentCheckPanel.tsx',
-                 'DocumentCheckPanel.test.tsx',
-                 'DriverLicenseFlow.test.tsx', 'DocumentFlowController.test.ts',
-                 'PhoneFlow.tsx', 'SubscriberResultDetails.tsx', 'PhoneFlowController.ts', 'PhoneFlow.test.tsx', 'PhoneFlowController.test.ts',
-                 'SSNFlow.tsx', 'SSNFlowController.ts', 'SSNFlow.test.tsx', 'SSNFlowController.test.ts',
-                 'HolderText.ts', 'ReferenceFindings.test.tsx', 'HolderLifecycle.test.tsx',
-                 'IntegrationChecks.tsx', 'PhonePolicy.ts', 'DocumentCheckController.ts', 'DocumentCheckController.test.ts',
-                 'SensorScreen.tsx', 'SensorScreen.test.tsx', 'SensorBoardController.ts', 'SensorBoardController.test.ts',
-                 'SensorBoardDocuments.tsx', 'SensorBoardLocation.tsx', 'SensorBoardRows.tsx', 'SensorBoardSettings.tsx',
-                 'SensorBoardSlider.tsx', 'SensorPresentation.ts', 'SensorPresentation.test.ts']:
+# The delivery manifest owns the root TypeScript inventory, including extracted controllers.
+# Validate every source before creating the host, then copy that exact inventory below.
+for filename in typescript_sources:
     contents = Path(__file__).with_name(filename).read_text()
     contents = contents.replace('../../ReactNative/identity-capture/src/codes', '@kenshiki/identity-capture/src/codes')
     (host / filename).write_text(contents)
-(host / 'CaptureFlowController.test.ts').write_text(Path(__file__).with_name('CaptureFlowController.test.ts').read_text().replace('../../ReactNative/identity-capture/src/codes', '@kenshiki/identity-capture/src/codes'))
-(host / 'IdentityCaptureFlow.test.tsx').write_text(Path(__file__).with_name('IdentityCaptureFlow.test.tsx').read_text().replace('../../ReactNative/identity-capture/src/codes', '@kenshiki/identity-capture/src/codes'))
 shutil.copyfile(Path(__file__).parent / '__tests__/support.ts', host / '__tests__/support.ts')
 shutil.copyfile(Path(__file__).parent / '__tests__/SensorBoardFixtures.ts', host / '__tests__/SensorBoardFixtures.ts')
 shutil.copyfile(Path(__file__).parent / '__tests__/FusionFixtures.ts', host / '__tests__/FusionFixtures.ts')
