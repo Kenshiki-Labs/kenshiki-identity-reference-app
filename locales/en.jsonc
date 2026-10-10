@@ -16,7 +16,7 @@
 {
   "prerequisite": {
     "title": "Complete the earlier checks",
-    "document": "Complete the document check before checking your phone.",
+    "document": "Open Driver’s license and choose Check license record. A successful result unlocks Phone.",
     "phone": "Complete the phone check before checking your Social Security number.",
     "service": "This check is not connected yet.",
     "back": "Back to Identity"

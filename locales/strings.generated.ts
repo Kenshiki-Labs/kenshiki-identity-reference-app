@@ -970,7 +970,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
     plural: (count) => (count === 1 ? 'one' : 'other'),
     messages: {
       "prerequisite.title": "Complete the earlier checks",
-      "prerequisite.document": "Complete the document check before checking your phone.",
+      "prerequisite.document": "Open Driver’s license and choose Check license record. A successful result unlocks Phone.",
       "prerequisite.phone": "Complete the phone check before checking your Social Security number.",
       "prerequisite.service": "This check is not connected yet.",
       "prerequisite.back": "Back to Identity",
