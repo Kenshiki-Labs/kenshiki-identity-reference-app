@@ -4,6 +4,7 @@ import type {
   SSNSessionSnapshot,
   SSNVerificationReceipt,
 } from '@kenshiki/identity-capture';
+import { ssnBinding, ssnOperationID, ssnReceipt } from './__tests__/ssnFixture';
 import { mockSession as makeSession } from './__tests__/support';
 import { SSNFlowController } from './SSNFlowController';
 
@@ -19,19 +20,14 @@ async function tick() {
 }
 const configuration: Configuration = {
   ssn: {
-    context: { credentialID: 'test-holder' },
-    workflowID: 'test-workflow',
+    contextID: 'test-holder',
     providerID: 'test-provider',
     directoryURL: 'file:///test',
     keychainService: 'test',
     keychainAccount: 'test',
   },
 };
-const receipt: SSNVerificationReceipt = {
-  operationID: 'operation',
-  checkedAt: '2026-10-07T20:00:00Z',
-  issuance: 'issued',
-};
+const receipt: SSNVerificationReceipt = ssnReceipt;
 const ready: SSNSessionSnapshot = {
   state: 'ready',
   entryDigits: '',
@@ -44,8 +40,8 @@ const ready: SSNSessionSnapshot = {
 };
 const pending: SSNSessionSnapshot = {
   ...ready,
-  state: 'outcomeUnknown',
-  attempt: { operationID: 'operation', createdAt: '2026-10-07T20:00:00Z' },
+  state: 'failed',
+  attempt: { operationID: ssnOperationID, binding: ssnBinding },
   recoveryNeeded: true,
 };
 const complete: SSNSessionSnapshot = { ...ready, state: 'completed', attempt: pending.attempt, receipt };
@@ -59,7 +55,7 @@ function fixture(initial = ready, configured = true) {
         ...snapshot,
         state: 'confirming',
         entryDigits: digits,
-        confirmation: { id: 'confirmation-token', digits, purpose: 'initialCheck' },
+        confirmation: { id: 'confirmation-token', digits },
       };
       return snapshot;
     }),
@@ -68,7 +64,7 @@ function fixture(initial = ready, configured = true) {
         ...snapshot,
         state: 'confirming',
         entryDigits: digits,
-        confirmation: { id: 'replacement-token', digits, purpose: 'replacementAfterUnknownOutcome' },
+        confirmation: { id: 'replacement-token', digits },
       };
       return snapshot;
     }),
@@ -131,35 +127,35 @@ test('editing revokes the native confirmation and keeps only transient editable 
   await f.c.confirm();
   expect(f.native.ssnConfirm).not.toHaveBeenCalled();
 });
-test('an unknown outcome requires a new explicitly marked review and makes no recovery purchase', async () => {
+test('an unresolved operation requires status before another entry', async () => {
   const f = fixture(pending);
   await f.c.open();
-  expect(f.native.ssnRecover).not.toHaveBeenCalled();
-  expect(f.native.ssnConfirm).not.toHaveBeenCalled();
   f.c.beginEntry();
   f.c.setDigits('000001234');
   await f.c.requestConfirmation();
-  expect(f.native.ssnRequestFreshConfirmation).toHaveBeenCalledWith('000001234');
+  expect(f.c.state.editing).toBe(false);
+  expect(f.native.ssnRequestFreshConfirmation).not.toHaveBeenCalled();
   expect(f.native.ssnRequestConfirmation).not.toHaveBeenCalled();
-  expect(f.c.state.snapshot?.confirmation?.purpose).toBe('replacementAfterUnknownOutcome');
+  await f.c.resend();
+  expect(f.native.ssnRecover).toHaveBeenCalledTimes(1);
   expect(f.native.ssnConfirm).not.toHaveBeenCalled();
 });
-test('a response failure reads local uncertainty and offers same-operation resend without another purchase', async () => {
+test('a response failure reconciles original status without another purchase', async () => {
   const f = fixture();
   await prepare(f);
   f.native.ssnConfirm.mockImplementationOnce(async () => {
-    f.commit({ ...pending, failure: 'outcomeUnknown' });
-    throw { code: 'outcomeUnknown' };
+    f.commit({ ...pending, failure: 'timedOut' });
+    throw { code: 'timedOut' };
   });
   await f.c.confirm();
   expect(f.c.state.sheet).toMatchObject({ kind: 'recovery', recovery: 'resend' });
-  expect(f.c.state.snapshot?.attempt?.operationID).toBe('operation');
+  expect(f.c.state.snapshot?.attempt?.operationID).toBe(ssnOperationID);
   await f.c.retry();
-  expect(f.native.ssnRecover).not.toHaveBeenCalled();
+  expect(f.native.ssnRecover).toHaveBeenCalledTimes(1);
   expect(f.native.ssnRequestFreshConfirmation).not.toHaveBeenCalled();
   expect(f.c.state.editing).toBe(false);
-  expect(f.native.ssnResendUnresolved).toHaveBeenCalledTimes(1);
-  expect(f.c.state.snapshot?.attempt?.operationID).toBe('operation');
+  expect(f.native.ssnResendUnresolved).not.toHaveBeenCalled();
+  expect(f.c.state.snapshot?.attempt?.operationID).toBe(ssnOperationID);
   expect(f.native.ssnConfirm).toHaveBeenCalledTimes(1);
   expect(f.native.ssnRequestConfirmation).toHaveBeenCalledTimes(1);
 });
@@ -173,7 +169,7 @@ test('backgrounding immediately redacts digits and never restores a delayed conf
     ...ready,
     state: 'confirming' as const,
     entryDigits: '000001234',
-    confirmation: { id: 'old-token', digits: '000001234', purpose: 'initialCheck' as const },
+    confirmation: { id: 'old-token', digits: '000001234' },
   };
   f.native.ssnRequestConfirmation.mockImplementationOnce(() => {
     f.commit(oldSnapshot);
@@ -317,10 +313,10 @@ test('entry opens from an introduction with no native confirmation or request', 
   expect(f.c.state.editing).toBe(true);
   expect(f.native.ssnConfirm).not.toHaveBeenCalled();
 });
-test('a received unsaved answer offers local save only and preserves the original attempt', async () => {
-  const f = fixture({ ...pending, state: 'finishing', failure: 'storageUnavailable' });
+test('a failed save reconciles original status and blocks another purchase', async () => {
+  const f = fixture({ ...pending, state: 'failed', failure: 'storageUnavailable' });
   await f.c.open();
-  expect(f.c.state.sheet).toMatchObject({ kind: 'recovery', recovery: 'localSave' });
+  expect(f.c.state.sheet).toMatchObject({ kind: 'recovery', recovery: 'resend' });
   f.c.beginEntry();
   expect(f.c.state.editing).toBe(false);
   await f.c.retry();
@@ -357,11 +353,31 @@ jest.mock('@kenshiki/identity-capture', () => ({
 test('same-operation recovery accepts a result without asking for digits or a new purchase', async () => {
   const f = fixture(pending);
   await f.c.open();
-  f.native.ssnResendUnresolved.mockResolvedValueOnce(complete);
+  f.native.ssnRecover.mockResolvedValueOnce(complete);
   await f.c.resend();
   expect(f.c.state.snapshot?.receipt).toEqual(receipt);
-  expect(f.native.ssnResendUnresolved).toHaveBeenCalledTimes(1);
+  expect(f.native.ssnResendUnresolved).not.toHaveBeenCalled();
   expect(f.native.ssnConfirm).not.toHaveBeenCalled();
   expect(f.native.ssnRequestConfirmation).not.toHaveBeenCalled();
   expect(f.native.ssnRequestFreshConfirmation).not.toHaveBeenCalled();
+});
+
+// The bound five-check contract reconciles the original operation before another entry.
+test('W2 unresolved operation cannot open a replacement number or fresh confirmation', async () => {
+  const f = fixture(pending);
+  await f.c.open();
+  f.c.beginEntry();
+  f.c.setDigits('000001234');
+  await f.c.requestConfirmation();
+  expect(f.c.state.editing).toBe(false);
+  expect(f.native.ssnRequestFreshConfirmation).not.toHaveBeenCalled();
+  expect(f.native.ssnRequestConfirmation).not.toHaveBeenCalled();
+});
+test('W2 recovery queries status without resending digits to the supplier', async () => {
+  const f = fixture(pending);
+  await f.c.open();
+  await f.c.resend();
+  expect(f.native.ssnRecover).toHaveBeenCalledTimes(1);
+  expect(f.native.ssnResendUnresolved).not.toHaveBeenCalled();
+  expect(f.native.ssnConfirm).not.toHaveBeenCalled();
 });

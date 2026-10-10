@@ -1,14 +1,11 @@
 import type { Configuration, SSNSessionSnapshot, SSNVerificationReceipt } from '@kenshiki/identity-capture';
 import renderer, { act } from 'react-test-renderer';
+import { ssnBinding, ssnOperationID, ssnReceipt } from './__tests__/ssnFixture';
 import { invoke, required } from './__tests__/support';
 import App from './App';
 import { SSNResultDetails } from './SSNFlow';
 
-const mockReceipt: SSNVerificationReceipt = {
-  operationID: 'operation',
-  checkedAt: '2026-10-07T20:00:00Z',
-  issuance: 'issued',
-};
+const mockReceipt: SSNVerificationReceipt = ssnReceipt;
 const mockReady: SSNSessionSnapshot = {
   state: 'ready',
   entryDigits: '',
@@ -28,7 +25,7 @@ const mockSession = {
       ...mockSnapshot,
       state: 'confirming',
       entryDigits: digits,
-      confirmation: { id: 'token', digits, purpose: 'initialCheck' },
+      confirmation: { id: 'token', digits },
     };
     return mockSnapshot;
   }),
@@ -37,7 +34,7 @@ const mockSession = {
       ...mockSnapshot,
       state: 'confirming',
       entryDigits: digits,
-      confirmation: { id: 'fresh-token', digits, purpose: 'replacementAfterUnknownOutcome' },
+      confirmation: { id: 'fresh-token', digits },
     };
     return mockSnapshot;
   }),
@@ -45,7 +42,7 @@ const mockSession = {
     mockSnapshot = {
       ...mockReady,
       state: 'completed',
-      attempt: { operationID: 'operation', createdAt: '2026-10-07T20:00:00Z' },
+      attempt: { operationID: ssnOperationID, binding: ssnBinding },
       receipt: mockReceipt,
     };
     return mockSnapshot;
@@ -73,8 +70,7 @@ beforeEach(() => {
 });
 const configuration: Configuration = {
   ssn: {
-    context: { credentialID: 'test-holder' },
-    workflowID: 'test-workflow',
+    contextID: 'test-holder',
     providerID: 'test-provider',
     directoryURL: 'file:///test',
     keychainService: 'test',
@@ -118,7 +114,7 @@ test('SSN review displays exact digits in a bottom sheet and a completed result 
   expect(mockSession.ssnConfirm).not.toHaveBeenCalled();
   await tap('ssn-confirm');
   expect(mockSession.ssnConfirm).toHaveBeenCalledWith('token');
-  expect(JSON.stringify(view.toJSON())).toContain('Reported as issued');
+  expect(JSON.stringify(view.toJSON())).toContain('The number was issued');
   expect(JSON.stringify(view.toJSON())).not.toContain('000-00-1234');
   await tap('finish-ssn');
   await tap('open-ssn');
@@ -166,34 +162,29 @@ test('issuance unavailable is not promoted to identity verification', async () =
     view = renderer.create(<SSNResultDetails receipt={{ ...mockReceipt, issuance: 'unavailable' }} />);
   });
   const shown = JSON.stringify(view.toJSON());
-  expect(shown).toContain('Issuance not available');
-  expect(shown).not.toContain('Reported as issued');
+  expect(shown).toContain('No issuance answer was available');
+  expect(shown).not.toContain('The number was issued');
   expect(shown).not.toContain('Verified');
-  expect(shown).toContain('does not establish that the number belongs to you');
+  expect(shown).toContain('An unanswered check cannot establish agreement');
   await act(async () => {
     view.unmount();
   });
 });
-test('an uncertain prior dispatch gets a fresh-number warning before another confirmation', async () => {
+test('an unresolved attempt offers status and no replacement purchase', async () => {
   mockSnapshot = {
     ...mockReady,
-    state: 'outcomeUnknown',
+    state: 'failed',
     recoveryNeeded: true,
-    attempt: { operationID: 'old-operation', createdAt: '2026-10-07T20:00:00Z' },
+    attempt: { operationID: ssnOperationID, binding: ssnBinding },
   };
-  const { view, tap, enter } = await renderApp();
+  const { view, tap } = await renderApp();
   await tap('open-ssn');
   await tap('ssn-resend-unresolved');
-  expect(mockSession.ssnResendUnresolved).toHaveBeenCalledTimes(1);
+  expect(mockSession.ssnRecover).toHaveBeenCalledTimes(1);
+  expect(mockSession.ssnResendUnresolved).not.toHaveBeenCalled();
+  expect(view.root.findAllByProps({ testID: 'ssn-new-attempt' })).toHaveLength(0);
+  expect(mockSession.ssnRequestFreshConfirmation).not.toHaveBeenCalled();
   expect(mockSession.ssnConfirm).not.toHaveBeenCalled();
-  await tap('ssn-new-attempt');
-  await enter();
-  await tap('ssn-review-number');
-  expect(view.root.findByProps({ testID: 'ssn-replacement-warning' })).toBeDefined();
-  expect(mockSession.ssnRequestFreshConfirmation).toHaveBeenCalledWith('000001234');
-  expect(mockSession.ssnConfirm).not.toHaveBeenCalled();
-  await tap('ssn-confirm');
-  expect(mockSession.ssnConfirm).toHaveBeenCalledWith('fresh-token');
   await act(async () => {
     view.unmount();
   });
@@ -243,7 +234,9 @@ test('returned findings show source values, while older receipts explain why det
   expect(shown).toContain('Not returned');
   expect(shown).not.toContain('Jan 1, 1978');
   await act(async () => {
-    view.update(<SSNResultDetails receipt={mockReceipt} />);
+    view.update(
+      <SSNResultDetails receipt={{ ...mockReceipt, reportKind: 'issuanceOnly', fiveChecks: null }} />,
+    );
   });
   shown = JSON.stringify(view.toJSON());
   expect(shown).toContain('Its details were not retained');

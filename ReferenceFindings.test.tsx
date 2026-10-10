@@ -13,6 +13,7 @@ import type {
 import type React from 'react';
 import { AppState, StyleSheet } from 'react-native';
 import renderer, { act, type ReactTestInstance } from 'react-test-renderer';
+import { ssnReceipt } from './__tests__/ssnFixture';
 import {
   actionSheets,
   invoke,
@@ -610,7 +611,12 @@ describe('5 what the holder sees', () => {
     const s = await render(
       <SSNResultDetails
         key="ssn"
-        receipt={{ operationID: 'o', checkedAt: '2026-10-08T12:00:00Z', issuance: 'notIssued' }}
+        receipt={{
+          ...ssnReceipt,
+          operationID: 'o',
+          checkedAt: '2026-10-08T12:00:00Z',
+          issuance: 'notIssued',
+        }}
       />,
     );
     shown.push(s.text());
@@ -694,11 +700,11 @@ describe('6 verdict wording', () => {
     const f = await render(
       <SSNResultDetails
         key="ssn"
-        receipt={{ operationID: 'o', checkedAt: '2026-10-08T12:00:00Z', issuance: 'issued' }}
+        receipt={{ ...ssnReceipt, operationID: 'o', checkedAt: '2026-10-08T12:00:00Z', issuance: 'issued' }}
       />,
     );
     expect(f.text()).not.toContain('Issuance confirmed');
-    expect(f.text()).toContain('Reported as issued');
+    expect(f.text()).toContain('The number was issued');
     await act(async () => {
       f.view.unmount();
     });
@@ -952,6 +958,7 @@ describe('9 privacy', () => {
       <SSNResultDetails
         key="ssn"
         receipt={{
+          ...ssnReceipt,
           operationID: 'o',
           checkedAt: '2026-10-08T12:00:00Z',
           issuance: 'issued',

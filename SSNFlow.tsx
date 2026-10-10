@@ -101,7 +101,6 @@ export function SSNFlow({
   const snapshot = state.snapshot;
   const receipt = snapshot?.receipt;
   const needsRecovery = snapshot?.recoveryNeeded;
-  const saving = snapshot?.state === 'finishing';
   const confirmation = snapshot?.confirmation;
   const close = (
     <Action
@@ -121,21 +120,6 @@ export function SSNFlow({
         </Text>
       );
     }
-    if (saving) {
-      return (
-        <View style={styles.card}>
-          <Text accessibilityRole="header" style={styles.sheetTitle}>
-            {t('common.saveYourResult')}
-          </Text>
-          <Text style={styles.body}>{t('ssn.saveBody')}</Text>
-          <Action
-            label={t('common.saveResult')}
-            testID="ssn-save-result"
-            onPress={activeController.recover}
-          />
-        </View>
-      );
-    }
     if (needsRecovery && !state.editing) {
       return (
         <View style={styles.card}>
@@ -144,11 +128,6 @@ export function SSNFlow({
           </Text>
           <Text style={styles.body}>{t('ssn.notReceivedBody')}</Text>
           <Action label={t('ssn.resend')} testID="ssn-resend-unresolved" onPress={activeController.resend} />
-          <Action
-            label={t('ssn.enterAgain')}
-            testID="ssn-new-attempt"
-            onPress={activeController.beginEntry}
-          />
         </View>
       );
     }
@@ -213,11 +192,6 @@ export function SSNFlow({
       return (
         <>
           <Text style={styles.body}>{t('ssn.confirm.body')}</Text>
-          {confirmation.purpose === 'replacementAfterUnknownOutcome' && (
-            <Text style={styles.body} testID="ssn-replacement-warning">
-              {t('ssn.confirm.replacement')}
-            </Text>
-          )}
           <Text style={styles.title} testID="ssn-confirmation-number">
             {formatNumber(confirmation.digits)}
           </Text>
@@ -249,15 +223,6 @@ export function SSNFlow({
               disabled={busy}
             />
           )}
-          {recovery.recovery === 'resend' && (
-            <Action
-              label={t('ssn.enterAgain')}
-              testID="ssn-new-attempt"
-              secondary
-              onPress={activeController.beginEntry}
-              disabled={busy}
-            />
-          )}
         </>
       );
     }
@@ -266,12 +231,6 @@ export function SSNFlow({
   function recoveryLabel() {
     if (!recovery) return t('common.tryAgain');
     if (recovery.recovery === 'resend') return t('ssn.resend');
-    if (recovery.recovery === 'localSave') {
-      return t('common.saveResult');
-    }
-    if (recovery.recovery === 'fresh') {
-      return t('ssn.enterAgain');
-    }
     return t('common.tryAgain');
   }
   return (
@@ -349,13 +308,14 @@ function SSNEntry({
   );
 }
 
-/** States what the checking service reported. Issuance is never presented as verification. */
+/** Present the aggregate independently of the issuance observation. */
 export function ssnSummary(receipt: SSNVerificationReceipt): string {
-  return receipt.issuance === 'issued'
-    ? t('ssn.summary.issued')
-    : receipt.issuance === 'notIssued'
-      ? t('ssn.summary.notIssued')
-      : t('ssn.summary.unavailable');
+  if (receipt.reportKind !== 'fiveChecks') return t('ssn.summary.historical');
+  return receipt.reportedOutcome === 'affirmative'
+    ? t('ssn.summary.fiveSatisfied')
+    : receipt.reportedOutcome === 'negative'
+      ? t('ssn.summary.fiveNotSatisfied')
+      : t('ssn.summary.fiveIncomplete');
 }
 export function SSNResultDetails({ receipt }: Readonly<{ receipt: SSNVerificationReceipt }>) {
   const details = receipt.details;
@@ -365,8 +325,28 @@ export function SSNResultDetails({ receipt }: Readonly<{ receipt: SSNVerificatio
       <Text accessibilityRole="header" style={styles.sheetTitle}>
         {ssnSummary(receipt)}
       </Text>
+      {receipt.fiveChecks && (
+        <>
+          <ResultRow
+            label={t('ssn.result.check.deathMasterFile')}
+            value={t(`ssn.result.outcome.${receipt.fiveChecks.checks.death_master_file.outcome}`)}
+          />
+          <ResultRow
+            label={t('ssn.result.check.name')}
+            value={t(`ssn.result.outcome.${receipt.fiveChecks.checks.ssn_name_association.outcome}`)}
+          />
+          <ResultRow
+            label={t('ssn.result.check.address')}
+            value={t(`ssn.result.outcome.${receipt.fiveChecks.checks.ssn_address_association.outcome}`)}
+          />
+          <ResultRow
+            label={t('ssn.result.check.phone')}
+            value={t(`ssn.result.outcome.${receipt.fiveChecks.checks.ssn_phone_association.outcome}`)}
+          />
+        </>
+      )}
       <ResultRow
-        label={t('ssn.result.reportedLabel')}
+        label={receipt.fiveChecks ? t('ssn.result.check.issuance') : t('ssn.result.reportedLabel')}
         value={
           receipt.issuance === 'issued'
             ? t('ssn.result.issued')
@@ -397,9 +377,11 @@ export function SSNResultDetails({ receipt }: Readonly<{ receipt: SSNVerificatio
             value={details.responseCode == null ? t('common.notReturned') : String(details.responseCode)}
           />
         </>
-      ) : (
-        <Text style={styles.body}>{t('ssn.result.issuanceOnly')}</Text>
-      )}
+      ) : !receipt.fiveChecks ? (
+        <Text style={styles.body}>
+          {receipt.reportKind === 'fiveChecks' ? t('ssn.result.noReport') : t('ssn.result.issuanceOnly')}
+        </Text>
+      ) : null}
       <ResultRow label={t('ssn.result.checked')} value={formatMoment(receipt.checkedAt)} />
       <Text style={styles.body}>{t('ssn.result.ownership')}</Text>
     </View>

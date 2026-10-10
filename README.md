@@ -199,7 +199,7 @@ Native service adapters are separate from hardware capture:
 | Capability | What the adopting native team supplies |
 | --- | --- |
 | Document check | `DocumentCheckProvider`, registration via `IDCaptureRegisterDocumentCheckProvider`, and `configuration.document.check` |
-| SSN issuance | `SSNIssuanceProvider`, `IDCaptureRegisterSSNIssuanceProvider`, stable workflow/context and dedicated custody configuration |
+| Bound SSN checks | `SSNVerificationProvider`, `IDCaptureRegisterSSNVerificationProvider`, a native context reference to the checked document/completed phone receipt, and dedicated custody |
 | Phone | `PhoneCheckProvider`, `IDCaptureRegisterPhoneCheckProvider`, approved service, checked-document reference and custody configuration |
 | Subscriber comparison | Optional separately qualified `SubscriberCheckProvider`, selected through `phone.subscriberProviderID` |
 
@@ -257,7 +257,7 @@ The default AppDelegate configures separate encrypted stores in private app supp
 with dedicated Keychain names, and the hub opens the current holder's saved results at launch. Every
 store is scoped to one local holder: its files are under `IdentityHolders/<holder UUID>/` (`Results`,
 `Documents`, and on the simulator fixtures `ArtifactSSN` and `ArtifactPhone`), and its Keychain service
-is `<app bundle ID>.identity.<holder UUID>.<store>`. The SSN and phone workflow IDs are derived from the
+is `<app bundle ID>.identity.<holder UUID>.<store>`. The synthetic SSN enrollment/context ID and phone workflow ID are derived from the
 holder, so the same holder reopens the same workflow. The AppDelegate creates the holder UUID once and
 keeps it in `UserDefaults`; if the stored value cannot be read it configures no store and the hub says
 so, rather than creating another holder. On the simulator only, `--reference-holder=<UUID>` selects the
@@ -285,8 +285,8 @@ SSN and phone have their own explicit native recovery/erasure operations; use th
 
 The document check panel shows returned provider checks and submitted fields instead of a generic
 success banner. It opens retained replies locally, requests a response only through an explicit action,
-and allows only corrections named by that reply. SSN results describe issuance, not ownership, and
-render provider details or explicit missing values. Phone results separate receipt evidence from the
+and allows only corrections named by that reply. SSN results show all five observations separately from the aggregate, including unavailable checks
+and an adverse death-file match. They do not turn issuance alone into agreement. Phone results separate receipt evidence from the
 subscriber comparison; reopening uncertainty does not silently start a new comparison. A receipt whose
 carrier comparison is contradicted, or whose subscriber comparison is not satisfied, stops the journey
 and offers a retry; it is never presented as a completed check.

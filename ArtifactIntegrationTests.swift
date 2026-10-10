@@ -457,7 +457,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     app.buttons["finish-ssn"].tap()
     XCTAssertTrue(open.waitForExistence(timeout: 5))
     open.tap()
-    XCTAssertTrue(app.staticTexts["Not reported as issued"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["Five-check result incomplete"].waitForExistence(timeout: 5))
     XCTAssertFalse(app.textFields["ssn-entry"].exists)
   }
 
@@ -482,8 +482,11 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertEqual(app.staticTexts["ssn-confirmation-number"].label, "000-00-1234")
     XCTAssertEqual(app.alerts.count, 0)
     app.buttons["ssn-confirm"].tap()
-    XCTAssertTrue(app.staticTexts["Not reported as issued"].waitForExistence(timeout: 10))
-    XCTAssertFalse(app.staticTexts["Reported as issued"].exists)
+    XCTAssertTrue(app.staticTexts["Five-check result incomplete"].waitForExistence(timeout: 10))
+    XCTAssertFalse(app.staticTexts["All five checks satisfied"].exists)
+    for label in ["Issuance record", "Death-file record", "Name association", "Address association", "Phone association"] {
+      XCTAssertTrue(app.staticTexts[label].exists, "The saved report must retain each distinct check")
+    }
     return open
   }
 
@@ -511,7 +514,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(open.waitForExistence(timeout: 30))
     for _ in 0..<3 where !open.isHittable { app.swipeUp() }
     open.tap()
-    XCTAssertTrue(app.staticTexts["Not reported as issued"].waitForExistence(timeout: 10),
+    XCTAssertTrue(app.staticTexts["Five-check result incomplete"].waitForExistence(timeout: 10),
       "The same holder must reopen its saved check after relaunch")
     app.terminate()
     app.launchArguments = ["--ssn-artifact-fixture", second]
@@ -522,7 +525,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     for _ in 0..<3 where !open.isHittable { app.swipeUp() }
     open.tap()
     XCTAssertTrue(app.buttons["ssn-begin-entry"].waitForExistence(timeout: 10))
-    XCTAssertFalse(app.staticTexts["Not reported as issued"].exists, "Another holder must not see the first holder's check")
+    XCTAssertFalse(app.staticTexts["Five-check result incomplete"].exists, "Another holder must not see the first holder's check")
   }
 
   @MainActor

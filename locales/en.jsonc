@@ -246,7 +246,7 @@
       "needsAttention": "Check needs attention · Open",
       // {summary} is the SSN result summary, for example "Reported as issued".
       "viewResult": "{summary} · View result",
-      "start": "Check whether your number was issued"
+      "start": "Compare your number with your checked ID and phone"
     },
     // The status line of a check this app cannot run; the section's footer says why.
     "notAvailable": "Not available",
@@ -815,14 +815,14 @@
     }
   },
 
-  // The Social Security number issuance check.
+  // The five Social Security number observations bound to the checked ID and phone.
   "ssn": {
-    "intro": "Check whether your Social Security number was issued. This does not confirm who owns the number.",
+    "intro": "Check issuance, the death file, and the name, address and phone associated with your Social Security number. Your checked ID and confirmed phone supply the comparison details.",
     "checking": "Checking…",
     "saveBody": "The answer arrived but could not be saved on this phone. Saving again will not send another check.",
     "notReceivedTitle": "The result was not received",
-    "notReceivedBody": "The previous check may have happened. Check again using the same request before starting a new check. If its result cannot be recovered, you can review your number for a new request.",
-    "resend": "Check again",
+    "notReceivedBody": "The previous check may have happened. Check its status before continuing. This does not send your number again or start a replacement check while the outcome is unresolved.",
+    "resend": "Check status",
     "enterAgain": "Enter number again",
     // Placeholder in the empty number field: nine digits, no separators.
     "placeholder": "000000000",
@@ -833,7 +833,7 @@
     "erase": "Erase saved SSN checks",
     "confirm": {
       "title": "Confirm your number",
-      "body": "Check every digit. This is the number that will be sent for the issuance check.",
+      "body": "Check every digit. This number will be sent with your checked ID and confirmed phone details for the five checks.",
       "replacement": "The previous check may have happened. Confirming sends a new request.",
       "action": "Confirm and check",
       "edit": "Edit number"
@@ -847,7 +847,11 @@
     "summary": {
       "issued": "Reported as issued",
       "notIssued": "Not reported as issued",
-      "unavailable": "Issuance not available"
+      "unavailable": "Issuance not available",
+      "fiveSatisfied": "All five checks satisfied",
+      "fiveNotSatisfied": "One or more checks did not agree",
+      "fiveIncomplete": "Five-check result incomplete",
+      "historical": "Saved earlier report"
     },
     "result": {
       "reportedLabel": "What the checking service reported",
@@ -864,14 +868,28 @@
       "responseCode": "Response code",
       "issuanceOnly": "This earlier check saved only the issuance result. Its details were not retained. A new confirmed check is needed to obtain them.",
       "checked": "Checked",
-      "ownership": "This result does not establish that the number belongs to you."
+      "ownership": "Each observation is shown separately. An unanswered check cannot establish agreement.",
+      "noReport": "The earlier attempt closed without a five-check report. No new check was sent.",
+      "check": {
+        "issuance": "Issuance record",
+        "deathMasterFile": "Death-file record",
+        "name": "Name association",
+        "address": "Address association",
+        "phone": "Phone association"
+      },
+      "outcome": {
+        "match": "Match reported",
+        "mismatch": "No match reported",
+        "unavailable": "Unavailable",
+        "indeterminate": "Not established"
+      }
     },
     "sheet": {
       "notReadyTitle": "This check is not ready",
       "notConnected": "The verification service is not connected. Your other identity checks remain available.",
       "failedTitle": "The check could not finish",
       "localSave": "The answer arrived but could not be saved on this phone. Try saving it again; this will not send another check.",
-      "unknown": "The previous check may have happened. Check again resends the same request. A new check requires you to review and confirm your number.",
+      "unknown": "The previous check may have happened. Check status asks about that attempt without sending your number again. A replacement is unavailable while its outcome is unresolved.",
       "other": "Enter your number again and confirm every digit before continuing.",
       "pausedOpen": "Open this check again when you are ready.",
       "pausedEntry": "Enter your number again when you are ready."

@@ -620,6 +620,10 @@ export type MessageValues = {
   readonly "ssn.summary.issued": undefined;
   readonly "ssn.summary.notIssued": undefined;
   readonly "ssn.summary.unavailable": undefined;
+  readonly "ssn.summary.fiveSatisfied": undefined;
+  readonly "ssn.summary.fiveNotSatisfied": undefined;
+  readonly "ssn.summary.fiveIncomplete": undefined;
+  readonly "ssn.summary.historical": undefined;
   readonly "ssn.result.reportedLabel": undefined;
   readonly "ssn.result.issued": undefined;
   readonly "ssn.result.notIssued": undefined;
@@ -635,6 +639,16 @@ export type MessageValues = {
   readonly "ssn.result.issuanceOnly": undefined;
   readonly "ssn.result.checked": undefined;
   readonly "ssn.result.ownership": undefined;
+  readonly "ssn.result.noReport": undefined;
+  readonly "ssn.result.check.issuance": undefined;
+  readonly "ssn.result.check.deathMasterFile": undefined;
+  readonly "ssn.result.check.name": undefined;
+  readonly "ssn.result.check.address": undefined;
+  readonly "ssn.result.check.phone": undefined;
+  readonly "ssn.result.outcome.match": undefined;
+  readonly "ssn.result.outcome.mismatch": undefined;
+  readonly "ssn.result.outcome.unavailable": undefined;
+  readonly "ssn.result.outcome.indeterminate": undefined;
   readonly "ssn.sheet.notReadyTitle": undefined;
   readonly "ssn.sheet.notConnected": undefined;
   readonly "ssn.sheet.failedTitle": undefined;
@@ -1118,7 +1132,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "hub.face.needsPassport": "Read a passport to add its photo first",
       "hub.ssn.needsAttention": "Check needs attention · Open",
       "hub.ssn.viewResult": [["arg", "summary"], " · View result"],
-      "hub.ssn.start": "Check whether your number was issued",
+      "hub.ssn.start": "Compare your number with your checked ID and phone",
       "hub.notAvailable": "Not available",
       "hub.section.checks": "Checks",
       "hub.section.saved": "Saved results",
@@ -1539,12 +1553,12 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "documentCheck.failure.documentCustodyFailed": "The saved license photos could not be opened on this phone. Reopen the saved status.",
       "documentCheck.failure.sessionUnavailable": "This screen closed before the check finished. Open the license again to see its saved status.",
       "documentCheck.failure.other": "The check could not finish. Reopen the saved status before sending another request.",
-      "ssn.intro": "Check whether your Social Security number was issued. This does not confirm who owns the number.",
+      "ssn.intro": "Check issuance, the death file, and the name, address and phone associated with your Social Security number. Your checked ID and confirmed phone supply the comparison details.",
       "ssn.checking": "Checking…",
       "ssn.saveBody": "The answer arrived but could not be saved on this phone. Saving again will not send another check.",
       "ssn.notReceivedTitle": "The result was not received",
-      "ssn.notReceivedBody": "The previous check may have happened. Check again using the same request before starting a new check. If its result cannot be recovered, you can review your number for a new request.",
-      "ssn.resend": "Check again",
+      "ssn.notReceivedBody": "The previous check may have happened. Check its status before continuing. This does not send your number again or start a replacement check while the outcome is unresolved.",
+      "ssn.resend": "Check status",
       "ssn.enterAgain": "Enter number again",
       "ssn.placeholder": "000000000",
       "ssn.entryNotice": "You will confirm every digit before the check starts. Your entered number is cleared when you leave this screen.",
@@ -1552,7 +1566,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "ssn.enter": "Enter SSN",
       "ssn.erase": "Erase saved SSN checks",
       "ssn.confirm.title": "Confirm your number",
-      "ssn.confirm.body": "Check every digit. This is the number that will be sent for the issuance check.",
+      "ssn.confirm.body": "Check every digit. This number will be sent with your checked ID and confirmed phone details for the five checks.",
       "ssn.confirm.replacement": "The previous check may have happened. Confirming sends a new request.",
       "ssn.confirm.action": "Confirm and check",
       "ssn.confirm.edit": "Edit number",
@@ -1562,6 +1576,10 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "ssn.summary.issued": "Reported as issued",
       "ssn.summary.notIssued": "Not reported as issued",
       "ssn.summary.unavailable": "Issuance not available",
+      "ssn.summary.fiveSatisfied": "All five checks satisfied",
+      "ssn.summary.fiveNotSatisfied": "One or more checks did not agree",
+      "ssn.summary.fiveIncomplete": "Five-check result incomplete",
+      "ssn.summary.historical": "Saved earlier report",
       "ssn.result.reportedLabel": "What the checking service reported",
       "ssn.result.issued": "The number was issued",
       "ssn.result.notIssued": "The number was not issued",
@@ -1576,12 +1594,22 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "ssn.result.responseCode": "Response code",
       "ssn.result.issuanceOnly": "This earlier check saved only the issuance result. Its details were not retained. A new confirmed check is needed to obtain them.",
       "ssn.result.checked": "Checked",
-      "ssn.result.ownership": "This result does not establish that the number belongs to you.",
+      "ssn.result.ownership": "Each observation is shown separately. An unanswered check cannot establish agreement.",
+      "ssn.result.noReport": "The earlier attempt closed without a five-check report. No new check was sent.",
+      "ssn.result.check.issuance": "Issuance record",
+      "ssn.result.check.deathMasterFile": "Death-file record",
+      "ssn.result.check.name": "Name association",
+      "ssn.result.check.address": "Address association",
+      "ssn.result.check.phone": "Phone association",
+      "ssn.result.outcome.match": "Match reported",
+      "ssn.result.outcome.mismatch": "No match reported",
+      "ssn.result.outcome.unavailable": "Unavailable",
+      "ssn.result.outcome.indeterminate": "Not established",
       "ssn.sheet.notReadyTitle": "This check is not ready",
       "ssn.sheet.notConnected": "The verification service is not connected. Your other identity checks remain available.",
       "ssn.sheet.failedTitle": "The check could not finish",
       "ssn.sheet.localSave": "The answer arrived but could not be saved on this phone. Try saving it again; this will not send another check.",
-      "ssn.sheet.unknown": "The previous check may have happened. Check again resends the same request. A new check requires you to review and confirm your number.",
+      "ssn.sheet.unknown": "The previous check may have happened. Check status asks about that attempt without sending your number again. A replacement is unavailable while its outcome is unresolved.",
       "ssn.sheet.other": "Enter your number again and confirm every digit before continuing.",
       "ssn.sheet.pausedOpen": "Open this check again when you are ready.",
       "ssn.sheet.pausedEntry": "Enter your number again when you are ready.",

@@ -10,7 +10,7 @@ import { t } from './locales/i18n';
 import { SessionAcquisition } from './SessionAcquisition';
 
 export type SavedSSNCheck = { session: CaptureSession; snapshot: SSNSessionSnapshot };
-type Recovery = 'localSave' | 'entry' | 'open' | 'exit' | 'fresh' | 'resend';
+type Recovery = 'entry' | 'open' | 'exit' | 'resend';
 export type SSNFlowState = {
   session?: CaptureSession | undefined;
   snapshot?: SSNSessionSnapshot | undefined;
@@ -41,7 +41,7 @@ const entryErrors: ErrorText = {
   busy: t('ssn.entryError.busy'),
 };
 
-/** The native SDK owns exact confirmation, single dispatch and encrypted local recovery.
+/** The native SDK owns exact confirmation, status-first recovery and encrypted custody.
  * This reference controller owns entry, presentation and the live session handoff only. */
 export class SSNFlowController {
   state: SSNFlowState = { digits: '', busy: false, editing: false };
@@ -144,7 +144,7 @@ export class SSNFlowController {
     await this.run((session) => session.ssnSnapshot());
   };
   beginEntry = () => {
-    if (this.closed || this.state.busy || this.state.snapshot?.state === 'finishing') return;
+    if (this.closed || this.state.busy || this.state.snapshot?.recoveryNeeded) return;
     this.update({ digits: '', editing: true, sheet: undefined });
   };
   setDigits = (value: string) => {
@@ -154,9 +154,8 @@ export class SSNFlowController {
   requestConfirmation = () => {
     if (this.state.digits.length !== 9) return Promise.resolve();
     const digits = this.state.digits;
-    return this.state.snapshot?.recoveryNeeded
-      ? this.run((session) => session.ssnRequestFreshConfirmation(digits), true)
-      : this.run((session) => session.ssnRequestConfirmation(digits), true);
+    if (this.state.snapshot?.recoveryNeeded) return Promise.resolve();
+    return this.run((session) => session.ssnRequestConfirmation(digits), true);
   };
   confirm = () => {
     const id = this.state.snapshot?.confirmation?.id;
@@ -164,10 +163,10 @@ export class SSNFlowController {
     this.update({ digits: '', snapshot: this.state.snapshot && redact(this.state.snapshot) });
     return this.run((session) => session.ssnConfirm(id));
   };
-  resend = () => this.run((session) => session.ssnResendUnresolved());
+  resend = () => this.recover();
   recover = () => this.run((session) => session.ssnRecover());
   edit = async () => {
-    if (this.state.busy || this.state.snapshot?.state === 'finishing') return;
+    if (this.state.busy || this.state.snapshot?.recoveryNeeded) return;
     const digits = this.state.snapshot?.confirmation?.digits ?? this.state.digits;
     const epoch = this.epoch + 1;
     await this.run((session) => session.ssnCancel());
@@ -180,8 +179,7 @@ export class SSNFlowController {
     if (sheet?.kind !== 'recovery') return Promise.resolve();
     if (sheet.recovery === 'open') return this.open();
     if (sheet.recovery === 'resend') return this.resend();
-    if (sheet.recovery === 'localSave') return this.recover();
-    if (sheet.recovery === 'entry' || sheet.recovery === 'fresh') this.beginEntry();
+    if (sheet.recovery === 'entry') this.beginEntry();
     return Promise.resolve();
   };
   /** Presents a rejected command in this screen's sheet. */
@@ -209,13 +207,6 @@ export class SSNFlowController {
         title: t('ssn.sheet.notReadyTitle'),
         message: errorText(code, setupErrors, ''),
         recovery: 'exit',
-      };
-    if (this.state.snapshot?.state === 'finishing')
-      return {
-        kind: 'recovery',
-        title: t('ssn.sheet.failedTitle'),
-        message: t('ssn.sheet.localSave'),
-        recovery: 'localSave',
       };
     if (this.state.snapshot?.recoveryNeeded)
       return {

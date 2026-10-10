@@ -86,11 +86,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Explicit synthetic integration fixture. Never registered on a physical device.
         if ProcessInfo.processInfo.arguments.contains("--ssn-artifact-fixture") {
           var registrationError: NSError?
-          if IDCaptureRegisterSSNIssuanceProvider(
-            ArtifactSSNProvider(), "artifact-fixture", &registrationError) {
+          let contextID = holder.workflowID("ssn")
+          if IDCaptureRegisterSSNVerificationProvider(
+            ArtifactSSNProvider(contextID: contextID), "artifact-fixture", &registrationError) {
             var ssn = holder.store("ArtifactSSN", service: "artifact-ssn", account: "artifact-ssn-v1")
-            ssn["context"] = ["credentialID": "synthetic-artifact-installation"]
-            ssn["workflowID"] = holder.workflowID("ssn")
+            ssn["contextID"] = contextID
             ssn["providerID"] = "artifact-fixture"
             configuration["ssn"] = ssn
           }
@@ -210,15 +210,107 @@ private final class ArtifactPhoneProvider: NSObject, PhoneCheckProvider {
 }
 
 @MainActor
-private final class ArtifactSSNProvider: NSObject, SSNIssuanceProvider {
-  func checkSSN(_ digits: String, operationID: String, credentialID: String) async
-    -> SSNIssuanceProviderReply {
-    // Only the synthetic test number is answered. Area 000 is never issued, so the fixture
-    // reports it as not issued; every other number is refused before dispatch.
-    SSNIssuanceProviderReply(operationID: operationID,
-      outcome: digits == "000001234" && credentialID == "synthetic-artifact-installation"
-        ? .notIssued : .notDispatched,
-      checkedAt: Date(timeIntervalSince1970: 1_800_000_000))
+private final class ArtifactSSNProvider: NSObject, SSNVerificationProvider {
+  private let contextID: String
+  private let documentID = "00000000-0000-4000-8000-000000000002"
+  private let phoneID = "00000000-0000-4000-8000-000000000003"
+
+  init(contextID: String) { self.contextID = contextID }
+
+  private var binding: [String: String] {
+    ["installationID": "synthetic-artifact-installation", "enrollmentID": contextID.uppercased(),
+     "documentOperationID": documentID, "phoneChallengeID": phoneID]
+  }
+
+  func ssnContext(_ contextID: String) throws -> String {
+    guard contextID == self.contextID else {
+      throw NSError(domain: "ArtifactSSNProvider", code: 1)
+    }
+    // Native-only synthetic context. No document or phone provenance is accepted from JavaScript.
+    return try json([
+      "binding": binding,
+      "subject": ["givenName": "Synthetic", "familyName": "Fixture", "street": "1 Test Way",
+                  "locality": "Test City", "region": "CA", "postalCode": "00000", "country": "US"],
+      "phone": ["sender": "12025550123", "receiptHash": String(repeating: "a", count: 64)],
+    ])
+  }
+
+  func checkSSN(_ digits: String, operationID: String, contextJSON: String) async
+    -> SSNVerificationProviderReply {
+    guard digits == "000001234", UUID(uuidString: operationID) != nil else {
+      return .init(state: .failed, failureCode: "invalidRequest")
+    }
+    do {
+      guard try matchesContext(contextJSON) else {
+        return .init(state: .failed, failureCode: "contextChanged")
+      }
+      return .init(state: .completed, receiptJSON: try receipt(operationID: operationID))
+    } catch {
+      return .init(state: .failed, failureCode: "invalidResponse")
+    }
+  }
+
+  func ssnStatus(_ operationID: String, contextJSON: String) async -> SSNVerificationProviderReply {
+    // This synthetic provider retains no remote results and never repeats a check on recovery.
+    do {
+      guard UUID(uuidString: operationID) != nil, try matchesContext(contextJSON) else {
+        return .init(state: .failed, failureCode: "contextChanged")
+      }
+      return .init(state: .notFound)
+    } catch {
+      return .init(state: .failed, failureCode: "invalidResponse")
+    }
+  }
+
+  private func matchesContext(_ value: String) throws -> Bool {
+    let supplied = try JSONSerialization.jsonObject(with: Data(value.utf8)) as? NSDictionary
+    let expected = try JSONSerialization.jsonObject(with: Data(ssnContext(contextID).utf8)) as? NSDictionary
+    return supplied != nil && supplied == expected
+  }
+
+  private func receipt(operationID: String) throws -> String {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    let moment = Date()
+    let checkedAt = formatter.string(from: moment)
+    let names = ["ssn_issuance", "death_master_file", "ssn_name_association",
+                 "ssn_address_association", "ssn_phone_association"]
+    var checks: [String: Any] = [:]
+    for name in names {
+      checks[name] = [
+        "submitted": false, "execution": "not_dispatched", "compared": false,
+        "outcome": "unavailable", "comparison_scope": "unqualified",
+        "reason_code": "supplier_unavailable", "provenance": NSNull(),
+      ]
+    }
+    // The reserved synthetic number is not issued. Other checks remain explicitly unanswered.
+    checks["ssn_issuance"] = [
+      "submitted": true, "execution": "response_received", "compared": true,
+      "outcome": "mismatch", "comparison_scope": "record_presence", "reason_code": "mismatched",
+      "provenance": ["product_id": "synthetic.ssn_issuance", "api_version": "fixture-1",
+                     "dispatched_at": checkedAt, "received_at": checkedAt],
+    ]
+    let report: [String: Any] = [
+      "contract_version": "pulse.ssn.v1", "operation_id": operationID.lowercased(),
+      "profile_version": "cra-ssn-five-check-1", "request_revision": documentID,
+      "completed_at": checkedAt,
+      "provider": ["provider_id": "synthetic", "product": "five-check-fixture",
+                   "api_version": "fixture-1", "adapter_version": "fixture-1",
+                   "qualification_revision": "unqualified"],
+      "checks": checks,
+      "evaluation": ["status": "incomplete", "policy_version": "cra-ssn-five-check-1",
+                     "required_checks": names, "unsatisfied_checks": ["ssn_issuance"],
+                     "incomplete_checks": Array(names.dropFirst())],
+    ]
+    return try json([
+      "operationID": operationID, "binding": binding, "checkedAt": formatter.string(from: moment),
+      "reportKind": "fiveChecks", "issuance": "notIssued", "reportedOutcome": "unavailable",
+      "fiveChecks": report, "replayed": false,
+    ])
+  }
+
+  private func json(_ value: [String: Any]) throws -> String {
+    String(decoding: try JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]), as: UTF8.self)
   }
 }
 #endif

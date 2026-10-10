@@ -121,8 +121,7 @@ const holderConfig = (holder: Holder): Configuration => {
       keychainAccount: 'completed-results-v1',
     },
     ssn: {
-      context: { credentialID: scope },
-      workflowID: `00000000-0000-4000-8000-00000000000${holder === 'A' ? '1' : '2'}`,
+      contextID: scope,
       providerID: 'agency',
       directoryURL: `file:///support/IdentityHolders/${scope}/SSN`,
       keychainService: `app.identity.${scope}.ssn`,
