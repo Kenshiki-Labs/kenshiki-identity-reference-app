@@ -1,4 +1,5 @@
 import type { Configuration, SensorBoardRequest } from '@kenshiki/identity-capture';
+import { StrictMode } from 'react';
 import { AppState, Linking, Settings, Text } from 'react-native';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { sensorBoardFixture } from './__tests__/SensorBoardFixtures';
@@ -64,6 +65,7 @@ beforeEach(() => {
     precise: false,
   };
   mockRead.mockImplementation(async () => mockBoard);
+  mockCreate.mockImplementation(async () => ({ sensorBoard: mockRead, release: mockRelease }));
   mockRelease.mockResolvedValue(undefined);
   jest.spyOn(Settings, 'get').mockImplementation(() => (completed ? 'completed' : undefined));
   jest.spyOn(Settings, 'set').mockImplementation(() => {
@@ -107,7 +109,7 @@ test('continue works with denied permissions, releases the native lease, and rem
   await render();
   expect(mockCreate).not.toHaveBeenCalled();
 });
-test('failed release leaves the introduction visible and does not record completion', async () => {
+test('failed release remains failed and never records completion after a repeated finish', async () => {
   mockRelease.mockRejectedValueOnce(new Error('release failed'));
   await render();
   await skipToLast();
@@ -119,7 +121,8 @@ test('failed release leaves the introduction visible and does not record complet
   await act(async () => {
     invoke(button('first-run-skip'), 'onPress');
   });
-  expect(completed).toBe(true);
+  expect(completed).toBe(false);
+  expect(mockRelease).toHaveBeenCalledTimes(1);
 });
 test('reduced location accuracy is visible and opens Settings rather than claiming precise access', async () => {
   mockBoard.permissions.location = 'given';
@@ -162,4 +165,94 @@ test('While Using does not satisfy Always; an unanswered upgrade directs the use
     invoke(button('first-run-primary'), 'onPress');
   });
   expect(open).toHaveBeenCalledTimes(1);
+});
+
+test('a replaced introduction cannot finish its successor or abandon the successor session', async () => {
+  let finishRelease!: () => void;
+  const releasing = new Promise<void>((resolve) => {
+    finishRelease = resolve;
+  });
+  const releasePrevious = jest.fn(() => releasing);
+  const releaseNext = jest.fn(async () => {});
+  mockCreate
+    .mockResolvedValueOnce({ sensorBoard: mockRead, release: releasePrevious })
+    .mockResolvedValueOnce({ sensorBoard: mockRead, release: releaseNext });
+  await render();
+  await skipToLast();
+  await act(async () => {
+    invoke(button('first-run-skip'), 'onPress');
+  });
+  expect(releasePrevious).toHaveBeenCalled();
+  await act(async () => {
+    required(view).update(
+      <FirstRunPermissions configuration={{ ...configuration }} enabled>
+        <Text testID="app-content">App</Text>
+      </FirstRunPermissions>,
+    );
+  });
+  expect(mockCreate).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    finishRelease();
+  });
+  expect(Settings.set).not.toHaveBeenCalled();
+  expect(required(view).root.findAllByProps({ testID: 'app-content' })).toHaveLength(0);
+  expect(mockCreate).toHaveBeenCalledTimes(2);
+  await act(async () => {
+    required(view).unmount();
+  });
+  view = undefined;
+  expect(releaseNext).toHaveBeenCalledTimes(1);
+});
+
+test('replacement waits for a late creation and its release before opening another session', async () => {
+  let created!: (value: Awaited<ReturnType<typeof mockCreate>>) => void;
+  let released!: () => void;
+  const pendingCreate = new Promise<Awaited<ReturnType<typeof mockCreate>>>((resolve) => {
+    created = resolve;
+  });
+  const pendingRelease = new Promise<void>((resolve) => {
+    released = resolve;
+  });
+  const releasePrevious = jest.fn(() => pendingRelease);
+  mockCreate.mockReturnValueOnce(pendingCreate);
+  await render();
+  await act(async () => {
+    required(view).update(
+      <FirstRunPermissions configuration={{ ...configuration }} enabled>
+        <Text testID="app-content">App</Text>
+      </FirstRunPermissions>,
+    );
+  });
+  expect(mockCreate).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    created({ sensorBoard: mockRead, release: releasePrevious });
+  });
+  expect(releasePrevious).toHaveBeenCalledTimes(1);
+  expect(mockRead).not.toHaveBeenCalled();
+  expect(mockCreate).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    released();
+  });
+  expect(mockCreate).toHaveBeenCalledTimes(2);
+  expect(mockRead).toHaveBeenCalledTimes(1);
+});
+
+test('Strict Mode effect replay retains one live owner and releases it on unmount', async () => {
+  await act(async () => {
+    view = create(
+      <StrictMode>
+        <FirstRunPermissions configuration={configuration} enabled>
+          <Text testID="app-content">App</Text>
+        </FirstRunPermissions>
+      </StrictMode>,
+    );
+  });
+  expect(mockCreate).toHaveBeenCalledTimes(1);
+  expect(mockRead).toHaveBeenCalledTimes(1);
+  expect(mockRelease).not.toHaveBeenCalled();
+  await act(async () => {
+    required(view).unmount();
+  });
+  view = undefined;
+  expect(mockRelease).toHaveBeenCalledTimes(1);
 });

@@ -9,12 +9,52 @@ import { AppState, Linking, Settings, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { t } from './locales/i18n';
 import { Action } from './ui/Action';
+import { createControllerCustody, type IdentityCustody } from './ui/ControllerCustody';
 import { Page } from './ui/Page';
 import { styles } from './ui/styles';
 
 const completionKey = 'kenshiki.reference.permissionsIntroduction.v1';
 const permissions = ['location', 'motion', 'bluetooth'] as const;
 type Permission = (typeof permissions)[number];
+type PermissionOwner = {
+  active: boolean;
+  session?: CaptureSession;
+  opening: Promise<void>;
+  pendingRead: Promise<void>;
+  releasing?: Promise<void>;
+  working: boolean;
+  refreshing: boolean;
+};
+
+function releaseSession(owner: PermissionOwner): Promise<void> {
+  const session = owner.session;
+  if (!session) return Promise.resolve();
+  owner.releasing ??= new Promise<void>((resolve) => {
+    resolve(session.release());
+  });
+  return owner.releasing;
+}
+
+async function closeOwner(owner: PermissionOwner): Promise<void> {
+  const release = releaseSession(owner);
+  await Promise.allSettled([owner.opening, owner.pendingRead, release]);
+  await release;
+  await releaseSession(owner);
+}
+
+/** Completion may publish only after this exact owner's cleanup, while it is still mounted. */
+async function finishOwner(owner: PermissionOwner, custody: IdentityCustody): Promise<boolean> {
+  await owner.opening;
+  await owner.pendingRead;
+  if (!owner.active) return false;
+  custody.releasing = Promise.all([custody.releasing, releaseSession(owner)]);
+  custody.releasing.catch(custody.reportFailure);
+  await custody.releasing;
+  if (!owner.active) return false;
+  delete owner.session;
+  owner.active = false;
+  return true;
+}
 
 /** This is an introduction flag, not a saved authorization decision. iOS owns permission state. */
 export function FirstRunPermissions({
@@ -27,10 +67,17 @@ export function FirstRunPermissions({
   children: ReactNode;
 }>) {
   const [completed, setCompleted] = useState(() => !enabled || Settings.get(completionKey) === 'completed');
+  const [owner, setOwner] = useState({ configuration, revision: 0 });
+  const [custody] = useState(createControllerCustody);
+  if (owner.configuration !== configuration) {
+    setOwner({ configuration, revision: owner.revision + 1 });
+  }
   if (completed) return children;
   return (
     <PermissionIntroduction
+      key={owner.revision}
       configuration={configuration}
+      custody={custody}
       onComplete={() => {
         Settings.set({ [completionKey]: 'completed' });
         setCompleted(true);
@@ -41,51 +88,63 @@ export function FirstRunPermissions({
 
 function PermissionIntroduction({
   configuration,
+  custody,
   onComplete,
 }: Readonly<{
   configuration: Configuration;
+  custody: IdentityCustody;
   onComplete: () => void;
 }>) {
-  const session = useRef<CaptureSession | null>(null);
-  const opening = useRef<Promise<void> | null>(null);
-  const working = useRef(false);
-  const refreshing = useRef(false);
-  const pendingRead = useRef<Promise<void>>(Promise.resolve());
+  const sessionOwner = useRef<PermissionOwner | undefined>(undefined);
   const [board, setBoard] = useState<SensorBoardState | null>(null);
   const [busy, setBusy] = useState(false);
   const [askedAlways, setAskedAlways] = useState(false);
   const [permission, setPermission] = useState<Permission>('location');
   const [failure, setFailure] = useState(false);
   useEffect(() => {
-    let live = true;
+    const owner: PermissionOwner = {
+      active: true,
+      working: false,
+      refreshing: false,
+      opening: Promise.resolve(),
+      pendingRead: Promise.resolve(),
+    };
+    sessionOwner.current = owner;
+    const previousRelease = custody.releasing;
     // Status only: no resume, refresh, scan or location fix runs during this introduction.
-    opening.current = (async () => {
-      if (!configuration.sensors) return;
+    owner.opening = (async () => {
+      await previousRelease;
+      if (!owner.active || !configuration.sensors) return;
       const created = await IdentityCaptureSession.create({ sensors: configuration.sensors });
-      if (!live) {
-        await created.release();
-        return;
-      }
-      session.current = created;
+      // This owner retains a late handle until its cleanup has released it.
+      owner.session = created;
+      if (!owner.active) return;
       const status = await created.sensorBoard({ action: 'status' });
-      if (live) setBoard(status);
+      if (owner.active) setBoard(status);
     })().catch(() => {
-      if (live) setFailure(true);
+      if (owner.active) setFailure(true);
     });
     const refresh = () => {
-      const current = session.current;
-      if (!current || working.current || refreshing.current || AppState.currentState !== 'active') return;
-      refreshing.current = true;
-      pendingRead.current = current
+      const current = owner.session;
+      if (
+        !owner.active ||
+        !current ||
+        owner.working ||
+        owner.refreshing ||
+        AppState.currentState !== 'active'
+      )
+        return;
+      owner.refreshing = true;
+      owner.pendingRead = current
         .sensorBoard({ action: 'status' })
         .then((status) => {
-          if (live) setBoard(status);
+          if (owner.active) setBoard(status);
         })
         .catch(() => {
-          if (live) setFailure(true);
+          if (owner.active) setFailure(true);
         })
         .finally(() => {
-          refreshing.current = false;
+          owner.refreshing = false;
         });
     };
     const timer = setInterval(refresh, 750);
@@ -93,67 +152,72 @@ function PermissionIntroduction({
       if (state === 'active') refresh();
     });
     return () => {
-      live = false;
+      owner.active = false;
       clearInterval(timer);
       subscription.remove();
-      const current = session.current;
-      session.current = null;
-      // Normal completion releases before mounting the app; this handles an interrupted introduction.
-      if (current) current.release().catch(() => setFailure(true));
+      // Revoke an acquired handle immediately, and also own creation that has not returned yet.
+      // Opening captured the previous barrier, so cleanup never waits on itself.
+      custody.releasing = Promise.all([custody.releasing, closeOwner(owner)]);
+      custody.releasing.catch(custody.reportFailure);
     };
-  }, [configuration]);
+  }, [configuration, custody]);
 
   async function request(permission: Permission) {
-    if (working.current || !session.current) return;
-    working.current = true;
+    const owner = sessionOwner.current;
+    const current = owner?.session;
+    if (!owner?.active || owner.working || !current) return;
+    owner.working = true;
     setBusy(true);
     setFailure(false);
     try {
-      await pendingRead.current;
+      await owner.pendingRead;
+      if (!owner.active) return;
       if (permission === 'location' && askedAlways) {
         await Linking.openSettings();
-      } else {
-        setBoard(
-          await session.current.sensorBoard({
-            action: 'permission',
-            permission: permission === 'location' ? 'always' : permission,
-            consent: true,
-          }),
-        );
-        if (permission === 'location') setAskedAlways(true);
+        return;
       }
+      const status = await current.sensorBoard({
+        action: 'permission',
+        permission: permission === 'location' ? 'always' : permission,
+        consent: true,
+      });
+      publishPermission(owner, permission, status);
     } catch {
-      setFailure(true);
+      if (owner.active) setFailure(true);
     } finally {
-      working.current = false;
-      setBusy(false);
+      owner.working = false;
+      if (owner.active) setBusy(false);
     }
   }
 
+  function publishPermission(owner: PermissionOwner, permission: Permission, status: SensorBoardState) {
+    if (!owner.active) return;
+    setBoard(status);
+    if (permission === 'location') setAskedAlways(true);
+  }
+
   async function finish() {
-    if (working.current) return;
-    working.current = true;
+    const owner = sessionOwner.current;
+    if (!owner?.active || owner.working) return;
+    owner.working = true;
     setBusy(true);
     setFailure(false);
     try {
-      await opening.current;
-      await pendingRead.current;
-      await session.current?.release();
-      session.current = null;
-      onComplete();
+      if (await finishOwner(owner, custody)) onComplete();
     } catch {
-      setFailure(true);
+      if (owner.active) setFailure(true);
     } finally {
-      working.current = false;
-      setBusy(false);
+      owner.working = false;
+      if (owner.active) setBusy(false);
     }
   }
 
   const next = () => {
+    if (!sessionOwner.current?.active) return;
     setFailure(false);
     if (permission === 'location') setPermission('motion');
     else if (permission === 'motion') setPermission('bluetooth');
-    else finish().catch(() => setFailure(true));
+    else finish().catch(custody.reportFailure);
   };
   return (
     <PermissionPrimer
@@ -164,10 +228,13 @@ function PermissionIntroduction({
       failure={failure}
       onNext={next}
       onRequest={() => {
-        request(permission).catch(() => setFailure(true));
+        request(permission).catch(custody.reportFailure);
       }}
       onSettings={() => {
-        Linking.openSettings().catch(() => setFailure(true));
+        const owner = sessionOwner.current;
+        Linking.openSettings().catch(() => {
+          if (owner?.active) setFailure(true);
+        });
       }}
     />
   );
