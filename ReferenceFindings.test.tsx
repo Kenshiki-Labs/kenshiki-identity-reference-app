@@ -713,6 +713,7 @@ describe('6 verdict wording', () => {
             declaredDataGroups: ['DG1', 'DG2'],
             protocols: {
               ...passport.protocols,
+              pace: 'failed',
               chipAuthentication: 'notPerformed',
               activeAuthentication: 'notPerformed',
             },
@@ -721,14 +722,41 @@ describe('6 verdict wording', () => {
         }}
       />,
     );
-    await f.press('View check details');
+    expect(f.text()).toContain('PACE parameters were unavailable');
+    expect(f.text()).not.toContain('View check details');
+    expect(f.text()).not.toContain('Hide check details');
     expect(f.text()).not.toContain('Chip authentication');
     expect(f.text()).not.toContain('Active authentication');
     expect(f.text()).toContain('CardAccess file was not found');
+    expect(f.text()).toContain('PACE parameters unavailable; BAC succeeded');
+    expect(f.text()).not.toContain('Did not complete; BAC succeeded');
+    expect(f.text()).toContain("Reading the chip's PACE capabilities");
     expect(f.text()).toContain('6A82');
     await act(async () => {
       f.view.unmount();
     });
+  });
+  test.each([
+    { stage: 'cardAccessRead' as const, code: 'cardResponse' as const, statusWord: 0x6a82 },
+    { stage: 'keyExchange' as const, code: 'protocolFailure' as const, statusWord: null },
+  ])('other PACE failures keep the incomplete-exchange summary ($code)', async (paceFailure) => {
+    const f = await render(
+      <CaptureResultDetails
+        result={{
+          session: makeSession(mockSession),
+          passport: {
+            ...passport,
+            protocols: { ...passport.protocols, pace: 'failed', basicAccessControl: 'succeeded' },
+            paceFailure,
+          },
+        }}
+      />,
+    );
+    expect(f.text()).not.toContain('View check details');
+    expect(f.text()).not.toContain('Hide check details');
+    expect(f.text()).toContain('Did not complete; BAC succeeded');
+    expect(f.text()).not.toContain('PACE parameters unavailable; BAC succeeded');
+    await act(async () => f.view.unmount());
   });
   test('successful BAC fallback is not presented as a failed chip integrity check', async () => {
     const f = await render(
@@ -744,7 +772,8 @@ describe('6 verdict wording', () => {
     );
     expect(f.text()).toContain('The chip was opened using BAC');
     expect(f.text()).not.toContain('PACE connection failed');
-    await f.press('View check details');
+    expect(f.text()).not.toContain('View check details');
+    expect(f.text()).not.toContain('Hide check details');
     expect(f.text()).toContain('Did not complete; BAC succeeded');
     expect(f.text()).toContain('The reason was not recorded with this saved read');
     await act(async () => {
@@ -779,7 +808,8 @@ describe('6 verdict wording', () => {
     const f = await render(
       <CaptureResultDetails key="capture" result={{ session: makeSession(mockSession), passport }} />,
     );
-    await f.press('View check details');
+    expect(f.text()).not.toContain('View check details');
+    expect(f.text()).not.toContain('Hide check details');
     expect(f.text()).toContain('revocation and expiry are not checked');
     await act(async () => {
       f.view.unmount();
@@ -823,6 +853,9 @@ describe('6 verdict wording', () => {
     expect(f.text()).not.toContain('Depth evidence unavailable');
     expect(f.text()).toContain('Passed — paired TrueDepth face relief accepted');
     expect(f.text()).toContain('Cosine similarity score');
+    expect(f.text()).toContain('Comparison route');
+    expect(f.text()).toContain('Depth samples');
+    expect(f.text()).not.toContain('View check details');
     expect(f.text()).toContain('0.55');
     await act(async () => {
       f.view.update(

@@ -393,7 +393,6 @@ export function CaptureResultDetails({
   focus?: ('passport' | 'face') | undefined;
 }>) {
   const { passport, comparison, session } = result;
-  const [technical, setTechnical] = useState(false);
   const depth = comparison?.admissionReceipt.depthEvidence;
   const referenceSHA = comparison?.referenceSHA256 ?? passport.portraitSHA256;
   // The SDK compares and restores only selfies whose TrueDepth face depth was measured and accepted.
@@ -426,6 +425,10 @@ export function CaptureResultDetails({
   }
   const bacFallback =
     passport.protocols.pace === 'failed' && passport.protocols.basicAccessControl === 'succeeded';
+  const paceParametersUnavailable = bacFallback && passport.paceFailure?.code === 'cardAccessAbsent';
+  const bacFallbackStatus = paceParametersUnavailable
+    ? t('passport.protocolStatus.paceParametersUnavailable')
+    : t('passport.protocolStatus.bacFallback');
   const visibleProtocols = protocolKeys.filter((key) => {
     const group = key === 'chipAuthentication' ? 'DG14' : key === 'activeAuthentication' ? 'DG15' : null;
     return !(
@@ -440,7 +443,6 @@ export function CaptureResultDetails({
     (key) => passport.protocols[key] === 'failed' && !(key === 'pace' && bacFallback),
   );
   function renderTechnicalDetails() {
-    if (!technical) return null;
     return (
       <View style={styles.card}>
         <Text accessibilityRole="header" style={styles.sheetTitle}>
@@ -455,9 +457,7 @@ export function CaptureResultDetails({
             key={key}
             label={protocolLabels[key]}
             value={
-              key === 'pace' && bacFallback
-                ? t('passport.protocolStatus.bacFallback')
-                : protocolStatus[passport.protocols[key]]
+              key === 'pace' && bacFallback ? bacFallbackStatus : protocolStatus[passport.protocols[key]]
             }
           />
         ))}
@@ -575,7 +575,13 @@ export function CaptureResultDetails({
             />
           )
         )}
-        {bacFallback && <Text style={styles.body}>{t('passport.result.bacFallback')}</Text>}
+        {bacFallback && (
+          <Text style={styles.body}>
+            {paceParametersUnavailable
+              ? t('passport.result.paceParametersUnavailable')
+              : t('passport.result.bacFallback')}
+          </Text>
+        )}
         {!!failed.length && (
           <View style={styles.detail} testID="passport-protocol-failures">
             {failed.map((key) => (
@@ -654,11 +660,6 @@ export function CaptureResultDetails({
         )}
       </View>
       {focus === 'passport' && renderFaceCard()}
-      <Action
-        secondary
-        label={technical ? t('passport.details.hide') : t('passport.details.show')}
-        onPress={() => setTechnical(!technical)}
-      />
       {renderTechnicalDetails()}
     </>
   );

@@ -268,6 +268,7 @@ export type MessageValues = {
   readonly "passport.result.chipChecksRecordedAt": {readonly moment: string | number};
   readonly "passport.result.readAt": undefined;
   readonly "passport.result.bacFallback": undefined;
+  readonly "passport.result.paceParametersUnavailable": undefined;
   readonly "passport.result.failedNotice": undefined;
   readonly "passport.result.chipPhoto": undefined;
   readonly "passport.result.passportPhoto": undefined;
@@ -319,8 +320,7 @@ export type MessageValues = {
   readonly "passport.protocolStatus.failed": undefined;
   readonly "passport.protocolStatus.notPerformed": undefined;
   readonly "passport.protocolStatus.bacFallback": undefined;
-  readonly "passport.details.show": undefined;
-  readonly "passport.details.hide": undefined;
+  readonly "passport.protocolStatus.paceParametersUnavailable": undefined;
   readonly "passport.details.title": undefined;
   readonly "passport.nfc.presenting": undefined;
   readonly "passport.nfc.authenticating": {readonly progress: string | number};
@@ -1210,6 +1210,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "passport.result.chipChecksRecordedAt": [["arg", "moment"], ". Opening saved results does not repeat them."],
       "passport.result.readAt": "Read at",
       "passport.result.bacFallback": "The chip was opened using BAC after PACE did not complete. The signing and data integrity checks are reported separately.",
+      "passport.result.paceParametersUnavailable": "The chip was opened using BAC; PACE parameters were unavailable. The signing and data integrity checks are reported separately.",
       "passport.result.failedNotice": "A failed chip check means this passport read should not be relied on. Read the chip again, or use another document.",
       "passport.result.chipPhoto": "Passport chip photo",
       "passport.result.passportPhoto": "Passport photo",
@@ -1261,8 +1262,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "passport.protocolStatus.failed": "Failed",
       "passport.protocolStatus.notPerformed": "Not performed",
       "passport.protocolStatus.bacFallback": "Did not complete; BAC succeeded",
-      "passport.details.show": "View check details",
-      "passport.details.hide": "Hide check details",
+      "passport.protocolStatus.paceParametersUnavailable": "PACE parameters unavailable; BAC succeeded",
       "passport.details.title": "Check details",
       "passport.nfc.presenting": "Hold the top of your phone against your passport.",
       "passport.nfc.authenticating": ["Connecting — ", ["arg", "progress"], "%"],

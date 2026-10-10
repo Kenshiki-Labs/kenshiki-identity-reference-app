@@ -385,6 +385,7 @@
       "chipChecksRecordedAt": "{moment}. Opening saved results does not repeat them.",
       "readAt": "Read at",
       "bacFallback": "The chip was opened using BAC after PACE did not complete. The signing and data integrity checks are reported separately.",
+      "paceParametersUnavailable": "The chip was opened using BAC; PACE parameters were unavailable. The signing and data integrity checks are reported separately.",
       "failedNotice": "A failed chip check means this passport read should not be relied on. Read the chip again, or use another document.",
       "chipPhoto": "Passport chip photo",
       "passportPhoto": "Passport photo",
@@ -445,11 +446,10 @@
       "succeeded": "Succeeded",
       "failed": "Failed",
       "notPerformed": "Not performed",
-      "bacFallback": "Did not complete; BAC succeeded"
+      "bacFallback": "Did not complete; BAC succeeded",
+      "paceParametersUnavailable": "PACE parameters unavailable; BAC succeeded"
     },
     "details": {
-      "show": "View check details",
-      "hide": "Hide check details",
       "title": "Check details"
     },
     // Messages shown in the iOS NFC sheet while the chip is read. {progress} is filled in by the
