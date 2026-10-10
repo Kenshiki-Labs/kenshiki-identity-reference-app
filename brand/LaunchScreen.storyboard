@@ -15,7 +15,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Kenshiki Pulse" textAlignment="center" adjustsFontSizeToFit="YES" minimumScaleFactor="0.75" translatesAutoresizingMaskIntoConstraints="NO" id="Tag-ln-lbl">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Kenshiki SDK" textAlignment="center" adjustsFontSizeToFit="YES" minimumScaleFactor="0.75" translatesAutoresizingMaskIntoConstraints="NO" id="Tag-ln-lbl">
                                 <rect key="frame" x="74" y="406" width="245" height="40"/>
                                 <fontDescription key="fontDescription" name="Georgia-Bold" family="Georgia" pointSize="32"/>
                                 <color key="textColor" white="0.96" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>

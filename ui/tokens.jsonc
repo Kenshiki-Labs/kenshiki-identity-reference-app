@@ -45,7 +45,7 @@
     // Brand: pulse-ios `KTheme.accent` (KenshikiTheme.swift, `Color(light: 0x0D2958, dark:
     // 0x8FB3E6)`), the navy identity ink. Replaces systemBlue, which replaced #173965.
     "tint": {"light": "#0D2958", "dark": "#8FB3E6"},
-    // The "Kenshiki Pulse" wordmark in the shared page header. Brand: pulse-ios `KTheme.text`
+    // The "Kenshiki SDK" wordmark in the shared page header. Brand: pulse-ios `KTheme.text`
     // (`Color(light: 0x1D1D1F, dark: 0xF5F5F7)`), the ink pulse-ios gives its h1 role
     // (`TextRole.defaultColor`), which reads on the light and the dark grouped background. The
     // launch screen's wordmark keeps pulse-ios's fixed 0.96 white: its background is always dark.

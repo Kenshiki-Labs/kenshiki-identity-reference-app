@@ -30,7 +30,7 @@
     "step": "Step {number} of {total}",
     "request": "Continue",
     "next": "Next",
-    "open": "Open Pulse",
+    "open": "Open Kenshiki SDK",
     "notNow": "Not now",
     "settings": "Open Settings",
     "allowed": "Access is enabled.",
@@ -144,10 +144,10 @@
   // values in ui/tokens.jsonc and the files in brand/.
   "brand": {
     // The shared page header and generated native launch screen use this same wordmark.
-    "wordmark": "Kenshiki Pulse",
+    "wordmark": "Kenshiki SDK",
     // The name under the app's icon on the Home Screen. create-host.py writes it into the
     // generated app's Info.plist as CFBundleDisplayName.
-    "appName": "Kenshiki Pulse"
+    "appName": "Kenshiki SDK"
   },
 
   // Words several screens share, with the same meaning everywhere.
