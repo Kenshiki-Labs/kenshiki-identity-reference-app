@@ -80,8 +80,8 @@ project as follows:
   resources into `ios/CaptureResources`, and sets the Podfile platform to iOS 18.0. It stops with an
   error if the generated Podfile lacks the line it replaces.
 - `configure-host.rb` replaces `ios/IdentitySDKHost/AppDelegate.swift` with this example's; sets the
-  camera and NFC usage descriptions and the passport application identifier in `Info.plist`, and
-  supplies location usage descriptions for the sensor permission and location-fix flows; merges NFC tag
+  camera, NFC, motion, Bluetooth and location (When In Use and Always) usage descriptions and the
+  passport application identifier in `Info.plist`; merges NFC tag
   reading (`TAG`) into the app's existing entitlements file; adds `ios/CaptureResources` to the app
   when it exists; sets the deployment target to 18.0 and `FORCE_BUNDLING` on Debug; adds the
   `ArtifactIntegrationTests` UI-test target; and makes the scheme's test action run that target in
