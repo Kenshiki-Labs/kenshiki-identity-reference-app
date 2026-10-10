@@ -13,7 +13,7 @@ from verify_export import sha256, require
 
 
 def git(source, *args):
-    return subprocess.check_output(['git', '-C', str(source), *args], text=True).strip()
+    return subprocess.check_output(['git', '-C', str(source.resolve()), *args], text=True).strip()
 
 
 def check_source(source, revision):
@@ -50,7 +50,7 @@ def verified_sdk(host, artifact, reference):
 
 def prepare(args):
     check_source(args.source, args.revision)
-    profile = plistlib.loads(subprocess.check_output(['security', 'cms', '-D', '-i', str(args.profile)]))
+    profile = plistlib.loads(subprocess.check_output(['security', 'cms', '-D', '-i', str(args.profile.resolve())]))
     identities = signing.usable_identities(signing.command('security', 'find-identity', '-v', '-p', 'codesigning'))
     selected = signing.profile_result(profile, args.profile, args.team, args.bundle, identities,
                                       datetime.datetime.now(datetime.timezone.utc))

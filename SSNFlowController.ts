@@ -315,7 +315,7 @@ export class SSNFlowController {
     return result;
   };
   dispose = (): Promise<void> => {
-    if (this.disposal) return this.disposal;
+    if (this.disposal !== undefined) return this.disposal;
     this.update({
       digits: '',
       snapshot: this.state.snapshot && redact(this.state.snapshot),

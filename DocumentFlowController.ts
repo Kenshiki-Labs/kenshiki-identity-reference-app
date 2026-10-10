@@ -362,7 +362,7 @@ export class DocumentFlowController {
     return result;
   };
   dispose = (): Promise<void> => {
-    if (this.disposal) return this.disposal;
+    if (this.disposal !== undefined) return this.disposal;
     this.closed = true;
     ++this.epoch;
     this.off?.();

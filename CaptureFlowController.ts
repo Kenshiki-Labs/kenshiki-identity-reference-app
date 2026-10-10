@@ -191,7 +191,7 @@ export class CaptureFlowController {
     }
   }
   private async session(epoch: number) {
-    if (this.releasing) await this.releasing;
+    if (this.releasing !== undefined) await this.releasing;
     if (epoch !== this.epoch || this.closed) throw { code: 'cancelled' };
     if (this.current) return this.current;
     const session = await this.acquisition.open(
@@ -456,7 +456,7 @@ export class CaptureFlowController {
     );
   }
   dispose = (): Promise<void> => {
-    if (this.disposal) return this.disposal;
+    if (this.disposal !== undefined) return this.disposal;
     this.pendingComparison = false;
     this.closed = true;
     ++this.epoch;
