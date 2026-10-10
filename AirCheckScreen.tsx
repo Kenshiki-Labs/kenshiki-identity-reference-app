@@ -1,4 +1,7 @@
 import type { FusionAirCheck, FusionAirComparison } from '@kenshiki/identity-capture';
+import { useIsFocused } from '@react-navigation/native';
+import { useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 import { AirCheckDiagram } from './AirCheckDiagram';
 import { FusionPage, MathDetails, quantity, TimestampRow } from './FusionPresentation';
 import { t } from './locales/i18n';
@@ -8,13 +11,18 @@ import { ButtonRow, ListSection, TextRow, ValueRow } from './ui/List';
 
 export function AirCheckScreen() {
   const { state, perform } = useSensorSession();
+  useAutomaticAirCheck();
   const air = state.board?.fusion.airCheck;
   const running = state.busy || air?.state === 'running';
   return (
     <FusionPage testID="fusion-air-check" title={copy('airCheck.navigationTitle')}>
       <ListSection header={copy('airCheck.header')} footer={copy('airCheck.intro')}>
         <ButtonRow
-          label={copy(running ? 'airCheck.button.running' : 'airCheck.button.run')}
+          label={
+            running
+              ? copy('airCheck.button.running')
+              : t(air?.state === 'compared' ? 'fusionUI.refreshAir' : 'fusionUI.retryAir')
+          }
           disabled={!state.board || running}
           onPress={() => perform({ action: 'airCheck', consent: true })}
         />
@@ -31,6 +39,34 @@ export function AirCheckScreen() {
     </FusionPage>
   );
 }
+/** Start once per visible visit/session; live board updates never retrigger acquisition. */
+function useAutomaticAirCheck() {
+  const { state, perform } = useSensorSession();
+  const focused = useIsFocused();
+  const started = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focused) {
+      started.current = null;
+      return;
+    }
+    const start = () => {
+      if (
+        AppState.currentState !== 'active' ||
+        !state.board ||
+        !state.sessionId ||
+        state.busy ||
+        started.current === state.sessionId
+      )
+        return;
+      started.current = state.sessionId;
+      if (state.board.fusion.airCheck.state !== 'running') perform({ action: 'airCheck', consent: true });
+    };
+    start();
+    const subscription = AppState.addEventListener('change', start);
+    return () => subscription.remove();
+  }, [focused, state.board, state.busy, state.sessionId, perform]);
+}
+
 function AirFailure({ air }: Readonly<{ air: FusionAirCheck }>) {
   if (air.state === 'idle' || air.state === 'running' || air.state === 'compared') return null;
   const reason = !('reason' in air)

@@ -260,7 +260,13 @@ final class ArtifactIntegrationTests: XCTestCase {
     reveal(air)
     air.tap()
     assertPage("Air check")
-    XCTAssertTrue(app.buttons["Run air check"].exists, "Air Check remains an explicit acquisition")
+    let completedAir = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+      let retry = app.buttons["Retry air check"]
+      let refresh = app.buttons["Refresh air check"]
+      return (retry.exists && retry.isEnabled) || (refresh.exists && refresh.isEnabled)
+    }, object: nil)
+    XCTAssertEqual(XCTWaiter.wait(for: [completedAir], timeout: 45), .completed,
+      "Air Check runs on entry and offers retry or refresh without a start tap")
     back()
     assertPage("Fusion")
   }

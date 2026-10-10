@@ -27,6 +27,8 @@ export type MessageValues = {
   readonly "firstRun.preciseBody": undefined;
   readonly "firstRun.camera": undefined;
   readonly "firstRun.failure": undefined;
+  readonly "fusionUI.refreshAir": undefined;
+  readonly "fusionUI.retryAir": undefined;
   readonly "fusionUI.passCountValue": {readonly count: string | number};
   readonly "fusionUI.evaluate": undefined;
   readonly "fusionUI.evaluating": undefined;
@@ -934,6 +936,8 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "firstRun.preciseBody": "iOS is sharing an approximate position. Enable Precise Location in Settings.",
       "firstRun.camera": "We’ll ask for camera access when you start a scan or face capture.",
       "firstRun.failure": "This step could not finish. Try again or choose Not now.",
+      "fusionUI.refreshAir": "Refresh air check",
+      "fusionUI.retryAir": "Retry air check",
       "fusionUI.passCountValue": ["Readings so far: ", ["arg", "count"]],
       "fusionUI.evaluate": "Evaluate this reading",
       "fusionUI.evaluating": "Working…",

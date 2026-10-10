@@ -43,6 +43,8 @@
     "failure": "This step could not finish. Try again or choose Not now."
   },
   "fusionUI": {
+    "refreshAir": "Refresh air check",
+    "retryAir": "Retry air check",
     "passCountValue": "Readings so far: {count}",
     "evaluate": "Evaluate this reading",
     "evaluating": "Working…",

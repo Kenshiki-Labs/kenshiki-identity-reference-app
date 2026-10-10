@@ -1,3 +1,4 @@
+import { AppState } from 'react-native';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { airComparison, continuityResult } from './__tests__/FusionFixtures';
 import { sensorBoardFixture } from './__tests__/SensorBoardFixtures';
@@ -10,10 +11,15 @@ import { ButtonRow, ListRow, ValueRow } from './ui/List';
 
 let mockBoard = sensorBoardFixture();
 let mockBusy = false;
+let mockFocused = true;
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual<typeof import('@react-navigation/native')>('@react-navigation/native'),
+  useIsFocused: () => mockFocused,
+}));
 const mockPerform = jest.fn();
 jest.mock('./SensorScreen', () => ({
   useSensorSession: () => ({
-    state: { board: mockBoard, busy: mockBusy, failure: null },
+    state: { board: mockBoard, busy: mockBusy, failure: null, sessionId: 'sensor-session' },
     failure: null,
     perform: mockPerform,
   }),
@@ -32,6 +38,8 @@ function words(view: ReactTestRenderer) {
 beforeEach(() => {
   mockBoard = sensorBoardFixture();
   mockBusy = false;
+  mockFocused = true;
+  AppState.currentState = 'active';
   jest.clearAllMocks();
 });
 
@@ -53,11 +61,9 @@ test('Fusion summary uses live results and opens the companion details', async (
   expect(open).toHaveBeenCalledWith('AirCheck');
   await act(async () => view.unmount());
 });
-test('Air Check runs explicitly, locks while busy, and retains exact native math values', async () => {
+test('Air Check starts on entry once, locks while busy, and retains exact native math values', async () => {
   const view = await render(<AirCheckScreen />);
-  await act(async () => {
-    invoke(view.root.findByType(ButtonRow), 'onPress');
-  });
+  expect(mockPerform).toHaveBeenCalledTimes(1);
   expect(mockPerform).toHaveBeenCalledWith({ action: 'airCheck', consent: true });
   mockBusy = true;
   await act(async () => view.update(<AirCheckScreen />));
@@ -69,6 +75,8 @@ test('Air Check runs explicitly, locks while busy, and retains exact native math
     comparison: airComparison(),
   };
   await act(async () => view.update(<AirCheckScreen />));
+  expect(mockPerform).toHaveBeenCalledTimes(1);
+  expect(view.root.findByType(ButtonRow).props.label).toBe('Refresh air check');
   expect(words(view)).toContain('2 kPa');
   expect(words(view)).toContain('Not available');
   await act(async () => {
@@ -86,6 +94,21 @@ test('Air Check runs explicitly, locks while busy, and retains exact native math
   mockBoard.fusion.airCheck = { state: 'idle' };
   await act(async () => view.update(<AirCheckScreen />));
   expect(view.root.findAllByProps({ testID: 'fusion-math' })).toHaveLength(0);
+  expect(mockPerform).toHaveBeenCalledTimes(1);
+  mockFocused = false;
+  await act(async () => view.update(<AirCheckScreen />));
+  mockFocused = true;
+  mockBusy = true;
+  await act(async () => view.update(<AirCheckScreen />));
+  expect(mockPerform).toHaveBeenCalledTimes(1);
+  mockBusy = false;
+  await act(async () => view.update(<AirCheckScreen />));
+  expect(mockPerform).toHaveBeenCalledTimes(2);
+  expect(view.root.findByType(ButtonRow).props.label).toBe('Retry air check');
+  await act(async () => {
+    invoke(view.root.findByType(ButtonRow), 'onPress');
+  });
+  expect(mockPerform).toHaveBeenCalledTimes(3);
   await act(async () => view.unmount());
 });
 test.each(['noFix', 'unavailable', 'weatherFailure'] as const)(
