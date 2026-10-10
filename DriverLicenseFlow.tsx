@@ -4,20 +4,31 @@ import {
   IdentityCapturePreview,
   IdentityCaptureSession,
 } from '@kenshiki/identity-capture';
-import { useEffect, useRef, useState } from 'react';
-import { AppState, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCallback, useRef, useState } from 'react';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { DocumentCheckPanel } from './DocumentCheckPanel';
 import {
   DocumentFlowController,
   type DocumentFlowState,
   type SavedDocumentCapture,
 } from './DocumentFlowController';
-import { Action, styles } from './IdentityCaptureFlow';
 import { t } from './locales/i18n';
-import { type CancelHandle, useCancel } from './ui/ModalCancel';
+import { Action } from './ui/Action';
+import { ControllerStartup } from './ui/ControllerStartup';
+import { connectBackground } from './ui/connectBackground';
 import { NativeSheet } from './ui/NativeSheet';
-import { spacing } from './ui/tokens.generated';
+import { Page } from './ui/Page';
+import { styles } from './ui/styles';
+import { useControllerState } from './ui/useControllerState';
+
+const initialState: DocumentFlowState = {
+  phase: 'loading',
+  busy: false,
+  capturing: false,
+  ready: false,
+  preview: 0,
+  saved: [],
+};
 
 export function DriverLicenseFlow({
   configuration,
@@ -25,43 +36,29 @@ export function DriverLicenseFlow({
   resume,
   onComplete,
   onExit,
-  cancelRef,
+  onClaim,
 }: {
   configuration: Configuration;
   saved?: SavedDocumentCapture | undefined;
   resume?: ('front' | 'back') | undefined;
   onComplete: (result: SavedDocumentCapture) => void;
   onExit: () => void;
-  /** Filled in with this check's own way out, for the navigation bar's Cancel button. */
-  cancelRef?: CancelHandle | undefined;
+  onClaim?: (() => void) | undefined;
 }) {
-  const [controller, setController] = useState<DocumentFlowController>();
-  const [state, setState] = useState<DocumentFlowState>({
-    phase: 'loading',
-    busy: false,
-    capturing: false,
-    ready: false,
-    preview: 0,
-    saved: [],
-  });
   const [finishing, setFinishing] = useState(false);
   const finishingRef = useRef(false);
-  const insets = useSafeAreaInsets();
-  useEffect(() => {
-    const active = new DocumentFlowController(IdentityCaptureSession.create, configuration, setState, saved);
-    setController(active);
-    setState(active.state);
-    if (resume === 'front') active.startFront().catch(active.fail);
-    else if (resume === 'back') active.startBack().catch(active.fail);
-    else active.open().catch(active.fail);
-    const listener = AppState.addEventListener('change', (next) => {
-      if (next === 'background') active.pause().catch(active.fail);
-    });
-    return () => {
-      listener.remove();
-      active.dispose().catch(active.fail);
-    };
-  }, [configuration, saved, resume]);
+  const connect = useCallback(
+    (publish: (state: DocumentFlowState) => void) => {
+      const active = new DocumentFlowController(IdentityCaptureSession.create, configuration, publish, saved);
+      onClaim?.();
+      if (resume === 'front') active.startFront().catch(active.fail);
+      else if (resume === 'back') active.startBack().catch(active.fail);
+      else active.open().catch(active.fail);
+      return connectBackground(active);
+    },
+    [configuration, saved, resume, onClaim],
+  );
+  const { controller, state, failed, cancelStartup } = useControllerState(initialState, connect);
   const finish = async () => {
     if (!controller || finishingRef.current) return;
     finishingRef.current = true;
@@ -88,8 +85,16 @@ export function DriverLicenseFlow({
     await controller.dispose();
     onExit();
   };
-  useCancel(cancelRef, exit, (error) => controller?.fail(error));
-  if (!controller) return <View style={styles.root} />;
+  const dismiss = () => exit().catch((error: unknown) => controller?.fail(error));
+  if (!controller)
+    return (
+      <ControllerStartup
+        title={t('license.title.default')}
+        onClose={onExit}
+        failed={failed}
+        cancelStartup={cancelStartup}
+      />
+    );
   const activeController = controller;
   const camera = state.phase === 'front' || state.phase === 'back';
   const action = (label: string, press: () => unknown, id?: string, secondary = false, disabled = false) => (
@@ -125,11 +130,7 @@ export function DriverLicenseFlow({
   function renderCaptureStage() {
     if (camera) {
       return (
-        <View
-          style={styles.camera}
-          accessibilityElementsHidden={!!state.sheet}
-          importantForAccessibility={state.sheet ? 'no-hide-descendants' : 'auto'}
-        >
+        <View style={styles.camera}>
           {state.session && (
             <IdentityCapturePreview
               key={`document-${state.preview}`}
@@ -142,12 +143,9 @@ export function DriverLicenseFlow({
             <Text style={[styles.eyebrow, styles.white]}>
               {t('license.step', { step: state.phase === 'front' ? 1 : 2, total: 2 })}
             </Text>
-            <Text accessibilityRole="header" style={[styles.title, styles.white]}>
-              {title}
-            </Text>
             <Text style={[styles.body, styles.white]}>{t('license.cameraHint')}</Text>
           </View>
-          <View style={[styles.cameraBottom, { paddingBottom: insets.bottom + spacing.lg }]}>
+          <View style={styles.cameraBottom}>
             <Text style={[styles.body, styles.white]} accessibilityLiveRegion="polite">
               {documentHint(state)}
             </Text>
@@ -163,14 +161,7 @@ export function DriverLicenseFlow({
       );
     }
     return (
-      <ScrollView
-        contentContainerStyle={styles.content}
-        accessibilityElementsHidden={!!state.sheet}
-        importantForAccessibility={state.sheet ? 'no-hide-descendants' : 'auto'}
-      >
-        <Text accessibilityRole="header" style={styles.title}>
-          {title}
-        </Text>
+      <>
         {state.phase === 'loading' && (
           <Text style={styles.body} accessibilityLiveRegion="polite">
             {t('license.loading')}
@@ -212,7 +203,12 @@ export function DriverLicenseFlow({
               session={state.session}
               configured={!!configuration.document?.check}
             />
-            {action(t('common.done'), finish, 'finish-document')}
+            <Action
+              label={t('common.done')}
+              onPress={finish}
+              disabled={state.busy || finishing}
+              testID="finish-document"
+            />
             {action(t('license.retake'), activeController.startFront, 'start-document-front', true)}
           </>
         )}
@@ -221,16 +217,13 @@ export function DriverLicenseFlow({
             {t('common.pleaseWait')}
           </Text>
         )}
-      </ScrollView>
+      </>
     );
   }
   function renderRecovery() {
     if (!state.sheet) return null;
     return (
-      <NativeSheet testID="document-bottom-sheet">
-        <Text accessibilityRole="header" style={styles.sheetTitle}>
-          {state.sheet.title}
-        </Text>
+      <NativeSheet title={state.sheet.title} testID="document-bottom-sheet">
         <Text style={styles.body}>{state.sheet.message}</Text>
         {state.sheet.recovery === 'details' ? (
           close
@@ -272,10 +265,15 @@ export function DriverLicenseFlow({
     );
   }
   return (
-    <View style={styles.root}>
+    <Page
+      title={title}
+      mode={camera ? 'camera' : 'scroll'}
+      onClose={dismiss}
+      covered={!!state.sheet}
+      overlay={renderRecovery()}
+    >
       {renderCaptureStage()}
-      {renderRecovery()}
-    </View>
+    </Page>
   );
 }
 
@@ -347,13 +345,13 @@ export function DocumentResultDetails({ result }: { result: SavedDocumentCapture
           <Text style={styles.body} testID="document-barcode-status">
             {barcodeStatus(document.back)}
           </Text>
-          {(fields.DAA || fields.DCS || fields.DAC) && (
+          {!!(fields.DAA || fields.DCS || fields.DAC) && (
             <Detail label={t('license.result.name')} value={documentName(document)} />
           )}
-          {fields.DAQ && <Detail label={t('license.result.licenseNumber')} value={fields.DAQ} />}
-          {fields.DBB && <Detail label={t('license.result.birthDate')} value={fields.DBB} />}
-          {fields.DBA && <Detail label={t('license.result.expiryDate')} value={fields.DBA} />}
-          {address && <Detail label={t('license.result.address')} value={address} />}
+          {!!fields.DAQ && <Detail label={t('license.result.licenseNumber')} value={fields.DAQ} />}
+          {!!fields.DBB && <Detail label={t('license.result.birthDate')} value={fields.DBB} />}
+          {!!fields.DBA && <Detail label={t('license.result.expiryDate')} value={fields.DBA} />}
+          {address.length > 0 && <Detail label={t('license.result.address')} value={address} />}
         </View>
       )}
       {barcode && (

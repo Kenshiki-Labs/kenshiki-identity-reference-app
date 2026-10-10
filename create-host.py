@@ -32,7 +32,7 @@ parser.add_argument('--integration-manifest', type=Path,
 args = parser.parse_args()
 host = args.host.resolve()
 artifact = args.artifact.resolve()
-if host.exists():
+if args.host.is_symlink() or host.exists():
     raise SystemExit('Choose a new host directory')
 if not artifact.is_file():
     raise SystemExit('Package artifact does not exist')
@@ -115,12 +115,15 @@ icons = sorted(brand.glob('*.icon'))
 if len(icons) != 1 or not (brand / 'LaunchScreen.storyboard').is_file():
     raise SystemExit('brand/ must hold exactly one Icon Composer .icon and a LaunchScreen.storyboard: ' + str(brand))
 subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'IdentitySDKHost',
-                '--version', '0.87.1', '--directory', str(host), '--skip-install', '--skip-git-init'], check=True)
+                '--version', '0.87.1', '--directory', str(host), '--replace-directory', 'false',
+                '--skip-install', '--skip-git-init'], check=True)
 with (host / '.gitignore').open('a') as ignored:
     ignored.write('\n# Local Fastlane output and signing credentials\n/fastlane/report.xml\n/fastlane/README.md.generated\n/fastlane/Preview.html\n*.p8\n*.p12\n*.mobileprovision\n.env\n.env.*\n')
 for filename in ['FusionScreen.tsx', 'FusionPresentation.tsx', 'FusionExplanations.tsx',
                  'AirCheckScreen.tsx', 'AirCheckDiagram.tsx', 'ContinuityScreen.tsx', 'FusionScreen.test.tsx',
-                 'App.tsx', 'FirstRunPermissions.tsx', 'FirstRunPermissions.test.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
+                 'FirstRunPermissions.tsx', 'FirstRunPermissions.test.tsx',
+                 'App.tsx', 'AppNavigator.tsx', 'useIdentityWorkspace.ts', 'SessionAcquisition.ts',
+                 'IdentityHome.tsx', 'IdentityResults.tsx', 'IdentitySettings.tsx', 'IdentityRecovery.tsx', 'IdentityCaptureFlow.tsx', 'CaptureFlowController.ts',
                  'DriverLicenseFlow.tsx', 'DocumentFlowController.ts', 'DocumentCheckPanel.tsx',
                  'DocumentCheckPanel.test.tsx',
                  'DriverLicenseFlow.test.tsx', 'DocumentFlowController.test.ts',
@@ -183,7 +186,8 @@ navigation = ['@react-navigation/native@7.5.0', '@react-navigation/native-stack@
               '@react-navigation/bottom-tabs@7.20.0', 'react-native-screens@4.28.0',
               'react-native-safe-area-context@5.10.1']
 subprocess.run(['npm', 'install', '--save-exact'] + navigation, cwd=host, check=True)
-# The copied Jest suites render the navigator, whose packages ship ES modules.
+# Only *.test files are suites; __tests__ also contains shared support and fixtures.
+# The copied suites render the navigator, whose packages ship ES modules.
 jest_config = host / 'jest.config.js'
 preset = re.fullmatch(r"module\.exports = \{\s*preset: '([^']+)',?\s*\};?\s*", jest_config.read_text())
 if preset is None:
@@ -191,7 +195,8 @@ if preset is None:
                      '@react-navigation, react-native-screens and react-native-safe-area-context to its '
                      'transformIgnorePatterns by hand: ' + str(jest_config))
 jest_config.write_text(
-    "module.exports = {\n  preset: '" + preset.group(1) + "',\n  transformIgnorePatterns: [\n"
+    "module.exports = {\n  preset: '" + preset.group(1) + "',\n"
+    "  testMatch: ['<rootDir>/**/*.test.ts?(x)'],\n  transformIgnorePatterns: [\n"
     "    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-navigation"
     "|react-native-screens|react-native-safe-area-context)/)',\n  ],\n};\n")
 signing = []

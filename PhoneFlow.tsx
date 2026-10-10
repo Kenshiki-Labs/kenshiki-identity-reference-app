@@ -1,49 +1,48 @@
 import type { Configuration, PhoneCheckReceipt, PhoneProviderObservation } from '@kenshiki/identity-capture';
 import { IdentityCaptureSession } from '@kenshiki/identity-capture';
-import { useEffect, useRef, useState } from 'react';
-import { AppState, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Text, View } from 'react-native';
 import { formatMoment } from './HolderText';
-import { Action, styles } from './IdentityCaptureFlow';
 import { t } from './locales/i18n';
 import { PhoneFlowController, type PhoneFlowState, type SavedPhoneCheck } from './PhoneFlowController';
 import { phoneCheckStopped } from './PhonePolicy';
 import { SubscriberResultDetails } from './SubscriberResultDetails';
-import { type CancelHandle, useCancel } from './ui/ModalCancel';
+import { Action } from './ui/Action';
+import { ControllerStartup } from './ui/ControllerStartup';
+import { connectBackground } from './ui/connectBackground';
 import { NativeSheet, useConfirmation } from './ui/NativeSheet';
+import { Page } from './ui/Page';
+import { styles } from './ui/styles';
+import { useControllerState } from './ui/useControllerState';
+
+const initialState: PhoneFlowState = { busy: false, paused: false };
 
 export function PhoneFlow({
   configuration,
   saved,
   onComplete,
   onExit,
-  cancelRef,
+  onClaim,
 }: {
   configuration: Configuration;
   saved?: SavedPhoneCheck | undefined;
   onComplete: (value: SavedPhoneCheck) => void;
   onExit: () => void;
-  /** Filled in with this check's own way out, for the navigation bar's Cancel button. */
-  cancelRef?: CancelHandle | undefined;
+  onClaim?: (() => void) | undefined;
 }) {
-  const [controller, setController] = useState<PhoneFlowController>();
-  const [state, setState] = useState<PhoneFlowState>({ busy: false, paused: false });
   const [leaving, setLeaving] = useState(false);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(Date.now);
   const leavingRef = useRef(false);
-  useEffect(() => {
-    const active = new PhoneFlowController(IdentityCaptureSession.create, configuration, setState, saved);
-    setController(active);
-    setState(active.state);
-    active.open().catch(active.fail);
-    const subscription = AppState.addEventListener('change', (next) => {
-      // Apple's message composer can make the app inactive. Only backgrounding cancels it.
-      if (next === 'background') active.pause().catch(active.fail);
-    });
-    return () => {
-      subscription.remove();
-      active.dispose().catch(active.fail);
-    };
-  }, [configuration, saved]);
+  const connect = useCallback(
+    (publish: (state: PhoneFlowState) => void) => {
+      const active = new PhoneFlowController(IdentityCaptureSession.create, configuration, publish, saved);
+      onClaim?.();
+      active.open().catch(active.fail);
+      return connectBackground(active);
+    },
+    [configuration, saved, onClaim],
+  );
+  const { controller, state, failed, cancelStartup } = useControllerState(initialState, connect);
   useEffect(() => {
     if (!state.snapshot?.sendAgainAt) return;
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -64,7 +63,7 @@ export function PhoneFlow({
       if (!controller.state.sheet) controller.fail(error);
     }
   };
-  useCancel(cancelRef, finish, (error) => controller?.fail(error));
+  const close = () => finish().catch((error: unknown) => controller?.fail(error));
   const choice = state.sheet?.kind === 'error' ? undefined : state.sheet?.kind;
   useConfirmation(
     controller && choice
@@ -81,7 +80,15 @@ export function PhoneFlow({
         }
       : undefined,
   );
-  if (!controller) return <View style={styles.root} />;
+  if (!controller)
+    return (
+      <ControllerStartup
+        title={t('hub.phone.title')}
+        onClose={onExit}
+        failed={failed}
+        cancelStartup={cancelStartup}
+      />
+    );
   const activeController = controller;
   const snapshot = state.snapshot;
   const busy = state.busy || leaving;
@@ -199,10 +206,7 @@ export function PhoneFlow({
   function renderPhoneSheet() {
     if (state.sheet?.kind !== 'error') return null;
     return (
-      <NativeSheet testID="phone-bottom-sheet">
-        <Text accessibilityRole="header" style={styles.sheetTitle}>
-          {t('common.checkNeedsAttention')}
-        </Text>
+      <NativeSheet title={t('common.checkNeedsAttention')} testID="phone-bottom-sheet">
         <Text style={styles.body}>{state.sheet.message}</Text>
         <Action
           label={t('phone.sheet.backToCheck')}
@@ -221,38 +225,27 @@ export function PhoneFlow({
     );
   }
   return (
-    <View style={styles.root}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        accessibilityElementsHidden={!!state.sheet}
-        importantForAccessibility={state.sheet ? 'no-hide-descendants' : 'auto'}
-      >
-        {renderPhoneStage()}
-        {busy && (
-          <Text accessibilityLiveRegion="polite" style={styles.body}>
-            {t('common.pleaseWait')}
-          </Text>
-        )}
-        {terminal && (
-          <Action
-            label={t('phone.startNew')}
-            onPress={() => activeController.ask('restart')}
-            disabled={busy}
-          />
-        )}
-        {renderReceipt()}
-        {snapshot && (
-          <Action
-            label={t('phone.erase')}
-            destructive
-            onPress={() => activeController.ask('erase')}
-            disabled={busy}
-            testID="phone-erase"
-          />
-        )}
-      </ScrollView>
-      {renderPhoneSheet()}
-    </View>
+    <Page title={t('hub.phone.title')} onClose={close} covered={!!state.sheet} overlay={renderPhoneSheet()}>
+      {renderPhoneStage()}
+      {busy && (
+        <Text accessibilityLiveRegion="polite" style={styles.body}>
+          {t('common.pleaseWait')}
+        </Text>
+      )}
+      {terminal && (
+        <Action label={t('phone.startNew')} onPress={() => activeController.ask('restart')} disabled={busy} />
+      )}
+      {renderReceipt()}
+      {snapshot && (
+        <Action
+          label={t('phone.erase')}
+          destructive
+          onPress={() => activeController.ask('erase')}
+          disabled={busy}
+          testID="phone-erase"
+        />
+      )}
+    </Page>
   );
 }
 

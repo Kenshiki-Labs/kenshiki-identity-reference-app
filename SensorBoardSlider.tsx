@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { t } from './locales/i18n';
 import { sensorConfig } from './SensorPresentation';
@@ -26,8 +26,8 @@ export function SensorWindowSlider({
   onCommit: (value: number) => void;
 }) {
   const [width, setWidth] = useState(1);
-  const [draft, setDraft] = useState(value);
-  useEffect(() => setDraft(value), [value]);
+  const [draft, setDraft] = useState<number>();
+  const shown = draft ?? value;
   const position = (x: number) => bounded(minimum + (x / width) * (maximum - minimum));
   return (
     <View
@@ -36,8 +36,8 @@ export function SensorWindowSlider({
       accessibilityValue={{
         min: minimum,
         max: maximum,
-        now: draft,
-        text: t('sensors.secondsSpoken', { value: draft.toFixed(1) }),
+        now: shown,
+        text: t('sensors.secondsSpoken', { value: shown.toFixed(1) }),
       }}
       accessibilityState={{ disabled }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
@@ -50,13 +50,16 @@ export function SensorWindowSlider({
       onMoveShouldSetResponder={() => !disabled}
       onResponderGrant={(event) => setDraft(position(event.nativeEvent.locationX))}
       onResponderMove={(event) => setDraft(position(event.nativeEvent.locationX))}
-      onResponderRelease={(event) => onCommit(position(event.nativeEvent.locationX))}
-      onResponderTerminate={() => setDraft(value)}
+      onResponderRelease={(event) => {
+        setDraft(undefined);
+        onCommit(position(event.nativeEvent.locationX));
+      }}
+      onResponderTerminate={() => setDraft(undefined)}
       style={[sliderStyles.slider, disabled && sliderStyles.disabled]}
     >
       <View style={sliderStyles.track} />
-      <View style={[sliderStyles.fill, { width: `${((draft - minimum) / (maximum - minimum)) * 100}%` }]} />
-      <View style={[sliderStyles.thumb, { left: `${((draft - minimum) / (maximum - minimum)) * 100}%` }]} />
+      <View style={[sliderStyles.fill, { width: `${((shown - minimum) / (maximum - minimum)) * 100}%` }]} />
+      <View style={[sliderStyles.thumb, { left: `${((shown - minimum) / (maximum - minimum)) * 100}%` }]} />
     </View>
   );
 }

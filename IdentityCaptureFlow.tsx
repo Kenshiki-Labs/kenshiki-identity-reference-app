@@ -4,63 +4,60 @@ import {
   IdentityCapturePreview,
   IdentityCaptureSession,
 } from '@kenshiki/identity-capture';
-import { useEffect, useRef, useState } from 'react';
-import { AppState, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCallback, useRef, useState } from 'react';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { CaptureFlowController, type CompletedCapture, type FlowState } from './CaptureFlowController';
 import { formatMoment } from './HolderText';
 import { t } from './locales/i18n';
 import { Action } from './ui/Action';
-import { type CancelHandle, useCancel } from './ui/ModalCancel';
+import { ControllerStartup } from './ui/ControllerStartup';
+import { connectBackground } from './ui/connectBackground';
 import { NativeSheet, useConfirmation } from './ui/NativeSheet';
-import { styles as sharedStyles } from './ui/styles';
-import { color, size, spacing, text } from './ui/tokens.generated';
+import { Page } from './ui/Page';
+import { styles } from './ui/styles';
+import { size } from './ui/tokens.generated';
+import { useControllerState } from './ui/useControllerState';
 
-export { Action } from './ui/Action';
+const initialState: FlowState = { phase: 'intro', busy: false, ready: false, preview: 0 };
 
 /** Completion transfers the session to the adopter. Cancellation releases it. */
 export function IdentityCaptureFlow({
   configuration,
   onExit,
   onComplete,
+  onClaim,
   completed,
   resume,
-  cancelRef,
 }: {
   configuration: Configuration;
   onExit: () => void;
   onComplete: (result: CompletedCapture) => void;
+  onClaim?: (() => void) | undefined;
   completed?: CompletedCapture | undefined;
   resume?: ('selfie' | 'read') | undefined;
-  /** Filled in with this check's own way out, for the navigation bar's Cancel button. */
-  cancelRef?: CancelHandle | undefined;
 }) {
-  const [state, setState] = useState<FlowState>({ phase: 'intro', busy: false, ready: false, preview: 0 });
-  const [controller, setController] = useState<CaptureFlowController>();
   const [width, setWidth] = useState(0);
   const handoffStarted = useRef(false);
   const [finishing, setFinishing] = useState(false);
-  const insets = useSafeAreaInsets();
-  useEffect(() => {
-    const active = new CaptureFlowController(
-      IdentityCaptureSession.create,
-      configuration,
-      setState,
-      completed,
-    );
-    setController(active);
-    setState(active.state);
-    if (resume === 'selfie') active.selfie().catch(active.fail);
-    if (resume === 'read') active.read().catch(active.fail);
-    if (!resume) active.open().catch(active.fail);
-    const listener = AppState.addEventListener('change', (next) => {
-      if (next === 'background') active.pause().catch(active.fail);
-    });
-    return () => {
-      listener.remove();
-      active.dispose().catch(active.fail);
-    };
-  }, [configuration, completed, resume]);
+  const { controller, state, failed, cancelStartup } = useControllerState(
+    initialState,
+    useCallback(
+      (publish: (state: FlowState) => void) => {
+        const active = new CaptureFlowController(
+          IdentityCaptureSession.create,
+          configuration,
+          publish,
+          completed,
+        );
+        onClaim?.();
+        if (resume === 'selfie') active.selfie().catch(active.fail);
+        if (resume === 'read') active.read().catch(active.fail);
+        if (!resume) active.open().catch(active.fail);
+        return connectBackground(active);
+      },
+      [configuration, completed, resume, onClaim],
+    ),
+  );
   const finish = async () => {
     if (!controller || handoffStarted.current) return;
     handoffStarted.current = true;
@@ -81,7 +78,7 @@ export function IdentityCaptureFlow({
       onExit();
     }
   };
-  useCancel(cancelRef, leave, (error) => controller?.fail(error));
+  const close = () => leave().catch((error: unknown) => controller?.fail(error));
   useConfirmation(
     controller && state.sheet?.kind === 'restart'
       ? {
@@ -99,7 +96,15 @@ export function IdentityCaptureFlow({
         }
       : undefined,
   );
-  if (!controller) return <View style={styles.root} />;
+  if (!controller)
+    return (
+      <ControllerStartup
+        title={t('hub.passport.title')}
+        onClose={onExit}
+        failed={failed}
+        cancelStartup={cancelStartup}
+      />
+    );
   const activeController = controller;
   const { phase, sheet } = state;
   const camera = phase === 'scanning' || phase === 'selfie';
@@ -127,14 +132,7 @@ export function IdentityCaptureFlow({
       return renderCamera();
     }
     return (
-      <ScrollView
-        accessibilityElementsHidden={!!sheet}
-        importantForAccessibility={sheet ? 'no-hide-descendants' : 'auto'}
-        contentContainerStyle={styles.content}
-      >
-        <Text accessibilityRole="header" style={styles.title}>
-          {title}
-        </Text>
+      <>
         {phase === 'loading' && <Text style={styles.body}>{t('common.openingSavedResults')}</Text>}
         {phase === 'saved' && (
           <>
@@ -185,7 +183,12 @@ export function IdentityCaptureFlow({
         {(phase === 'passport' || phase === 'result') && result && (
           <>
             <CaptureResultDetails result={result} focus={phase === 'result' ? 'face' : 'passport'} />
-            {action(t('common.done'), finish, false, 'finish-capture')}
+            <Action
+              label={t('common.done')}
+              onPress={finish}
+              disabled={state.busy || finishing}
+              testID="finish-capture"
+            />
             {action(
               state.comparison ? t('passport.action.retakeSelfie') : t('passport.action.compareSelfie'),
               activeController.selfie,
@@ -220,16 +223,13 @@ export function IdentityCaptureFlow({
             testID="restart-check"
           />
         )}
-      </ScrollView>
+      </>
     );
   }
   function renderRecovery() {
     if (sheet?.kind !== 'recovery') return null;
     return (
-      <NativeSheet testID="capture-bottom-sheet">
-        <Text accessibilityRole="header" style={styles.sheetTitle}>
-          {t('common.letsTryAgain')}
-        </Text>
+      <NativeSheet title={t('common.letsTryAgain')} testID="capture-bottom-sheet">
         <Text style={styles.body}>{sheet.message}</Text>
         {renderRecoveryActions()}
       </NativeSheet>
@@ -237,12 +237,7 @@ export function IdentityCaptureFlow({
   }
   function renderCamera() {
     return (
-      <View
-        style={styles.camera}
-        accessibilityElementsHidden={!!sheet}
-        importantForAccessibility={sheet ? 'no-hide-descendants' : 'auto'}
-        onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
-      >
+      <View style={styles.camera} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
         {state.session && (
           <IdentityCapturePreview
             key={`${phase}-${state.preview}`}
@@ -265,14 +260,11 @@ export function IdentityCaptureFlow({
           </View>
         )}
         <View style={styles.cameraTop}>
-          <Text accessibilityRole="header" style={[styles.title, styles.white]}>
-            {title}
-          </Text>
           <Text style={[styles.body, styles.white]}>
             {phase === 'scanning' ? t('passport.camera.scanHint') : state.hint}
           </Text>
         </View>
-        <View style={[styles.cameraBottom, { paddingBottom: insets.bottom + spacing.lg }]}>{scanHint()}</View>
+        <View style={styles.cameraBottom}>{scanHint()}</View>
       </View>
     );
   }
@@ -280,7 +272,15 @@ export function IdentityCaptureFlow({
     return (
       <>
         {renderRecoveryChoice()}
-        {state.passport && action(t('passport.sheet.keepResults'), finish, false, 'keep-passport', true)}
+        {state.passport && (
+          <Action
+            label={t('passport.sheet.keepResults')}
+            onPress={finish}
+            disabled={state.busy || finishing}
+            testID="keep-passport"
+            secondary
+          />
+        )}
         {action(t('common.startOver'), activeController.restart, false, 'confirm-restart', true)}
       </>
     );
@@ -345,10 +345,15 @@ export function IdentityCaptureFlow({
     );
   }
   return (
-    <View style={styles.root}>
+    <Page
+      title={title}
+      mode={camera ? 'camera' : 'scroll'}
+      onClose={close}
+      covered={!!sheet}
+      overlay={renderRecovery()}
+    >
       {renderCaptureStage()}
-      {renderRecovery()}
-    </View>
+    </Page>
   );
 }
 
@@ -635,20 +640,6 @@ function Details({ label, value }: { label: string; value: string }) {
     </View>
   );
 }
-export const styles = {
-  ...sharedStyles,
-  ...StyleSheet.create({
-    root: { flex: 1, backgroundColor: color.background },
-    content: {
-      paddingHorizontal: spacing.md,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.xxxxl,
-      gap: spacing.lg,
-    },
-    developerContent: { padding: spacing.md, gap: spacing.md },
-    developerTitle: { ...text.developerTitle, color: color.text },
-  }),
-};
 
 const protocolKeys = [
   'basicAccessControl',

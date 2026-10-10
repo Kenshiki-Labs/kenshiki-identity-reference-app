@@ -232,17 +232,43 @@ test('camera failure waits for the native cancellation boundary before allowing 
   await f.controller.retry();
   expect(f.native.startDocument).toHaveBeenCalledTimes(2);
 });
-test('closing during session creation releases the late session without opening camera or saved records', async () => {
-  const f = fixture();
-  const created = deferred<CaptureSession>();
-  const c = new DocumentFlowController(() => created.promise, {}, jest.fn());
-  const opening = c.open();
-  await c.dispose();
-  created.resolve(f.session);
-  await opening;
-  expect(f.native.release).toHaveBeenCalledTimes(1);
-  expect(f.native.listDocuments).not.toHaveBeenCalled();
-});
+test.each([false, true])(
+  'closing during creation drains custody without opening records (release fails: %s)',
+  async (releaseFails) => {
+    const f = fixture();
+    const created = deferred<CaptureSession>();
+    const c = new DocumentFlowController(() => created.promise, {}, jest.fn());
+    const opening = c.open();
+    const released = deferred<void>();
+    const failure = { code: 'operationFailed' };
+    f.native.release.mockImplementation(async () => {
+      await released.promise;
+      if (releaseFails) throw failure;
+    });
+    let closed = false;
+    const closing = c.dispose().then(
+      () => {
+        closed = true;
+        return undefined;
+      },
+      (error: unknown) => {
+        closed = true;
+        return error;
+      },
+    );
+    await tick();
+    expect(closed).toBe(false);
+    created.resolve(f.session);
+    await tick();
+    expect(closed).toBe(false);
+    released.resolve();
+    await opening;
+    expect(await closing).toEqual(releaseFails ? failure : undefined);
+    if (releaseFails) await expect(c.dispose()).rejects.toEqual(failure);
+    expect(f.native.release).toHaveBeenCalledTimes(1);
+    expect(f.native.listDocuments).not.toHaveBeenCalled();
+  },
+);
 test('release fences queued capture events and unsubscribes only once', async () => {
   const f = fixture();
   await f.controller.open();

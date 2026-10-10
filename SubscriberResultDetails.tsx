@@ -1,8 +1,8 @@
 import type { SubscriberComparisonFailure, SubscriberComparisonResult } from '@kenshiki/identity-capture';
 import { Text, View } from 'react-native';
 import { formatMoment } from './HolderText';
-import { styles } from './IdentityCaptureFlow';
 import { t } from './locales/i18n';
+import { styles } from './ui/styles';
 
 /** Each reason the comparison did not return a usable answer. Possession stays confirmed. */
 const failures: Record<SubscriberComparisonFailure, string> = {

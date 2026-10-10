@@ -105,28 +105,56 @@ test('background stops refresh, foreground resumes only a previously running boa
   await controller.dispose();
 });
 
-test('closing before session creation resolves releases the late session without publishing it', async () => {
-  const { session } = setup();
-  let finish: (() => void) | undefined;
-  const updates: SensorBoardPresentation[] = [];
-  const controller = new SensorBoardController(
-    configuration,
-    (value) => updates.push(value),
-    async () => {
+test.each([false, true])(
+  'closing during creation drains custody without publication (release fails: %s)',
+  async (releaseFails) => {
+    const { session } = setup();
+    let finish: (() => void) | undefined;
+    const updates: SensorBoardPresentation[] = [];
+    const controller = new SensorBoardController(
+      configuration,
+      (value) => updates.push(value),
+      async () => {
+        await new Promise<void>((resolve) => {
+          finish = resolve;
+        });
+        return session;
+      },
+    );
+    const opening = controller.open();
+    let release: (() => void) | undefined;
+    const failure = { code: 'operationFailed' };
+    session.release.mockImplementation(async () => {
       await new Promise<void>((resolve) => {
-        finish = resolve;
+        release = resolve;
       });
-      return session;
-    },
-  );
-  const opening = controller.open();
-  const closing = controller.dispose();
-  finish?.();
-  await Promise.all([opening, closing]);
-  expect(session.release).toHaveBeenCalledTimes(1);
-  expect(session.sensorBoard).not.toHaveBeenCalled();
-  expect(updates).toEqual([]);
-});
+      if (releaseFails) throw failure;
+    });
+    let closed = false;
+    const closing = controller.dispose().then(
+      () => {
+        closed = true;
+        return undefined;
+      },
+      (error: unknown) => {
+        closed = true;
+        return error;
+      },
+    );
+    await settle();
+    expect(closed).toBe(false);
+    finish?.();
+    await settle();
+    expect(closed).toBe(false);
+    release?.();
+    await opening;
+    expect(await closing).toEqual(releaseFails ? failure : undefined);
+    if (releaseFails) await expect(controller.dispose()).rejects.toEqual(failure);
+    expect(session.release).toHaveBeenCalledTimes(1);
+    expect(session.sensorBoard).not.toHaveBeenCalled();
+    expect(updates).toEqual([]);
+  },
+);
 
 test('settings restore collection after native cancellation pauses an active refresh', async () => {
   const { controller, session, board, calls, updates } = setup();

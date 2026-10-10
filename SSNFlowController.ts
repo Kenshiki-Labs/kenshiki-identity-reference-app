@@ -6,6 +6,7 @@ import type {
 } from '@kenshiki/identity-capture';
 import { type ErrorText, errorCode, errorText } from './HolderText';
 import { t } from './locales/i18n';
+import { SessionAcquisition } from './SessionAcquisition';
 
 export type SavedSSNCheck = { session: CaptureSession; snapshot: SSNSessionSnapshot };
 type Recovery = 'localSave' | 'entry' | 'open' | 'exit' | 'fresh' | 'resend';
@@ -47,6 +48,8 @@ export class SSNFlowController {
   private closed = false;
   private epoch = 0;
   private active?: Promise<SSNSessionSnapshot> | undefined;
+  private readonly acquisition = new SessionAcquisition();
+  private disposal?: Promise<void> | undefined;
   private pausing = false;
   constructor(
     private readonly create: (configuration: Configuration) => Promise<CaptureSession>,
@@ -66,13 +69,15 @@ export class SSNFlowController {
   }
   private async session(epoch: number) {
     if (this.current) return this.current;
-    const session = await this.create(this.configuration);
-    if (this.closed || epoch !== this.epoch) {
-      await session.release();
-      throw { code: 'cancelled' };
-    }
-    this.current = session;
-    this.update({ session });
+    const session = await this.acquisition.open(
+      () => this.create(this.configuration),
+      () => !this.closed && epoch === this.epoch,
+      (created) => {
+        this.current = created;
+        this.update({ session: created });
+      },
+    );
+    if (!session) throw { code: 'cancelled' };
     return session;
   }
   private accept(snapshot: SSNSessionSnapshot, allowConfirmation: boolean) {
@@ -231,8 +236,13 @@ export class SSNFlowController {
   }
   private async settle() {
     const session = this.current;
-    const [cancelled] = await Promise.allSettled([session?.ssnCancel(), this.active]);
+    const [cancelled, , acquired] = await Promise.allSettled([
+      session?.ssnCancel(),
+      this.active,
+      this.acquisition.drain(),
+    ]);
     if (cancelled.status === 'rejected') throw cancelled.reason;
+    if (acquired.status === 'rejected') throw acquired.reason;
     if (!session || this.closed || session !== this.current) return;
     const snapshot = await session.ssnSnapshot();
     if (!this.closed && session === this.current) this.accept(snapshot, false);
@@ -304,7 +314,8 @@ export class SSNFlowController {
     this.current = undefined;
     return result;
   };
-  dispose = async () => {
+  dispose = (): Promise<void> => {
+    if (this.disposal) return this.disposal;
     this.update({
       digits: '',
       snapshot: this.state.snapshot && redact(this.state.snapshot),
@@ -314,7 +325,13 @@ export class SSNFlowController {
     ++this.epoch;
     const session = this.current;
     this.current = undefined;
-    await Promise.allSettled([session?.release(), this.active]);
+    this.disposal = Promise.allSettled([session?.release(), this.active, this.acquisition.drain()]).then(
+      ([released, , acquired]) => {
+        if (released.status === 'rejected') throw released.reason;
+        if (acquired.status === 'rejected') throw acquired.reason;
+      },
+    );
+    return this.disposal;
   };
 }
 

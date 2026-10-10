@@ -134,8 +134,8 @@ export function MathSheet({
   onDismiss: () => void;
 }) {
   return (
-    <NativeSheet testID="fusion-math" onDismiss={onDismiss}>
-      <ListSection header={t('fusionUI.mathTitle')} footer={t('fusionUI.working')}>
+    <NativeSheet title={t('fusionUI.mathTitle')} testID="fusion-math" onDismiss={onDismiss}>
+      <ListSection footer={t('fusionUI.working')}>
         {explanation.map((line) => (
           <TextRow key={line} text={line} />
         ))}

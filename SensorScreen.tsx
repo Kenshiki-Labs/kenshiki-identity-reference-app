@@ -1,6 +1,6 @@
 import type { Configuration, SensorBoardState } from '@kenshiki/identity-capture';
-import { createContext, type ReactElement, type ReactNode, useContext, useEffect, useState } from 'react';
-import { Alert, AppState, ScrollView, StyleSheet } from 'react-native';
+import { createContext, type ReactElement, type ReactNode, useCallback, useContext, useState } from 'react';
+import { AppState } from 'react-native';
 import { t } from './locales/i18n';
 import { SensorBoardController, type SensorBoardPresentation } from './SensorBoardController';
 import { SensorDocuments } from './SensorBoardDocuments';
@@ -17,8 +17,9 @@ import {
   type SensorPage,
   title,
 } from './SensorPresentation';
-import { BarButton, ListGroupTitle, ListRow, ListSection, TextRow } from './ui/List';
-import { color, spacing } from './ui/tokens.generated';
+import { ListGroupTitle, ListRow, ListSection, TextRow } from './ui/List';
+import { Page } from './ui/Page';
+import { useControllerState } from './ui/useControllerState';
 
 type SensorSessionValue = {
   state: SensorBoardPresentation;
@@ -50,36 +51,44 @@ export function SensorSession({
   open: boolean;
   children: ReactNode;
 }) {
-  const [controller, setController] = useState<SensorBoardController>();
-  const [state, setState] = useState<SensorBoardPresentation>(closed);
-  const [failure, setFailure] = useState<string | null>(null);
-  useEffect(() => {
-    if (!open) return;
-    let live = true;
-    const active = new SensorBoardController(configuration, (next) => {
-      if (live) setState(next);
-    });
-    setController(active);
-    setFailure(null);
-    active.open().catch(() => {
-      if (live) setFailure(t('sensors.failure.open'));
-    });
-    const subscription = AppState.addEventListener('change', (next) => {
-      if (next === 'inactive') return;
-      active.setActive(next === 'active').catch(() => {
-        if (live) setFailure(t('sensors.failure.activity'));
+  const [reportedFailure, setReportedFailure] = useState<{
+    controller: SensorBoardController | undefined;
+    message: string;
+  }>();
+  const connect = useCallback(
+    (publish: (state: SensorBoardPresentation) => void) => {
+      if (!open) return;
+      let live = true;
+      const active = new SensorBoardController(configuration, publish);
+      active.open().catch(() => {
+        if (live) setReportedFailure({ controller: active, message: t('sensors.failure.open') });
       });
-    });
-    return () => {
-      live = false;
-      subscription.remove();
-      setController(undefined);
-      setState(closed);
-      active.dispose().catch(() => {
-        Alert.alert(t('sensors.failure.closeTitle'), t('sensors.failure.closeBody'));
+      const subscription = AppState.addEventListener('change', (next) => {
+        if (next === 'inactive') return;
+        active.setActive(next === 'active').catch(() => {
+          if (live) setReportedFailure({ controller: active, message: t('sensors.failure.activity') });
+        });
       });
-    };
-  }, [configuration, open]);
+      return {
+        controller: active,
+        initialState: closed,
+        dispose: () => {
+          live = false;
+          subscription.remove();
+          return active.dispose();
+        },
+      };
+    },
+    [configuration, open],
+  );
+  const { controller, state, failed } = useControllerState(closed, connect);
+  const failure = failed
+    ? t('common.sessionRecovery')
+    : reportedFailure?.controller === controller
+      ? (reportedFailure?.message ?? null)
+      : null;
+  const setFailure = (message: string | null) =>
+    setReportedFailure(message ? { controller, message } : undefined);
   const perform: BoardActions['perform'] = (request) => {
     setFailure(null);
     controller?.perform(request).catch(() => setFailure(t('sensors.failure.request')));
@@ -91,21 +100,6 @@ export function SensorSession({
   );
 }
 
-/** Pause or Resume, for the Sensors tab's navigation bar: collection is the screen's one control. */
-export function SensorCollectionButton() {
-  const { state, perform } = useContext(SensorSessionContext);
-  const board = state.board;
-  if (!board) return null;
-  const paused = board.collection.paused;
-  return (
-    <BarButton
-      label={paused ? t('sensors.resume') : t('sensors.pause')}
-      disabled={state.busy}
-      onPress={() => perform(paused ? { action: 'resume', consent: true } : { action: 'pause' })}
-    />
-  );
-}
-
 /** The board: every sensor section, grouped by whether iOS asks permission first, as SensorHost's
  * Sensors tab lists them. Each section's last row opens its page. */
 export function SensorBoardScreen({ onOpenPage }: { onOpenPage: (page: SensorPage) => void }) {
@@ -113,7 +107,7 @@ export function SensorBoardScreen({ onOpenPage }: { onOpenPage: (page: SensorPag
   const board = state.board;
   const now = useSecondClock();
   return (
-    <SensorScroll enabledIcons testID="sensor-screen">
+    <SensorScroll title={copy('tab.sensors.title')} enabledIcons testID="sensor-screen">
       {board ? (
         <>
           <ListSection>
@@ -151,7 +145,7 @@ export function SensorDetailScreen({ page }: { page: SensorPage }) {
   const board = state.board;
   const now = useSecondClock();
   return (
-    <SensorScroll enabledIcons={false} testID="sensor-detail">
+    <SensorScroll title={title(page)} enabledIcons={false} testID="sensor-detail">
       {board ? (
         <Section section={prefix(page)} heading={false}>
           {pageRows(page, { board, busy: state.busy, perform }, state.sessionId, now)}
@@ -168,7 +162,7 @@ export function SensorSettingsScreen({ children }: { children?: ReactNode }) {
   const { state, perform, setFailure } = useContext(SensorSessionContext);
   const board = state.board;
   return (
-    <SensorScroll enabledIcons testID="sensor-settings">
+    <SensorScroll title={copy('tab.settings.title')} enabledIcons testID="sensor-settings">
       {board ? (
         <SensorSettings board={board} busy={state.busy} perform={perform} onFailure={setFailure} />
       ) : null}
@@ -180,10 +174,12 @@ export function SensorSettingsScreen({ children }: { children?: ReactNode }) {
 /** What every sensor screen shows above its own sections: a failure, or that the board is still
  * opening. */
 function SensorScroll({
+  title,
   enabledIcons,
   testID,
   children,
 }: {
+  title: string;
   enabledIcons: boolean;
   testID: string;
   children: ReactNode;
@@ -192,18 +188,13 @@ function SensorScroll({
   const shown = failure || state.failure;
   return (
     <SensorIconContext.Provider value={{ sessionId: state.sessionId, enabled: enabledIcons }}>
-      <ScrollView
-        style={scrollStyles.root}
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={scrollStyles.content}
-        testID={testID}
-      >
+      <Page title={title} testID={testID}>
         <ListSection>
           {shown ? <TextRow text={shown} tone="warning" alert /> : null}
           {state.board ? null : <TextRow text={t('sensors.opening')} />}
         </ListSection>
         {children}
-      </ScrollView>
+      </Page>
     </SensorIconContext.Provider>
   );
 }
@@ -243,8 +234,3 @@ function statusRows(board: SensorBoardState, busy: boolean): (ReactElement | nul
     warning(board.collection.failure && failureText(board.collection.failure), 'failure'),
   ];
 }
-
-const scrollStyles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.background },
-  content: { padding: spacing.md, paddingBottom: spacing.xxxxl, gap: spacing.lg },
-});

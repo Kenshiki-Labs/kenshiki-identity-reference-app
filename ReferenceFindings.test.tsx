@@ -13,16 +13,24 @@ import type {
 import type React from 'react';
 import { AppState, StyleSheet } from 'react-native';
 import renderer, { act, type ReactTestInstance } from 'react-test-renderer';
-import { actionSheets, invoke, mockSession as makeSession, settle, without } from './__tests__/support';
+import {
+  actionSheets,
+  invoke,
+  mockSession as makeSession,
+  required,
+  settle,
+  without,
+} from './__tests__/support';
 import App from './App';
 import { CaptureFlowController } from './CaptureFlowController';
 import { DocumentCheckPanel } from './DocumentCheckPanel';
 import { DocumentFlowController } from './DocumentFlowController';
 import { DocumentResultDetails } from './DriverLicenseFlow';
-import { CaptureResultDetails, styles } from './IdentityCaptureFlow';
+import { CaptureResultDetails } from './IdentityCaptureFlow';
 import { PhoneResultDetails } from './PhoneFlow';
 import { SSNResultDetails } from './SSNFlow';
 import { SubscriberResultDetails } from './SubscriberResultDetails';
+import { styles } from './ui/styles';
 
 // Reference-app findings of the 8 October 2026 fix brief (Fix B). Mock tier: jest with mocked sessions.
 
@@ -821,7 +829,11 @@ describe('8 accessibility', () => {
         configuration={{ results: { directoryURL: 'file:///r', keychainService: 's', keychainAccount: 'a' } }}
       />,
     );
-    const background = f.view.root.findByProps({ testID: 'identity-hub' });
+    const background = required(
+      f.view.root
+        .findAllByProps({ testID: 'identity-hub' })
+        .find((node) => node.props.accessibilityElementsHidden !== undefined),
+    );
     expect(background.props.accessibilityElementsHidden).toBe(true);
     expect(background.props.importantForAccessibility).toBe('no-hide-descendants');
     await act(async () => {

@@ -6,6 +6,7 @@ import type {
 } from '@kenshiki/identity-capture';
 import { type ErrorText, errorCode, errorText } from './HolderText';
 import { t } from './locales/i18n';
+import { SessionAcquisition } from './SessionAcquisition';
 
 export type SavedPhoneCheck = { session: CaptureSession; snapshot: PhoneCheckSnapshot };
 export type PhoneFlowState = {
@@ -44,7 +45,9 @@ export class PhoneFlowController {
   private current?: CaptureSession | undefined;
   private unsubscribe?: (() => void) | undefined;
   private active?: Promise<void> | undefined;
+  private readonly acquisition = new SessionAcquisition();
   private drain?: Promise<void> | undefined;
+  private disposal?: Promise<void> | undefined;
   private epoch = 0;
   private closed = false;
   private eventRevision = 0;
@@ -67,12 +70,22 @@ export class PhoneFlowController {
   }
   private attach(session: CaptureSession) {
     this.current = session;
-    this.unsubscribe = session.subscribe((event) => {
-      if (event.type === 'phoneSnapshot' && this.current === session && !this.drain) {
-        ++this.eventRevision;
-        this.accept(event.snapshot);
-      }
-    });
+    this.unsubscribe = session.subscribe(
+      (event) => {
+        if (
+          !this.closed &&
+          event.type === 'phoneSnapshot' &&
+          this.current === session &&
+          this.drain === undefined
+        ) {
+          ++this.eventRevision;
+          this.accept(event.snapshot);
+        }
+      },
+      (failure) => {
+        if (!this.closed && this.current === session && this.drain === undefined) this.fail(failure);
+      },
+    );
   }
   private accept(snapshot: PhoneCheckSnapshot) {
     this.update({ snapshot, paused: snapshot.pending ? this.state.paused : false });
@@ -94,16 +107,15 @@ export class PhoneFlowController {
   }
   private async ensureSession(epoch: number) {
     if (!this.current) {
-      const created = await this.create(this.configuration);
-      if (this.closed || epoch !== this.epoch) {
-        await created.release();
-        return;
-      }
-      this.attach(created);
+      await this.acquisition.open(
+        () => this.create(this.configuration),
+        () => !this.closed && epoch === this.epoch,
+        (created) => this.attach(created),
+      );
     }
   }
   private run(action: (session: CaptureSession) => Promise<PhoneCheckSnapshot>) {
-    if (this.closed || this.active || this.drain) return Promise.resolve();
+    if (this.closed || this.active !== undefined || this.drain !== undefined) return Promise.resolve();
     const epoch = ++this.epoch;
     this.update({ busy: true, sheet: undefined });
     const work = (async () => {
@@ -148,7 +160,7 @@ export class PhoneFlowController {
     });
   save = () => this.run((session) => session.phoneRetrySave());
   ask = (kind: 'restart' | 'erase') => {
-    if (!this.state.busy && !this.drain) this.update({ sheet: { kind } });
+    if (!this.state.busy && this.drain === undefined) this.update({ sheet: { kind } });
   };
   dismiss = () => this.update({ sheet: undefined });
   confirm = () => {
@@ -165,13 +177,18 @@ export class PhoneFlowController {
   };
   pause = (): Promise<void> => {
     if (this.closed) return Promise.resolve();
-    if (this.drain) return this.drain;
+    if (this.drain !== undefined) return this.drain;
     ++this.epoch;
     this.update({ busy: true, sheet: undefined });
     const session = this.current;
     const work = (async () => {
-      const [cancelled] = await Promise.allSettled([session?.phoneCancel(), this.active]);
+      const [cancelled, , acquired] = await Promise.allSettled([
+        session?.phoneCancel(),
+        this.active,
+        this.acquisition.drain(),
+      ]);
       if (cancelled.status === 'rejected') throw cancelled.reason;
+      if (acquired.status === 'rejected') throw acquired.reason;
       if (session && this.current === session && !this.closed) {
         const snapshot = await session.phoneSnapshot();
         this.update({ snapshot, paused: snapshot.pending });
@@ -190,7 +207,7 @@ export class PhoneFlowController {
   };
   handoff = async (): Promise<SavedPhoneCheck | undefined> => {
     if (this.closed) return undefined;
-    if (!this.state.snapshot && !this.active) {
+    if (!this.state.snapshot && this.active === undefined) {
       await this.dispose();
       return undefined;
     }
@@ -211,14 +228,23 @@ export class PhoneFlowController {
     this.closed = true;
     return result;
   };
-  dispose = async () => {
-    if (this.closed) return;
+  dispose = (): Promise<void> => {
+    if (this.disposal !== undefined) return this.disposal;
     this.closed = true;
     ++this.epoch;
     this.unsubscribe?.();
     this.unsubscribe = undefined;
     const session = this.current;
     this.current = undefined;
-    await Promise.allSettled([session?.release(), this.active, this.drain]);
+    this.disposal = Promise.allSettled([
+      session?.release(),
+      this.active,
+      this.drain,
+      this.acquisition.drain(),
+    ]).then(([released, , , acquired]) => {
+      if (released.status === 'rejected') throw released.reason;
+      if (acquired.status === 'rejected') throw acquired.reason;
+    });
+    return this.disposal;
   };
 }

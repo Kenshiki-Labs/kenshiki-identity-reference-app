@@ -92,7 +92,7 @@ final class ArtifactIntegrationTests: XCTestCase {
 
     func reveal(_ element: XCUIElement, upward: Bool = true) {
       for _ in 0..<30 where !element.isHittable {
-        if upward { app.swipeUp() } else { app.swipeDown() }
+        if upward { app.scrollViews.firstMatch.swipeUp() } else { app.scrollViews.firstMatch.swipeDown() }
       }
       XCTAssertTrue(element.isHittable, "Expected navigation control: \(element.label)")
     }
@@ -103,9 +103,8 @@ final class ArtifactIntegrationTests: XCTestCase {
       add(attachment)
     }
     func back(from title: String) {
-      let bar = app.navigationBars[title]
-      XCTAssertTrue(bar.waitForExistence(timeout: 10), "Expected navigation bar: \(title)")
-      bar.buttons.element(boundBy: 0).tap()
+      XCTAssertTrue(app.staticTexts[title].firstMatch.waitForExistence(timeout: 10))
+      app.buttons["page-back"].tap()
     }
     func assertNoSensorFailure() {
       XCTAssertEqual(app.alerts.count, 0)
@@ -123,15 +122,12 @@ final class ArtifactIntegrationTests: XCTestCase {
     let tabs = app.tabBars.firstMatch
     XCTAssertTrue(tabs.waitForExistence(timeout: 30), "The root is a native tab bar")
     tabs.buttons["Sensors"].tap()
-    XCTAssertTrue(app.navigationBars["Sensors"].waitForExistence(timeout: 10))
-    // These controls are rendered only after sensorBoard returns a decoded native board. Pause is
-    // the navigation bar's button, not a control in the list.
-    let pause = app.buttons["Pause sensors"]
-    XCTAssertTrue(pause.waitForExistence(timeout: 20), "The real sensor bridge must load its board")
-    XCTAssertTrue(app.navigationBars["Sensors"].buttons["Pause sensors"].exists, "Pause is a bar button")
-    reveal(pause, upward: false)
-    pause.tap()
-    XCTAssertTrue(app.buttons["Resume sensors"].waitForExistence(timeout: 10))
+    XCTAssertTrue(app.staticTexts["Sensors"].firstMatch.waitForExistence(timeout: 10))
+    // The detail link exists only after the real sensor bridge returns a board.
+    let loadedBoard = app.buttons["About Motion"]
+    XCTAssertTrue(loadedBoard.waitForExistence(timeout: 20))
+    XCTAssertFalse(app.buttons["Pause sensors"].exists)
+    XCTAssertFalse(app.buttons["Resume sensors"].exists)
     XCTAssertTrue(app.staticTexts["Last read"].exists)
     assertNoSensorFailure()
     screenshot("sensor-board-sensors")
@@ -139,14 +135,14 @@ final class ArtifactIntegrationTests: XCTestCase {
     let motion = app.buttons["About Motion"]
     reveal(motion)
     motion.tap()
-    XCTAssertTrue(app.navigationBars["Motion"].waitForExistence(timeout: 10), "Motion detail is a pushed screen")
+    XCTAssertTrue(app.staticTexts["Motion"].firstMatch.waitForExistence(timeout: 10), "Motion detail is a pushed screen")
     XCTAssertTrue(app.staticTexts["Motion"].firstMatch.exists)
     screenshot("sensor-board-motion-detail")
     back(from: "Motion")
-    XCTAssertTrue(app.navigationBars["Sensors"].waitForExistence(timeout: 10))
+    XCTAssertTrue(app.staticTexts["Sensors"].firstMatch.waitForExistence(timeout: 10))
 
     tabs.buttons["Settings"].tap()
-    XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), "Settings is its own tab")
+    XCTAssertTrue(app.staticTexts["Settings"].firstMatch.waitForExistence(timeout: 10), "Settings is its own tab")
     XCTAssertTrue(app.buttons["Prepare export"].waitForExistence(timeout: 10))
     // Altering a signed reading is a developer's check: present in this Debug build only.
     XCTAssertTrue(app.buttons["sensor-tamper"].exists, "Debug builds offer the tamper check")
@@ -159,12 +155,10 @@ final class ArtifactIntegrationTests: XCTestCase {
     screenshot("sensor-board-settings-reading-time")
 
     tabs.buttons["Identity"].tap()
-    XCTAssertTrue(app.navigationBars["Identity"].waitForExistence(timeout: 10))
+    XCTAssertTrue(app.staticTexts["Identity"].firstMatch.waitForExistence(timeout: 10))
     tabs.buttons["Sensors"].tap()
-    XCTAssertTrue(pause.waitForExistence(timeout: 20), "Returning must establish a new usable bridge session")
-    reveal(pause, upward: false)
-    pause.tap()
-    XCTAssertTrue(app.buttons["Resume sensors"].waitForExistence(timeout: 10))
+    XCTAssertTrue(loadedBoard.waitForExistence(timeout: 20), "Returning restores the sensor board")
+    XCTAssertFalse(app.buttons["Pause sensors"].exists)
     assertNoSensorFailure()
     screenshot("sensor-board-reopened")
     tabs.buttons["Identity"].tap()
@@ -279,7 +273,7 @@ final class ArtifactIntegrationTests: XCTestCase {
     }
 
     let tabs = app.tabBars.firstMatch
-    let identity = app.navigationBars["Identity"]
+    let identity = app.staticTexts["Identity"].firstMatch
     let license = app.buttons["open-driver-license"]
     let ssn = app.buttons["open-ssn"]
     for appearance in [XCUIDevice.Appearance.light, .dark] {
@@ -287,49 +281,66 @@ final class ArtifactIntegrationTests: XCTestCase {
       let suffix = appearance == .dark ? "dark" : "light"
       XCTAssertTrue(tabs.waitForExistence(timeout: 30), "The root is a native tab bar")
       tabs.buttons["Identity"].tap()
-      XCTAssertTrue(identity.waitForExistence(timeout: 10), "Identity is a large-title list")
+      XCTAssertTrue(identity.waitForExistence(timeout: 10), "Identity uses the shared page")
       XCTAssertTrue(license.waitForExistence(timeout: 10))
-      // The brand's wordmark sits in the bar's row, wholly above the large title it must not cover.
-      let title = identity.staticTexts["Identity"]
-      // The bar item wraps the wordmark's text in a label of its own, so the query matches twice.
-      let wordmark = identity.staticTexts["Kenshiki Pulse"].firstMatch
-      XCTAssertTrue(title.exists, "The large title stays")
-      XCTAssertTrue(wordmark.exists, "The wordmark is at the top of the Identity tab")
-      XCTAssertLessThanOrEqual(wordmark.frame.maxY, title.frame.minY, "The wordmark is above the title")
+      let title = app.staticTexts["page-title"].firstMatch
+      let wordmark = app.staticTexts["page-wordmark"].firstMatch
+      XCTAssertEqual(title.label, "Identity")
+      XCTAssertTrue(wordmark.exists, "The shared container supplies the wordmark")
+      XCTAssertLessThanOrEqual(wordmark.frame.maxY, title.frame.minY)
       screenshot("identity-root-\(suffix)")
 
       // A pushed detail keeps its place when another tab is chosen, and leaves by the edge swipe.
       tabs.buttons["Sensors"].tap()
-      XCTAssertTrue(app.navigationBars["Sensors"].waitForExistence(timeout: 10))
-      XCTAssertTrue(app.buttons["Pause sensors"].waitForExistence(timeout: 20)
-        || app.buttons["Resume sensors"].exists, "The board must load")
+      XCTAssertTrue(app.staticTexts["Sensors"].firstMatch.waitForExistence(timeout: 10))
+      XCTAssertTrue(app.buttons["About Motion"].waitForExistence(timeout: 20), "The board must load")
+      XCTAssertFalse(app.buttons["Pause sensors"].exists)
+      XCTAssertTrue(wordmark.exists, "Sensors uses the same page header")
+      XCTAssertFalse(app.buttons["page-back"].exists, "A tab root has no Back button")
       screenshot("sensor-board-\(suffix)")
       let motion = app.buttons["About Motion"]
-      for _ in 0..<30 where !motion.isHittable { app.swipeUp() }
+      let board = app.scrollViews.firstMatch
+      for _ in 0..<12 where !motion.isHittable { board.swipeUp() }
+      XCTAssertTrue(motion.isHittable, "The Motion action must be reachable inside the page scroller")
       motion.tap()
-      XCTAssertTrue(app.navigationBars["Motion"].waitForExistence(timeout: 10), "A pushed detail")
+      XCTAssertTrue(app.staticTexts["Motion"].firstMatch.waitForExistence(timeout: 10), "A pushed detail")
+      XCTAssertTrue(wordmark.exists)
       screenshot("pushed-detail-\(suffix)")
       tabs.buttons["Settings"].tap()
-      XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10))
+      XCTAssertTrue(app.staticTexts["Settings"].firstMatch.waitForExistence(timeout: 10))
+      XCTAssertTrue(wordmark.exists)
+      XCTAssertFalse(app.buttons["page-back"].exists)
       screenshot("settings-tab-\(suffix)")
       tabs.buttons["Sensors"].tap()
-      XCTAssertTrue(app.navigationBars["Motion"].waitForExistence(timeout: 10),
+      XCTAssertTrue(app.staticTexts["Motion"].firstMatch.waitForExistence(timeout: 10),
         "Each tab keeps its own stack: Motion is still pushed")
       edgeSwipeBack()
-      XCTAssertTrue(app.navigationBars["Sensors"].waitForExistence(timeout: 10), "Edge swipe pops the detail")
-      XCTAssertFalse(app.navigationBars["Motion"].exists)
+      XCTAssertTrue(app.staticTexts["Sensors"].firstMatch.waitForExistence(timeout: 10), "Edge swipe pops the detail")
+      XCTAssertFalse(app.buttons["page-back"].exists)
 
-      // A capture is a full-screen modal over the tabs; Cancel closes it without starting the camera.
-      tabs.buttons["Identity"].tap()
-      XCTAssertTrue(license.waitForExistence(timeout: 10))
-      license.tap()
+      // Both entry points open the same modal. Settings owns a live sensor session before this
+      // transition, so its entry also exercises the change from sensor to identity ownership.
+      if appearance == .light {
+        tabs.buttons["Settings"].tap()
+        let savedLicense = app.buttons["settings-license-checks"]
+        for _ in 0..<20 where !savedLicense.isHittable { app.scrollViews.firstMatch.swipeUp() }
+        XCTAssertTrue(savedLicense.isHittable)
+        savedLicense.tap()
+      } else {
+        tabs.buttons["Identity"].tap()
+        XCTAssertTrue(license.waitForExistence(timeout: 10))
+        license.tap()
+      }
       let start = app.buttons["start-document-front"]
       XCTAssertTrue(start.waitForExistence(timeout: 10), "The license capture opens as a modal")
       XCTAssertFalse(tabs.isHittable, "A full-screen modal covers the tab bar")
+      XCTAssertTrue(wordmark.exists)
       screenshot("capture-modal-\(suffix)")
       app.buttons["modal-cancel"].tap()
-      XCTAssertTrue(identity.waitForExistence(timeout: 10), "Cancel returns to Identity")
       XCTAssertFalse(start.waitForExistence(timeout: 2), "Cancel dismisses the capture")
+      XCTAssertTrue(tabs.isHittable, "Cancel restores the tab navigation")
+      tabs.buttons["Identity"].tap()
+      XCTAssertTrue(identity.waitForExistence(timeout: 10))
 
       // A destructive choice is an iOS action sheet, not a drawn overlay.
       ssn.tap()
@@ -562,8 +573,9 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(settings.waitForExistence(timeout: 30))
     settings.tap()
     let checks = app.buttons["open-sdk-checks"]
-    XCTAssertTrue(checks.waitForExistence(timeout: 30))
-    for _ in 0..<30 where !checks.isHittable { app.swipeUp() }
+    XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 30))
+    for _ in 0..<30 where !checks.isHittable { app.scrollViews.firstMatch.swipeUp() }
+    XCTAssertTrue(checks.isHittable)
     checks.tap()
     let run = app.buttons["run-sdk-checks"]
     XCTAssertTrue(run.waitForExistence(timeout: 30))
@@ -584,8 +596,9 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertTrue(settings.waitForExistence(timeout: 30))
     settings.tap()
     let checks = app.buttons["open-sdk-checks"]
-    XCTAssertTrue(checks.waitForExistence(timeout: 30))
-    for _ in 0..<30 where !checks.isHittable { app.swipeUp() }
+    XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 30))
+    for _ in 0..<30 where !checks.isHittable { app.scrollViews.firstMatch.swipeUp() }
+    XCTAssertTrue(checks.isHittable)
     checks.tap()
     let run = app.buttons["run-sdk-checks"]
     XCTAssertTrue(run.waitForExistence(timeout: 30), "Packaged React Native host did not load")

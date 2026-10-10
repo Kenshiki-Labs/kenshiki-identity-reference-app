@@ -73,7 +73,7 @@ export function locationRows({
 
 /** Keeps a page's "age" row current: the now the location rows count from, once a second. */
 export function useSecondClock(): number {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(Date.now);
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);

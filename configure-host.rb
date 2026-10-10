@@ -26,6 +26,12 @@ end
 FileUtils.cp(File.join(__dir__, 'AppDelegate.swift'), File.join(host, 'ios/IdentitySDKHost/AppDelegate.swift'))
 info_path = File.join(host, 'ios/IdentitySDKHost/Info.plist')
 info = Xcodeproj::Plist.read_from_path(info_path)
+# The reference delivery uses its embedded bundle. The CLI's Metro exception must not
+# travel into Release; developers can opt in through a separate Debug-only Info.plist.
+transport = info['NSAppTransportSecurity'] || {}
+transport.delete('NSAllowsLocalNetworking')
+transport['NSAllowsArbitraryLoads'] = false
+info['NSAppTransportSecurity'] = transport
 info['CFBundleDisplayName'] = app_name
 info['NSCameraUsageDescription'] = 'Scan your ID or passport and take a selfie when you start an identity check.'
 info['NSMotionUsageDescription'] = 'Read motion and air pressure when you choose to collect sensor readings.'
@@ -59,6 +65,12 @@ app.build_configurations.each { |config| config.build_settings['IPHONEOS_DEPLOYM
 # The UI tests run the Debug build: only simulator Debug offers the developer checks. Embed the
 # JavaScript bundle so those tests do not depend on a running Metro server.
 app.build_configurations.each { |config| config.build_settings['FORCE_BUNDLING'] = 'YES' if config.name == 'Debug' }
+# Declare the generated resource so incremental builds invalidate the app's resource signature
+# when JavaScript changes. The template's output-less script can leave a stale signed seal.
+bundle_phase = app.shell_script_build_phases.find { |phase| phase.name == 'Bundle React Native code and images' }
+raise 'React Native bundle build phase is missing' unless bundle_phase
+bundle_phase.always_out_of_date = '1'
+bundle_phase.output_paths |= ['$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/main.jsbundle']
 # The UI-test bundle identifier follows the app's own identifier, so it stays in whatever App ID
 # namespace the adopting team signs the app with. Rerun this script after changing the app's ID.
 app_name = app.build_configurations.first.build_settings['PRODUCT_NAME'] || app.name

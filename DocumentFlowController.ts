@@ -8,6 +8,7 @@ import type {
 } from '@kenshiki/identity-capture';
 import { type ErrorText, errorCode, errorText } from './HolderText';
 import { t } from './locales/i18n';
+import { SessionAcquisition } from './SessionAcquisition';
 
 export type DocumentSide = 'front' | 'back';
 export type SavedDocumentCapture = { session: CaptureSession; document: DocumentObservation };
@@ -76,6 +77,8 @@ export class DocumentFlowController {
   private current?: CaptureSession | undefined;
   private off?: (() => void) | undefined;
   private activeWork?: Promise<void> | undefined;
+  private readonly acquisition = new SessionAcquisition();
+  private disposal?: Promise<void> | undefined;
   private side: DocumentSide = 'front';
   constructor(
     private readonly create: (configuration: Configuration) => Promise<CaptureSession>,
@@ -101,20 +104,27 @@ export class DocumentFlowController {
     this.changed(this.state);
   }
   private listen(session: CaptureSession) {
-    this.off = session.subscribe((event) => {
-      if (!this.closed && this.current === session && !this.state.sheet) this.event(event);
-    });
+    this.off = session.subscribe(
+      (event) => {
+        if (!this.closed && this.current === session && !this.state.sheet) this.event(event);
+      },
+      (failure) => {
+        if (!this.closed && this.current === session) this.fail(failure);
+      },
+    );
   }
   private async session(epoch: number) {
     if (this.current) return this.current;
-    const session = await this.create(this.configuration);
-    if (this.closed || epoch !== this.epoch) {
-      await session.release();
-      throw { code: 'cancelled' };
-    }
-    this.current = session;
-    this.listen(session);
-    this.update({ session });
+    const session = await this.acquisition.open(
+      () => this.create(this.configuration),
+      () => !this.closed && epoch === this.epoch,
+      (created) => {
+        this.current = created;
+        this.listen(created);
+        this.update({ session: created });
+      },
+    );
+    if (!session) throw { code: 'cancelled' };
     return session;
   }
   private async run(
@@ -254,7 +264,12 @@ export class DocumentFlowController {
   }
   private async settle(reveal: boolean) {
     const session = this.current;
-    await Promise.allSettled([session?.cancel(), this.activeWork]);
+    const [, , acquired] = await Promise.allSettled([
+      session?.cancel(),
+      this.activeWork,
+      this.acquisition.drain(),
+    ]);
+    if (acquired.status === 'rejected') throw acquired.reason;
     if (!session || this.closed || this.current !== session) return;
     // A native capture can commit before its event crosses the bridge. Read back the settled
     // snapshot before showing retained results so images and observations remain paired.
@@ -346,14 +361,21 @@ export class DocumentFlowController {
     this.current = undefined;
     return result;
   };
-  dispose = async () => {
+  dispose = (): Promise<void> => {
+    if (this.disposal) return this.disposal;
     this.closed = true;
     ++this.epoch;
     this.off?.();
     this.off = undefined;
     const session = this.current;
     this.current = undefined;
-    await Promise.allSettled([session?.release(), this.activeWork]);
+    this.disposal = Promise.allSettled([session?.release(), this.activeWork, this.acquisition.drain()]).then(
+      ([released, , acquired]) => {
+        if (released.status === 'rejected') throw released.reason;
+        if (acquired.status === 'rejected') throw acquired.reason;
+      },
+    );
+    return this.disposal;
   };
   private event(event: CaptureEvent) {
     if (event.type === 'previewChanged' && event.kind === 'document')

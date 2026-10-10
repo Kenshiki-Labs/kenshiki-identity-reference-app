@@ -2,7 +2,7 @@
 
 /** One compiled message: plain text, or ICU parts. Rendered by `t` in i18n.ts. */
 export type Message = string | readonly Part[];
-export type Part = string | readonly ['#'] | readonly ['arg', string]
+type Part = string | readonly ['#'] | readonly ['arg', string]
   | readonly ['plural' | 'select', string, {readonly [selector: string]: Message}];
 
 /** Every message key, with the values its message needs (undefined: none). */
@@ -118,7 +118,6 @@ export type MessageValues = {
   readonly "fusionMath.contradictionCoherenceWeight": undefined;
   readonly "brand.wordmark": undefined;
   readonly "brand.appName": undefined;
-  readonly "common.back": undefined;
   readonly "common.backToIdentity": undefined;
   readonly "common.backToResults": undefined;
   readonly "common.done": undefined;
@@ -146,7 +145,9 @@ export type MessageValues = {
   readonly "common.reportedOutcome": undefined;
   readonly "common.compared": undefined;
   readonly "common.actionFailed": undefined;
+  readonly "common.sessionRecovery": undefined;
   readonly "common.cancel": undefined;
+  readonly "common.back": undefined;
   readonly "common.labelAndStatus": {readonly label: string | number; readonly status: string | number};
   readonly "common.checkmark": undefined;
   readonly "format.timeNotRecorded": undefined;
@@ -785,11 +786,9 @@ export type MessageValues = {
   readonly "subscriber.label.unknown": undefined;
   readonly "subscriber.label.other": undefined;
   readonly "settings.identityData": undefined;
-  readonly "settings.nothingSaved": undefined;
+  readonly "settings.reviewSaved": undefined;
   readonly "settings.developer": undefined;
   readonly "sensors.opening": undefined;
-  readonly "sensors.pause": undefined;
-  readonly "sensors.resume": undefined;
   readonly "sensors.resumeCollection": undefined;
   readonly "sensors.about": {readonly title: string | number};
   readonly "sensors.waitingForReading": undefined;
@@ -1026,7 +1025,6 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "fusionMath.contradictionCoherenceWeight": "Contradiction coherence weight",
       "brand.wordmark": "Kenshiki Pulse",
       "brand.appName": "Kenshiki Pulse",
-      "common.back": "Back",
       "common.backToIdentity": "Back to Identity",
       "common.backToResults": "Back to results",
       "common.done": "Done",
@@ -1054,7 +1052,9 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "common.reportedOutcome": "Reported outcome",
       "common.compared": "Compared",
       "common.actionFailed": "This action could not finish. Try again.",
+      "common.sessionRecovery": "Close and reopen the app before starting another check. Your saved results have not been erased.",
       "common.cancel": "Cancel",
+      "common.back": "Back",
       "common.labelAndStatus": [["arg", "label"], ", ", ["arg", "status"]],
       "common.checkmark": "✓",
       "format.timeNotRecorded": "Time not recorded",
@@ -1693,11 +1693,9 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "subscriber.label.unknown": "Unknown",
       "subscriber.label.other": "Unrecognized value",
       "settings.identityData": "Saved identity data",
-      "settings.nothingSaved": "No passport, face or license results are saved on this phone.",
+      "settings.reviewSaved": "Open a check to review or erase its saved results. Results stay on this phone until you erase them.",
       "settings.developer": "Developer",
       "sensors.opening": "Opening sensors…",
-      "sensors.pause": "Pause sensors",
-      "sensors.resume": "Resume sensors",
       "sensors.resumeCollection": "Resume collection",
       "sensors.about": ["About ", ["arg", "title"]],
       "sensors.waitingForReading": "Waiting for a reading.",

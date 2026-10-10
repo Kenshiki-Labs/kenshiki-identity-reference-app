@@ -16,7 +16,7 @@ export const color = {
   cameraBackground: "#000000",
   onCamera: "#FFFFFF",
   destructive: PlatformColor("systemRed"),
-  warning: PlatformColor("systemOrange"),
+  warning: DynamicColorIOS({light: "#994700", dark: "#FFB366"}),
   sliderTrack: PlatformColor("systemGray4"),
   sliderThumb: "#FFFFFF",
   sliderThumbBorder: PlatformColor("opaqueSeparator"),
@@ -39,6 +39,7 @@ export const appearanceColor = {
   tint: {light: "#0D2958", dark: "#8FB3E6"},
   wordmark: {light: "#1D1D1F", dark: "#F5F5F7"},
   onTint: {light: "#FFFFFF", dark: "#1D1D1F"},
+  warning: {light: "#994700", dark: "#FFB366"},
 } as const;
 
 /** Text styles, each on a step of the iOS Dynamic Type ramp. */
@@ -94,12 +95,12 @@ export const opacity = {
 } as const;
 
 export const size = {
-  navigationActionWidth: 72,
   fusionDiagram: 200,
   fusionRing: 80,
   fusionMinimumScale: 0.18,
   fusionMaximumScale: 1.65,
   actionMinHeight: 50,
+  navigationActionWidth: 72,
   documentPreviewHeight: 220,
   documentImageHeight: 200,
   developerPreviewHeight: 180,
