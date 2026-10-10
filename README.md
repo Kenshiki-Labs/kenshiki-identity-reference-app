@@ -167,6 +167,19 @@ This is a device-integration profile: original acquisition, signed master-list p
 current revocation coverage remain unverified. It is not a production trust-source approval.
 Do not change the SDK's signature or trust-failure handling to make a passport pass.
 
+To prepare the existing face models from this source checkout for device evaluation:
+
+```sh
+python3 Examples/ReactNativeCaptureHost/compile-face-resources.py /absolute/new/face-resources
+```
+
+The compiler verifies all six model-package files against the SDK's pinned import manifest,
+compiles for iOS 18, and records the compiled resource hashes in `face-resources.json`.
+Pass the resulting `embedder.mlmodelc` and `detector.mlmodelc` directories to `create-host.py`
+using the flags above. Model thresholds and selfie admission policy are unchanged.
+The models' existing [provenance and licensing limitations](../../ThirdParty/FaceMatching/Provenance/pulse-face-embedder-provenance.md)
+still apply; compilation and installation do not establish production licensing or face-match accuracy.
+
 The script copies them into `ios/CaptureResources`; AppDelegate resolves their bundle URLs and
 passes them to the SDK explicitly. A trust result is only as appropriate as the supplied anchors.
 
