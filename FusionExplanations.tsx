@@ -11,7 +11,9 @@ export function ThreeProofsScreen() {
     ['presence', ['how', 'proves', 'notProves', 'absence', 'where']],
     ['person', ['how', 'proves', 'notProves', 'where']],
     ['together', ['how', 'proves', 'claim', 'limit']],
-    ['check', ['how', 'completeness', 'time', 'attestation', 'where', 'tamper', 'coverage']],
+    // SensorHost's `tamper` paragraph points at its alter-a-reading button; the shipped runtime
+    // has no such command, so this host does not show it.
+    ['check', ['how', 'completeness', 'time', 'attestation', 'where', 'coverage']],
   ] as const;
   return (
     <FusionPage testID="fusion-proofs" title={copy('threeProofs.title')}>

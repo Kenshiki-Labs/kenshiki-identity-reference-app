@@ -180,6 +180,7 @@ test('explanation pages retain verification limits and locale sorted definitions
   const proofs = await render(<ThreeProofsScreen />);
   expect(words(proofs)).toContain('does not independently prove device identity');
   expect(words(proofs)).not.toContain('waiting to be brought across');
+  expect(words(proofs)).not.toContain('button beside the export');
   const glossary = await render(<GlossaryScreen />);
   const rendered = words(glossary);
   expect(rendered.indexOf('App Attest')).toBeLessThan(rendered.indexOf('Canonical form'));
