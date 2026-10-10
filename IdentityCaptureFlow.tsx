@@ -288,15 +288,13 @@ export function IdentityCaptureFlow({
   function scanHint() {
     if (phase === 'scanning') {
       return (
-        <>
-          <Text style={[styles.body, styles.white]} accessibilityLiveRegion="polite">
-            {state.mrz?.completeness === 'complete'
-              ? t('passport.camera.ready')
-              : state.mrz
-                ? t('passport.camera.keepInView')
-                : t('passport.camera.holdSteady')}
-          </Text>
-        </>
+        <Text style={[styles.body, styles.white]} accessibilityLiveRegion="polite">
+          {state.mrz?.completeness === 'complete'
+            ? t('passport.camera.ready')
+            : state.mrz
+              ? t('passport.camera.keepInView')
+              : t('passport.camera.holdSteady')}
+        </Text>
       );
     }
     return action(t('passport.camera.captureSelfie'), activeController.capture, !state.ready);

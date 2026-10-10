@@ -81,6 +81,12 @@ const passport: PassportObservation = {
   protocolVerdicts: { source: 'recorded', recordedAt: '2026-10-08T12:00:00Z' },
 };
 const depth = {
+  schemaVersion: 1,
+  imageTimestamp: 1,
+  depthTimestamp: 1,
+  orientation: 1,
+  mapWidth: 32,
+  mapHeight: 32,
   imageSHA256: 'selfie',
   filtered: false,
   ageAtAdmission: 0.01,
@@ -109,6 +115,13 @@ const comparison: FaceComparison = {
   comparisonSeconds: 1,
   admissionReceipt: {
     policyVersion: 'test',
+    frameTimestamp: 1,
+    anchorID: 'synthetic-anchor',
+    blinkCompletedAt: 1,
+    leftEyeClosed: 0,
+    rightEyeClosed: 0,
+    captureQualityEnforced: false,
+    guideContainmentEnforced: false,
     trigger: 'automatic',
     eyesOpen: true,
     blinkAge: 0,

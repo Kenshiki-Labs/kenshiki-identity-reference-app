@@ -59,6 +59,13 @@ const comparison: FaceComparison = {
   comparisonSeconds: 1,
   admissionReceipt: {
     policyVersion: 'test',
+    frameTimestamp: 1,
+    anchorID: 'synthetic-anchor',
+    blinkCompletedAt: 1,
+    leftEyeClosed: 0,
+    rightEyeClosed: 0,
+    captureQualityEnforced: false,
+    guideContainmentEnforced: false,
     trigger: 'automatic',
     eyesOpen: true,
     blinkAge: 0,

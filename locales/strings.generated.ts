@@ -326,6 +326,15 @@ export type MessageValues = {
   readonly "passport.error.passportNotConfigured": undefined;
   readonly "passport.error.faceComparisonNotConfigured": undefined;
   readonly "passport.error.faceModelUnavailable": undefined;
+  readonly "passport.error.referenceUnavailable": undefined;
+  readonly "passport.error.invalidReference": undefined;
+  readonly "passport.error.selfieUnavailable": undefined;
+  readonly "passport.error.comparisonUnavailable": undefined;
+  readonly "passport.error.noFaceDetected": undefined;
+  readonly "passport.error.faceImageUnreadable": undefined;
+  readonly "passport.error.faceEmbeddingFailed": undefined;
+  readonly "passport.error.faceIntegrityFailure": undefined;
+  readonly "passport.error.invalidResponse": undefined;
   readonly "passport.error.faceComparisonUnavailable": undefined;
   readonly "passport.error.resultIntegrityFailure": undefined;
   readonly "passport.error.depthEvidenceUnavailable": undefined;
@@ -1235,6 +1244,15 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "passport.error.passportNotConfigured": "Passport chip checking is not set up in this app, so this passport cannot be checked here. Your other identity checks remain available.",
       "passport.error.faceComparisonNotConfigured": "Face comparison is not set up in this app. Your passport results are kept.",
       "passport.error.faceModelUnavailable": "Face comparison is not set up in this app. Your passport results are kept.",
+      "passport.error.referenceUnavailable": "The passport portrait is not available for comparison. Reopen your saved passport or read it again.",
+      "passport.error.invalidReference": "The passport portrait could not be used for comparison. Read the passport again.",
+      "passport.error.selfieUnavailable": "The captured selfie is no longer available. Take another selfie.",
+      "passport.error.comparisonUnavailable": "We could not find a usable face comparison in these images. Take another selfie in even light.",
+      "passport.error.noFaceDetected": "A face could not be found in one of the images. Take another selfie in even light.",
+      "passport.error.faceImageUnreadable": "One of the face images could not be opened. Take another selfie.",
+      "passport.error.faceEmbeddingFailed": "The face model could not process these images. Your passport results are kept.",
+      "passport.error.faceIntegrityFailure": "The face images could not be verified. No comparison was accepted.",
+      "passport.error.invalidResponse": "The app could not read the SDK result. No comparison result was accepted by this screen.",
       "passport.error.faceComparisonUnavailable": "Face comparison could not run on this iPhone. Your passport results are kept.",
       "passport.error.resultIntegrityFailure": "Your saved passport and face results could not be verified on this phone. Try reopening them, or erase them and scan again.",
       "passport.error.depthEvidenceUnavailable": "Your face depth could not be measured with that selfie. Take a new selfie looking straight at the camera.",
