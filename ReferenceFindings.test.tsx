@@ -703,6 +703,28 @@ describe('6 verdict wording', () => {
       f.view.unmount();
     });
   });
+  test('absent DG14 hides unperformed chip authentication and PACE reports its recorded cause', async () => {
+    const f = await render(
+      <CaptureResultDetails
+        result={{
+          session: makeSession(mockSession),
+          passport: {
+            ...passport,
+            declaredDataGroups: ['DG1', 'DG2'],
+            protocols: { ...passport.protocols, chipAuthentication: 'notPerformed' },
+            paceFailure: { stage: 'cardAccess', code: 'cardAccessAbsent', statusWord: 0x6a82 },
+          },
+        }}
+      />,
+    );
+    await f.press('View check details');
+    expect(f.text()).not.toContain('Chip authentication');
+    expect(f.text()).toContain('CardAccess file was not found');
+    expect(f.text()).toContain('6A82');
+    await act(async () => {
+      f.view.unmount();
+    });
+  });
   test('successful BAC fallback is not presented as a failed chip integrity check', async () => {
     const f = await render(
       <CaptureResultDetails

@@ -426,6 +426,16 @@ export function CaptureResultDetails({
   }
   const bacFallback =
     passport.protocols.pace === 'failed' && passport.protocols.basicAccessControl === 'succeeded';
+  const visibleProtocols = protocolKeys.filter(
+    (key) =>
+      !(
+        key === 'chipAuthentication' &&
+        passport.protocols[key] === 'notPerformed' &&
+        passport.declaredDataGroups !== undefined &&
+        passport.declaredDataGroups.length > 0 &&
+        !passport.declaredDataGroups.includes('DG14')
+      ),
+  );
   const failed = protocolKeys.filter(
     (key) => passport.protocols[key] === 'failed' && !(key === 'pace' && bacFallback),
   );
@@ -440,7 +450,7 @@ export function CaptureResultDetails({
         {passport.personalNumber && (
           <Details label={t('passport.field.personalNumber')} value={passport.personalNumber} />
         )}
-        {protocolKeys.map((key) => (
+        {visibleProtocols.map((key) => (
           <Details
             key={key}
             label={protocolLabels[key]}
@@ -542,9 +552,23 @@ export function CaptureResultDetails({
           )
         )}
         {bacFallback && <Text style={styles.body}>{t('passport.result.bacFallback')}</Text>}
-        {(passport.protocols.activeAuthentication === 'notPerformed' ||
-          passport.protocols.chipAuthentication === 'notPerformed') && (
-          <Text style={styles.body}>{t('passport.result.authenticationNotPerformed')}</Text>
+        {passport.paceFailure && (
+          <>
+            <Details
+              label={t('passport.paceDiagnostic.reason')}
+              value={t(`passport.paceDiagnostic.${passport.paceFailure.code}`)}
+            />
+            <Details
+              label={t('passport.paceDiagnostic.stage')}
+              value={t(`passport.paceDiagnostic.${passport.paceFailure.stage}`)}
+            />
+            {passport.paceFailure.statusWord !== null && (
+              <Details
+                label={t('passport.paceDiagnostic.statusWord')}
+                value={passport.paceFailure.statusWord.toString(16).toUpperCase().padStart(4, '0')}
+              />
+            )}
+          </>
         )}
         {!!failed.length && (
           <View style={styles.detail} testID="passport-protocol-failures">

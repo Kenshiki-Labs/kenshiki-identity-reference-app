@@ -268,7 +268,6 @@ export type MessageValues = {
   readonly "passport.result.chipChecksRecordedAt": {readonly moment: string | number};
   readonly "passport.result.readAt": undefined;
   readonly "passport.result.bacFallback": undefined;
-  readonly "passport.result.authenticationNotPerformed": undefined;
   readonly "passport.result.failedNotice": undefined;
   readonly "passport.result.chipPhoto": undefined;
   readonly "passport.result.passportPhoto": undefined;
@@ -294,6 +293,19 @@ export type MessageValues = {
   readonly "passport.protocolFailed.chipAuthentication": undefined;
   readonly "passport.protocolFailed.pace": undefined;
   readonly "passport.protocolFailed.basicAccessControl": undefined;
+  readonly "passport.paceDiagnostic.reason": undefined;
+  readonly "passport.paceDiagnostic.stage": undefined;
+  readonly "passport.paceDiagnostic.statusWord": undefined;
+  readonly "passport.paceDiagnostic.masterFile": undefined;
+  readonly "passport.paceDiagnostic.cardAccess": undefined;
+  readonly "passport.paceDiagnostic.parameters": undefined;
+  readonly "passport.paceDiagnostic.authentication": undefined;
+  readonly "passport.paceDiagnostic.cardAccessAbsent": undefined;
+  readonly "passport.paceDiagnostic.cardResponse": undefined;
+  readonly "passport.paceDiagnostic.unsupportedParameters": undefined;
+  readonly "passport.paceDiagnostic.protocolFailure": undefined;
+  readonly "passport.paceDiagnostic.invalidParameters": undefined;
+  readonly "passport.paceDiagnostic.other": undefined;
   readonly "passport.protocolStatus.succeeded": undefined;
   readonly "passport.protocolStatus.failed": undefined;
   readonly "passport.protocolStatus.notPerformed": undefined;
@@ -1189,7 +1201,6 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "passport.result.chipChecksRecordedAt": [["arg", "moment"], ". Opening saved results does not repeat them."],
       "passport.result.readAt": "Read at",
       "passport.result.bacFallback": "The chip was opened using BAC after PACE did not complete. The signing and data integrity checks are reported separately.",
-      "passport.result.authenticationNotPerformed": "This read did not perform every chip authentication method. Signing and data integrity checks do not by themselves prove that a chip is not a copy.",
       "passport.result.failedNotice": "A failed chip check means this passport read should not be relied on. Read the chip again, or use another document.",
       "passport.result.chipPhoto": "Passport chip photo",
       "passport.result.passportPhoto": "Passport photo",
@@ -1215,6 +1226,19 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "passport.protocolFailed.chipAuthentication": "Chip authentication failed",
       "passport.protocolFailed.pace": "PACE connection failed",
       "passport.protocolFailed.basicAccessControl": "BAC connection failed",
+      "passport.paceDiagnostic.reason": "PACE reason",
+      "passport.paceDiagnostic.stage": "PACE stage",
+      "passport.paceDiagnostic.statusWord": "Chip response (status word)",
+      "passport.paceDiagnostic.masterFile": "Selecting the chip master file",
+      "passport.paceDiagnostic.cardAccess": "Reading the chip's PACE capabilities",
+      "passport.paceDiagnostic.parameters": "Decoding and selecting PACE parameters",
+      "passport.paceDiagnostic.authentication": "Establishing the PACE connection",
+      "passport.paceDiagnostic.cardAccessAbsent": "The chip reported that the CardAccess file was not found",
+      "passport.paceDiagnostic.cardResponse": "The chip returned an unsuccessful status word",
+      "passport.paceDiagnostic.unsupportedParameters": "The reader does not support the supplied PACE parameters",
+      "passport.paceDiagnostic.protocolFailure": "The PACE protocol exchange failed",
+      "passport.paceDiagnostic.invalidParameters": "The reader could not decode the supplied PACE parameters",
+      "passport.paceDiagnostic.other": "The reader encountered an unclassified PACE error",
       "passport.protocolStatus.succeeded": "Succeeded",
       "passport.protocolStatus.failed": "Failed",
       "passport.protocolStatus.notPerformed": "Not performed",

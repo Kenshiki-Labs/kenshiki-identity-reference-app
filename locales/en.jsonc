@@ -385,7 +385,6 @@
       "chipChecksRecordedAt": "{moment}. Opening saved results does not repeat them.",
       "readAt": "Read at",
       "bacFallback": "The chip was opened using BAC after PACE did not complete. The signing and data integrity checks are reported separately.",
-      "authenticationNotPerformed": "This read did not perform every chip authentication method. Signing and data integrity checks do not by themselves prove that a chip is not a copy.",
       "failedNotice": "A failed chip check means this passport read should not be relied on. Read the chip again, or use another document.",
       "chipPhoto": "Passport chip photo",
       "passportPhoto": "Passport photo",
@@ -417,6 +416,21 @@
       "chipAuthentication": "Chip authentication failed",
       "pace": "PACE connection failed",
       "basicAccessControl": "BAC connection failed"
+    },
+    "paceDiagnostic": {
+      "reason": "PACE reason",
+      "stage": "PACE stage",
+      "statusWord": "Chip response (status word)",
+      "masterFile": "Selecting the chip master file",
+      "cardAccess": "Reading the chip's PACE capabilities",
+      "parameters": "Decoding and selecting PACE parameters",
+      "authentication": "Establishing the PACE connection",
+      "cardAccessAbsent": "The chip reported that the CardAccess file was not found",
+      "cardResponse": "The chip returned an unsuccessful status word",
+      "unsupportedParameters": "The reader does not support the supplied PACE parameters",
+      "protocolFailure": "The PACE protocol exchange failed",
+      "invalidParameters": "The reader could not decode the supplied PACE parameters",
+      "other": "The reader encountered an unclassified PACE error"
     },
     "protocolStatus": {
       "succeeded": "Succeeded",
