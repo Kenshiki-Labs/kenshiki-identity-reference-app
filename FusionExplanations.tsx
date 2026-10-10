@@ -14,7 +14,7 @@ export function ThreeProofsScreen() {
     ['check', ['how', 'completeness', 'time', 'attestation', 'where', 'tamper', 'coverage']],
   ] as const;
   return (
-    <FusionPage testID="fusion-proofs">
+    <FusionPage testID="fusion-proofs" title={copy('threeProofs.title')}>
       <ListSection>
         <TextRow text={t('fusionUI.wiring')} />
         <TextRow text={t('fusionUI.receiptLimit')} />
@@ -38,7 +38,7 @@ export function GlossaryScreen() {
   entries.push({ term: t('fusionUI.glossaryKeyTerm'), body: t('fusionUI.glossaryKeyBody') });
   entries.sort((a, b) => a.term.localeCompare(b.term, formatLocale));
   return (
-    <FusionPage testID="fusion-glossary">
+    <FusionPage testID="fusion-glossary" title={copy('glossary.title')}>
       {entries.map((entry) => (
         <ListSection key={entry.term} header={entry.term}>
           <TextRow text={entry.body} />
@@ -52,7 +52,7 @@ export function OverTimeScreen() {
   const continuity = state.board?.fusion.continuity;
   const result = continuity?.state === 'evaluated' ? continuity.result : null;
   return (
-    <FusionPage testID="fusion-over-time">
+    <FusionPage testID="fusion-over-time" title={copy('overTime.title')}>
       <ListSection header={copy('overTime.reading.header')}>
         <TextRow text={copy('overTime.reading.is')} />
         <TextRow text={t('fusionUI.readingWhen')} />

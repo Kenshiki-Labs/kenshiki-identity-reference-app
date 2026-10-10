@@ -1,4 +1,4 @@
-import { NavigationContext } from '@react-navigation/native';
+import { NavigationContext, NavigationRouteContext } from '@react-navigation/native';
 import { type ReactNode, useContext } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -36,9 +36,15 @@ export function Page({
   overlay,
 }: PageProps) {
   const navigation = useContext(NavigationContext);
+  const route = useContext(NavigationRouteContext);
   const stack = navigation?.getState();
   const back =
-    mode !== 'sheet' && stack?.type === 'stack' && stack.index > 0 ? () => navigation?.goBack() : undefined;
+    mode !== 'sheet' &&
+    stack?.type === 'stack' &&
+    stack.index > 0 &&
+    stack.routes[stack.index]?.key === route?.key
+      ? () => navigation?.goBack()
+      : undefined;
   const close = onClose ?? back;
   const hasActions = actions !== undefined && actions !== null;
   const closeLabel = onClose ? t(mode === 'sheet' ? 'common.done' : 'common.cancel') : t('common.back');

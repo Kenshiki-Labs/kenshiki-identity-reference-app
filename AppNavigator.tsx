@@ -14,7 +14,7 @@ import {
   type NativeStackNavigationProp,
 } from '@react-navigation/native-stack';
 import { type ComponentProps, useCallback, useLayoutEffect, useRef, useState } from 'react';
-import { Platform, useColorScheme } from 'react-native';
+import { useColorScheme } from 'react-native';
 import { AirCheckScreen } from './AirCheckScreen';
 import { ContinuityScreen } from './ContinuityScreen';
 import { DriverLicenseFlow } from './DriverLicenseFlow';
@@ -36,7 +36,7 @@ import {
   createControllerCustody,
   type IdentityCustody,
 } from './ui/ControllerCustody';
-import { appearanceColor, color, symbol } from './ui/tokens.generated';
+import { appearanceColor, symbol } from './ui/tokens.generated';
 import { type IdentityFlow, useIdentityWorkspace } from './useIdentityWorkspace';
 
 /** The root: the tabs, and the checks presented over them as full-screen modals. A journey that
@@ -73,16 +73,6 @@ const SettingsStack = createNativeStackNavigator<SettingsRoutes>();
 type IdentityNavigation = NativeStackNavigationProp<IdentityRoutes>;
 /** Native stacks own transitions. Page owns the visible header and every screen's layout. */
 const pushed: NativeStackNavigationOptions = { headerShown: false };
-/** Fusion screens draw under native large-title headers. iOS 26 draws its own scroll edge effect
- * under a transparent navigation bar, so the bar's blur is only for earlier iOS. */
-const scrollEdgeEffects = Platform.OS === 'ios' && Number.parseInt(String(Platform.Version), 10) >= 26;
-const fusionPushed: NativeStackNavigationOptions = {
-  headerTransparent: true,
-  ...(scrollEdgeEffects ? {} : { headerBlurEffect: 'systemChromeMaterial' as const }),
-  contentStyle: { backgroundColor: color.background },
-};
-const large: NativeStackNavigationOptions = { headerLargeTitle: true, headerLargeTitleShadowVisible: false };
-
 /** Only visible sensor surfaces own collection; identity modals and developer checks do not. */
 function sensorTabFocused(state: NavigationState | undefined): boolean {
   const root = state?.routes[state.index];
@@ -220,8 +210,8 @@ function HolderNavigator({
   }
   function renderFusionTab() {
     return (
-      <FusionStack.Navigator screenOptions={fusionPushed}>
-        <FusionStack.Screen name="FusionHome" options={{ ...large, title: copy('fusion.navigationTitle') }}>
+      <FusionStack.Navigator screenOptions={pushed}>
+        <FusionStack.Screen name="FusionHome" options={{ title: copy('fusion.navigationTitle') }}>
           {({ navigation: fusion }: { navigation: NativeStackNavigationProp<FusionRoutes> }) => (
             <FusionScreen onOpen={(page) => fusion.navigate(page)} />
           )}

@@ -1,5 +1,6 @@
 import type { FusionAirComparison, FusionContinuityResult, FusionReceipt } from '@kenshiki/identity-capture';
-export const fusionReceipt: FusionReceipt = {
+
+const fusionReceipt: FusionReceipt = {
   publicKeyHash: 'synthetic-key',
   payloadHash: 'synthetic-payload',
   previousRoot: null,

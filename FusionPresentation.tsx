@@ -1,13 +1,12 @@
 import type { FusionMetric, FusionReceipt } from '@kenshiki/identity-capture';
-import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { type ReactNode, useState } from 'react';
 import { formatLocale, t } from './locales/i18n';
 import type { MessageKey } from './locales/strings.generated';
 import { copy, moment } from './SensorPresentation';
 import { useSensorSession } from './SensorScreen';
-import { ButtonRow, ListSection, TextRow, ValueRow } from './ui/List';
+import { ButtonRow, ListRow, ListSection, TextRow, ValueRow } from './ui/List';
 import { NativeSheet } from './ui/NativeSheet';
-import { color, spacing } from './ui/tokens.generated';
+import { Page } from './ui/Page';
 
 const metricNames: Record<string, Extract<MessageKey, `fusionMath.${string}`>> = {
   temperature: 'fusionMath.temperature',
@@ -61,22 +60,25 @@ export function quantity(value: number | null, unit: string): string {
 export function share(value: number): string {
   return new Intl.NumberFormat(formatLocale, { style: 'percent', maximumFractionDigits: 2 }).format(value);
 }
-export function FusionPage({ children, testID }: { children: ReactNode; testID: string }) {
+export function FusionPage({
+  children,
+  testID,
+  title,
+}: {
+  children: ReactNode;
+  testID: string;
+  title: string;
+}) {
   const { state, failure } = useSensorSession();
   return (
-    <ScrollView
-      testID={testID}
-      style={styles.root}
-      contentContainerStyle={styles.content}
-      contentInsetAdjustmentBehavior="automatic"
-    >
+    <Page testID={testID} title={title}>
       {failure || state.failure ? (
         <ListSection>
           <TextRow text={failure || state.failure || ''} tone="warning" alert />
         </ListSection>
       ) : null}
       {children}
-    </ScrollView>
+    </Page>
   );
 }
 export function TimestampRow({ label, value }: { label: string; value: string | null }) {
@@ -124,7 +126,7 @@ export function ReceiptSection({ receipt }: { receipt: FusionReceipt | null }) {
     </ListSection>
   );
 }
-export function MathSheet({
+function MathSheet({
   metrics,
   explanation,
   onDismiss,
@@ -151,7 +153,24 @@ export function MathSheet({
     </NativeSheet>
   );
 }
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: color.background },
-  content: { padding: spacing.md, paddingBottom: spacing.xxxxl, gap: spacing.lg },
-});
+
+/** The disclosure owns its snapshot and unmounts when the enclosing result disappears. */
+export function MathDetails({
+  label,
+  metrics,
+  explanation,
+}: {
+  label: string;
+  metrics: FusionMetric[];
+  explanation: string[];
+}) {
+  const [snapshot, setSnapshot] = useState<FusionMetric[] | null>(null);
+  return (
+    <>
+      <ListRow label={label} onPress={() => setSnapshot(metrics)} />
+      {snapshot ? (
+        <MathSheet metrics={snapshot} explanation={explanation} onDismiss={() => setSnapshot(null)} />
+      ) : null}
+    </>
+  );
+}

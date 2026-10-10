@@ -31,7 +31,7 @@ export function FusionScreen({ onOpen }: { onOpen: (page: FusionDestination) => 
           ? copy('fusion.readingReady')
           : copy('fusion.notRunYet');
   return (
-    <FusionPage testID="fusion-screen">
+    <FusionPage testID="fusion-screen" title={copy('fusion.navigationTitle')}>
       <ListSection header={copy('fusion.proofs.header')} footer={t('fusionUI.receiptLimit')}>
         {['device', 'presence', 'person'].map((proof) => (
           <TextRow key={proof} text={copy(`fusion.proofs.${proof}`)} />

@@ -1,7 +1,6 @@
 import type { FusionContinuityResult } from '@kenshiki/identity-capture';
-import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { FusionPage, MathSheet, ReceiptSection, share, TimestampRow } from './FusionPresentation';
+import { FusionPage, MathDetails, ReceiptSection, share, TimestampRow } from './FusionPresentation';
 import { t } from './locales/i18n';
 import { copy, plain } from './SensorPresentation';
 import { useSensorSession } from './SensorScreen';
@@ -10,18 +9,14 @@ import { confirmDestructive } from './ui/NativeSheet';
 
 export function ContinuityScreen({ onOverTime }: { onOverTime: () => void }) {
   const { state, perform } = useSensorSession();
-  const [math, setMath] = useState<FusionContinuityResult | null>(null);
   const continuity = state.board?.fusion.continuity;
-  useEffect(() => {
-    if (continuity?.state !== 'evaluated') setMath(null);
-  }, [continuity?.state]);
   const result = continuity?.state === 'evaluated' ? continuity.result : null;
   const failure =
     continuity?.state === 'unavailable' || continuity?.state === 'storageFailure'
       ? t(`fusionUI.${continuity.reason}`)
       : null;
   return (
-    <FusionPage testID="fusion-continuity">
+    <FusionPage testID="fusion-continuity" title={copy('continuity.header')}>
       <ListSection
         header={copy('continuity.answer.header')}
         footer={copy(
@@ -41,7 +36,12 @@ export function ContinuityScreen({ onOverTime }: { onOverTime: () => void }) {
           ? [
               <TimestampRow key="at" label={copy('continuity.row.evaluatedAt')} value={result.evaluatedAt} />,
               <ValueRow key="envelope" label={t('fusionUI.envelopeID')} value={result.envelopeID} />,
-              <ListRow key="math" label={copy('continuity.row.working')} onPress={() => setMath(result)} />,
+              <MathDetails
+                key="math"
+                label={copy('continuity.row.working')}
+                metrics={result.math}
+                explanation={[t('fusionUI.continuityFormula'), t('fusionUI.receiptLimit')]}
+              />,
             ]
           : null}
         {result?.breakReason ? (
@@ -70,13 +70,6 @@ export function ContinuityScreen({ onOverTime }: { onOverTime: () => void }) {
           }
         />
       </ListSection>
-      {math ? (
-        <MathSheet
-          metrics={math.math}
-          explanation={[t('fusionUI.continuityFormula'), t('fusionUI.receiptLimit')]}
-          onDismiss={() => setMath(null)}
-        />
-      ) : null}
     </FusionPage>
   );
 }

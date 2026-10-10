@@ -1,22 +1,17 @@
 import type { FusionAirCheck, FusionAirComparison } from '@kenshiki/identity-capture';
-import { useEffect, useState } from 'react';
 import { AirCheckDiagram } from './AirCheckDiagram';
-import { FusionPage, MathSheet, quantity, TimestampRow } from './FusionPresentation';
+import { FusionPage, MathDetails, quantity, TimestampRow } from './FusionPresentation';
 import { t } from './locales/i18n';
 import { copy } from './SensorPresentation';
 import { useSensorSession } from './SensorScreen';
-import { ButtonRow, ListRow, ListSection, TextRow, ValueRow } from './ui/List';
+import { ButtonRow, ListSection, TextRow, ValueRow } from './ui/List';
 
 export function AirCheckScreen() {
   const { state, perform } = useSensorSession();
-  const [math, setMath] = useState<FusionAirComparison | null>(null);
   const air = state.board?.fusion.airCheck;
-  useEffect(() => {
-    if (air?.state !== 'compared') setMath(null);
-  }, [air?.state]);
   const running = state.busy || air?.state === 'running';
   return (
-    <FusionPage testID="fusion-air-check">
+    <FusionPage testID="fusion-air-check" title={copy('airCheck.navigationTitle')}>
       <ListSection header={copy('airCheck.header')} footer={copy('airCheck.intro')}>
         <ButtonRow
           label={copy(running ? 'airCheck.button.running' : 'airCheck.button.run')}
@@ -29,21 +24,9 @@ export function AirCheckScreen() {
         {air && 'ranAt' in air ? <TimestampRow label={copy('airCheck.row.ranAt')} value={air.ranAt} /> : null}
       </ListSection>
       {air?.state === 'compared' ? (
-        <AirComparison comparison={air.comparison} onMath={() => setMath(air.comparison)} />
+        <AirComparison comparison={air.comparison} />
       ) : air ? (
         <AirFailure air={air} />
-      ) : null}
-      {math ? (
-        <MathSheet
-          metrics={math.math}
-          explanation={[
-            t('fusionUI.pressureUnits'),
-            t('fusionUI.airFormula'),
-            t('fusionUI.allowanceFormula'),
-            t('fusionUI.residualFormula'),
-          ]}
-          onDismiss={() => setMath(null)}
-        />
       ) : null}
     </FusionPage>
   );
@@ -84,7 +67,7 @@ function AirFailure({ air }: { air: FusionAirCheck }) {
     </ListSection>
   );
 }
-function AirComparison({ comparison: c, onMath }: { comparison: FusionAirComparison; onMath: () => void }) {
+function AirComparison({ comparison: c }: { comparison: FusionAirComparison }) {
   return (
     <>
       <ListSection header={copy('airCheck.result.header')} footer={copy('airCheck.result.notAVerdict')}>
@@ -96,7 +79,16 @@ function AirComparison({ comparison: c, onMath }: { comparison: FusionAirCompari
           label={copy('airCheck.row.confidence')}
           value={copy(`airCheck.confidence.${c.confidence}`)}
         />
-        <ListRow label={copy('airCheckMath.row')} onPress={onMath} />
+        <MathDetails
+          label={copy('airCheckMath.row')}
+          metrics={c.math}
+          explanation={[
+            t('fusionUI.pressureUnits'),
+            t('fusionUI.airFormula'),
+            t('fusionUI.allowanceFormula'),
+            t('fusionUI.residualFormula'),
+          ]}
+        />
       </ListSection>
       <ListSection header={copy('airCheck.measured.header')} footer={copy('airCheck.note.allowed')}>
         {(['measured', 'expected', 'difference', 'allowed'] as const).map((key, index) => (

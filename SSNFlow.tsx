@@ -328,7 +328,7 @@ function SSNEntry({
   editable: boolean;
   onChangeText: (text: string) => void;
 }) {
-  const seed = useRef(initialDigits);
+  const [seed] = useState(initialDigits);
   return (
     <TextInput
       testID="ssn-entry"
@@ -340,7 +340,7 @@ function SSNEntry({
       importantForAutofill="no"
       autoFocus={autoFocus}
       maxLength={9}
-      defaultValue={seed.current}
+      defaultValue={seed}
       onChangeText={onChangeText}
       editable={editable}
       placeholder={t('ssn.placeholder')}
