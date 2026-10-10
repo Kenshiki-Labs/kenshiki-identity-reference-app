@@ -7,6 +7,11 @@ type Part = string | readonly ['#'] | readonly ['arg', string]
 
 /** Every message key, with the values its message needs (undefined: none). */
 export type MessageValues = {
+  readonly "prerequisite.title": undefined;
+  readonly "prerequisite.document": undefined;
+  readonly "prerequisite.phone": undefined;
+  readonly "prerequisite.service": undefined;
+  readonly "prerequisite.back": undefined;
   readonly "firstRun.location.title": undefined;
   readonly "firstRun.location.body": undefined;
   readonly "firstRun.motion.title": undefined;
@@ -963,6 +968,11 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
     formatLocale: "en-US",
     plural: (count) => (count === 1 ? 'one' : 'other'),
     messages: {
+      "prerequisite.title": "Complete the earlier checks",
+      "prerequisite.document": "Complete the document check before checking your phone.",
+      "prerequisite.phone": "Complete the phone check before checking your Social Security number.",
+      "prerequisite.service": "This check is not connected yet.",
+      "prerequisite.back": "Back to Identity",
       "firstRun.location.title": "Allow location",
       "firstRun.location.body": "Choose Always so location is available for continuity checks. Keep Precise Location on. iOS may ask in two stages.",
       "firstRun.motion.title": "Allow Motion & Fitness",

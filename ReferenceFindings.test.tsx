@@ -13,6 +13,7 @@ import type {
 import type React from 'react';
 import { AppState, StyleSheet } from 'react-native';
 import renderer, { act, type ReactTestInstance } from 'react-test-renderer';
+import { phoneConfiguration } from './__tests__/phoneFixture';
 import { ssnReceipt } from './__tests__/ssnFixture';
 import {
   actionSheets,
@@ -267,7 +268,7 @@ const selectable = (root: ReactTestInstance) => root.findAll((node) => node.prop
 
 describe('1 developer checks', () => {
   test('a normal launch has no Developer checks entry; only the simulator debug host passes it in', async () => {
-    const plain = await render(<App />);
+    const plain = await render(<App configuration={{ phone: phoneConfiguration }} />);
     expect(plain.view.root.findAllByProps({ testID: 'open-sdk-checks' })).toHaveLength(0);
     await act(async () => {
       plain.view.unmount();
@@ -297,7 +298,7 @@ describe('2 contradicted carrier verdict stops', () => {
   ])('%s stops with a retry instead of confirming possession and offering Done', async (_name, receipt) => {
     phoneSnapshot = { ...phoneReady, stage: 'completed', receipt };
     const sheets = actionSheets();
-    const f = await render(<App />);
+    const f = await render(<App configuration={{ phone: phoneConfiguration }} />);
     await f.tap('open-phone');
     expect(f.text()).not.toContain('Phone possession confirmed');
     expect(f.view.root.findAllByProps({ testID: 'phone-done' })).toHaveLength(0);
@@ -327,7 +328,7 @@ describe('2 contradicted carrier verdict stops', () => {
         },
       },
     };
-    const f = await render(<App />);
+    const f = await render(<App configuration={{ phone: phoneConfiguration }} />);
     await f.tap('open-phone');
     await f.tap('modal-cancel');
     expect(f.text()).toContain('Check stopped');

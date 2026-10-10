@@ -14,6 +14,13 @@
 // locales/<language>.jsonc with the same keys and placeholders, and add the language's plural
 // rule to the generator.
 {
+  "prerequisite": {
+    "title": "Complete the earlier checks",
+    "document": "Complete the document check before checking your phone.",
+    "phone": "Complete the phone check before checking your Social Security number.",
+    "service": "This check is not connected yet.",
+    "back": "Back to Identity"
+  },
   "firstRun": {
     "location": {
       "title": "Allow location",

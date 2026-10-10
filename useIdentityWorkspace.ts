@@ -3,6 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { CaptureFlowController, type CompletedCapture } from './CaptureFlowController';
 import type { SavedDocumentCapture } from './DocumentFlowController';
 import { type ErrorText, errorCode, errorText } from './HolderText';
+import { ssnPrerequisite } from './IdentityPrerequisites';
 import { t } from './locales/i18n';
 import type { SavedPhoneCheck } from './PhoneFlowController';
 import type { SavedSSNCheck } from './SSNFlowController';
@@ -64,6 +65,18 @@ export function useIdentityWorkspace(
   const ownedSSN = useRef<SavedSSNCheck | undefined>(undefined);
   const [ssnInput, setSSNInput] = useState<SavedSSNCheck>();
   const [phone, setPhone] = useState<SavedPhoneCheck>();
+  // A changed document requires native revalidation before this phone result unlocks SSN.
+  const [phoneDocument, setPhoneDocument] = useState<string>();
+  const documentRevision = JSON.stringify([
+    document?.document.front?.captureID,
+    document?.document.front?.sha256,
+    document?.document.back?.captureID,
+    document?.document.back?.sha256,
+  ]);
+  const ssnBlocked = ssnPrerequisite(
+    configuration,
+    phoneDocument === documentRevision ? phone?.snapshot : undefined,
+  );
   const ownedPhone = useRef<SavedPhoneCheck | undefined>(undefined);
   const [phoneInput, setPhoneInput] = useState<SavedPhoneCheck>();
   const [clearRequest, setClearRequest] = useState<ClearRequest>();
@@ -219,6 +232,7 @@ export function useIdentityWorkspace(
     openFlow('license');
   }
   function openSSN() {
+    if (ssnBlocked) return;
     if (!active.current || clearPending.current || opening.current) return;
     if (ssn) pending.current.ssn = ssn.session;
     ownedSSN.current = undefined;
@@ -235,6 +249,7 @@ export function useIdentityWorkspace(
     onHome();
   }
   function openPhone() {
+    if (!configuration.phone) return;
     if (!active.current || clearPending.current || opening.current) return;
     if (phone) pending.current.phone = phone.session;
     ownedPhone.current = undefined;
@@ -245,6 +260,7 @@ export function useIdentityWorkspace(
   function acceptPhone(value: SavedPhoneCheck) {
     if (!receive(value.session)) return;
     delete pending.current.phone;
+    setPhoneDocument(documentRevision);
     ownedPhone.current = value;
     setPhone(value);
     setPhoneInput(undefined);
@@ -385,6 +401,7 @@ export function useIdentityWorkspace(
       },
     },
     ssn: {
+      blocked: ssnBlocked,
       result: ssn,
       input: ssnInput,
       start: openSSN,

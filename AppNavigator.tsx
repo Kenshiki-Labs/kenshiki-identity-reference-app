@@ -22,6 +22,7 @@ import { GlossaryScreen, OverTimeScreen, ThreeProofsScreen } from './FusionExpla
 import { type FusionDestination, FusionScreen } from './FusionScreen';
 import { IdentityCaptureFlow } from './IdentityCaptureFlow';
 import { IdentityHome } from './IdentityHome';
+import { IdentityPrerequisiteGate } from './IdentityPrerequisiteGate';
 import { IdentityRecovery } from './IdentityRecovery';
 import { LicenseResult, PassportResult } from './IdentityResults';
 import { IdentitySettings } from './IdentitySettings';
@@ -314,24 +315,31 @@ function HolderNavigator({
           </Root.Screen>
           <Root.Screen name="SSNCheck" options={modal}>
             {() => (
-              <SSNFlow
-                configuration={configuration}
-                saved={workspace.ssn.input}
-                onComplete={workspace.ssn.accept}
-                onClaim={workspace.ssn.claim}
-                onExit={workspace.ssn.exit}
-              />
+              <IdentityPrerequisiteGate reason={workspace.ssn.blocked} onExit={workspace.ssn.exit}>
+                <SSNFlow
+                  configuration={configuration}
+                  saved={workspace.ssn.input}
+                  onComplete={workspace.ssn.accept}
+                  onClaim={workspace.ssn.claim}
+                  onExit={workspace.ssn.exit}
+                />
+              </IdentityPrerequisiteGate>
             )}
           </Root.Screen>
           <Root.Screen name="PhoneCheck" options={modal}>
             {() => (
-              <PhoneFlow
-                configuration={configuration}
-                saved={workspace.phone.input}
-                onComplete={workspace.phone.accept}
-                onClaim={workspace.phone.claim}
+              <IdentityPrerequisiteGate
+                reason={configuration.phone ? undefined : 'document'}
                 onExit={workspace.phone.exit}
-              />
+              >
+                <PhoneFlow
+                  configuration={configuration}
+                  saved={workspace.phone.input}
+                  onComplete={workspace.phone.accept}
+                  onClaim={workspace.phone.claim}
+                  onExit={workspace.phone.exit}
+                />
+              </IdentityPrerequisiteGate>
             )}
           </Root.Screen>
         </Root.Navigator>

@@ -36,6 +36,8 @@ export function IdentityHome({
   const faceDisabled =
     blocked ||
     !(result?.comparison || (faceReady && result?.passport.portraitAvailable) || (!result && savedCount > 0));
+  const ssnBlocked = workspace.ssn.blocked;
+  const phoneDisabled = blocked || !configuration.phone;
   const covered = !!clearFailure || !!restoreFailure;
   /** Why a dimmed check cannot open, for the section footer. Nothing while results are opening. */
   function unavailableReasons() {
@@ -127,18 +129,20 @@ export function IdentityHome({
           }}
         />
         <ListRow
-          rowID="open-ssn"
-          label={t('common.socialSecurityNumber')}
-          status={ssnStatus()}
-          icon={{ name: symbol.ssn, background: color.swiftOrange }}
-          onPress={openSSN}
-        />
-        <ListRow
           rowID="open-phone"
           label={t('hub.phone.title')}
-          status={phoneStatus()}
+          status={phoneDisabled ? t('prerequisite.document') : phoneStatus()}
           icon={{ name: symbol.phone, background: color.swiftTeal }}
+          disabled={phoneDisabled}
           onPress={openPhone}
+        />
+        <ListRow
+          rowID="open-ssn"
+          label={t('common.socialSecurityNumber')}
+          status={ssnBlocked ? t(`prerequisite.${ssnBlocked}`) : ssnStatus()}
+          icon={{ name: symbol.ssn, background: color.swiftOrange }}
+          disabled={blocked || !!ssnBlocked}
+          onPress={openSSN}
         />
       </ListSection>
       {saved && (

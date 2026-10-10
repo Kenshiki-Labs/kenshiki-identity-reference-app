@@ -1,5 +1,6 @@
 import type { Configuration, SSNSessionSnapshot, SSNVerificationReceipt } from '@kenshiki/identity-capture';
 import renderer, { act } from 'react-test-renderer';
+import { completedPhone, phoneConfiguration } from './__tests__/phoneFixture';
 import { ssnBinding, ssnOperationID, ssnReceipt } from './__tests__/ssnFixture';
 import { invoke, required } from './__tests__/support';
 import App from './App';
@@ -19,6 +20,9 @@ const mockReady: SSNSessionSnapshot = {
 let mockSnapshot = mockReady;
 const mockSession = {
   id: 'ssn',
+  subscribe: jest.fn(() => () => {}),
+  phoneSnapshot: jest.fn(async () => completedPhone),
+  phoneCancel: jest.fn(async () => completedPhone),
   ssnSnapshot: jest.fn(async () => mockSnapshot),
   ssnRequestConfirmation: jest.fn(async (digits: string) => {
     mockSnapshot = {
@@ -69,6 +73,7 @@ beforeEach(() => {
   mockSnapshot = mockReady;
 });
 const configuration: Configuration = {
+  phone: phoneConfiguration,
   ssn: {
     contextID: 'test-holder',
     providerID: 'test-provider',
@@ -98,6 +103,10 @@ async function renderApp(config = configuration) {
       invoke(view.root.findByProps({ testID: 'ssn-entry' }), 'onChangeText', '000001234');
     });
   }
+  if (config.phone) {
+    await tap('open-phone');
+    await tap('phone-done');
+  }
   return { view, tap, enter };
 }
 test('SSN review displays exact digits in a bottom sheet and a completed result reopens from Identity', async () => {
@@ -124,7 +133,8 @@ test('SSN review displays exact digits in a bottom sheet and a completed result 
   await act(async () => {
     view.unmount();
   });
-  expect(mockSession.release).toHaveBeenCalledTimes(1);
+  // The fixture returns this stub for both the phone and SSN session owners.
+  expect(mockSession.release).toHaveBeenCalledTimes(2);
 });
 test('leaving the exact-number sheet clears the input before the Identity card can reopen it', async () => {
   const { view, tap, enter } = await renderApp();
@@ -142,16 +152,14 @@ test('leaving the exact-number sheet clears the input before the Identity card c
     view.unmount();
   });
 });
-test('missing provider presents a bottom sheet without an ID or phone CTA', async () => {
+test('missing prerequisites disable SSN without opening a service session', async () => {
   const { view, tap } = await renderApp({});
   await tap('open-ssn');
-  expect(view.root.findByProps({ testID: 'ssn-bottom-sheet' })).toBeDefined();
-  expect(JSON.stringify(view.toJSON())).toContain('This check is not ready');
-  expect(JSON.stringify(view.toJSON())).not.toMatch(/capture or choose ID|connected document|phone check/i);
-  expect(view.root.findAllByProps({ testID: 'ssn-retry' })).toHaveLength(0);
-  await tap('ssn-back-to-identity');
-  expect(view.root.findByProps({ testID: 'open-ssn' })).toBeDefined();
-  expect(mockSession.ssnConfirm).not.toHaveBeenCalled();
+  expect(view.root.findAllByProps({ testID: 'ssn-bottom-sheet' })).toHaveLength(0);
+  expect(mockSession.ssnSnapshot).not.toHaveBeenCalled();
+  const shown = JSON.stringify(view.toJSON());
+  expect(shown).toContain('Complete the document check');
+  expect(shown.indexOf('open-phone')).toBeLessThan(shown.indexOf('open-ssn'));
   await act(async () => {
     view.unmount();
   });

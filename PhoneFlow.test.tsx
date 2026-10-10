@@ -7,6 +7,7 @@ import type {
 import type { AppStateStatus } from 'react-native';
 import { AppState } from 'react-native';
 import renderer, { act } from 'react-test-renderer';
+import { phoneConfiguration } from './__tests__/phoneFixture';
 import { actionSheets, invoke, required, settle, without } from './__tests__/support';
 import App from './App';
 import { PhoneResultDetails } from './PhoneFlow';
@@ -92,7 +93,7 @@ afterEach(() => jest.restoreAllMocks());
 async function renderApp() {
   let view!: renderer.ReactTestRenderer;
   await act(async () => {
-    view = renderer.create(<App />);
+    view = renderer.create(<App configuration={{ phone: phoneConfiguration }} />);
   });
   async function tap(id: string) {
     await act(async () => {
