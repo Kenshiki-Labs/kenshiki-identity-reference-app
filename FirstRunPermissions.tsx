@@ -29,9 +29,9 @@ type PermissionOwner = {
 function releaseSession(owner: PermissionOwner): Promise<void> {
   const session = owner.session;
   if (!session) return Promise.resolve();
-  owner.releasing ??= new Promise<void>((resolve) => {
-    resolve(session.release());
-  });
+  owner.releasing ??= (async () => {
+    await session.release();
+  })();
   return owner.releasing;
 }
 

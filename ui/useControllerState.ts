@@ -99,11 +99,11 @@ function controllerStore<State, Controller>(
         waitForCustody();
         disconnect = () => {
           live = false;
-          // The executor invalidates the controller synchronously. Promise adoption joins an
-          // asynchronous release, while a synchronous dispose throw rejects the same promise.
-          const release = new Promise<unknown>((resolve) => {
-            resolve(connection?.dispose());
-          });
+          // Immediate async invocation calls dispose synchronously and awaits its cleanup.
+          // A synchronous throw rejects the same promise as an asynchronous release failure.
+          const release = (async () => {
+            await connection?.dispose();
+          })();
           custody.releasing = Promise.all([custody.releasing, release]);
           // Observe immediately, and retain the rejection so a later owner cannot open.
           custody.releasing.catch(custody.reportFailure);
