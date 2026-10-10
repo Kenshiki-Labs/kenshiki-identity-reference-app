@@ -158,22 +158,12 @@ test('units stay selectable without a Pause or Resume sensors CTA', async () => 
   await act(async () => view.unmount());
 });
 
-test('the tamper row is a Debug-only control: a Release bundle does not render it', async () => {
-  const debug = await render('settings');
-  expect(debug.root.findAllByProps({ testID: 'sensor-tamper' }).length).toBeGreaterThan(0);
-  await act(async () => debug.unmount());
-  const development = __DEV__;
-  // What Metro does for a Release bundle: __DEV__ is the constant false.
-  Object.defineProperty(globalThis, '__DEV__', { value: false, configurable: true, writable: true });
-  try {
-    const release = await render('settings');
-    expect(release.root.findAllByProps({ testID: 'sensor-tamper' })).toHaveLength(0);
-    expect(JSON.stringify(release.toJSON())).not.toContain('Tamper');
-    expect(JSON.stringify(release.toJSON())).toContain('Prepare export');
-    await act(async () => release.unmount());
-  } finally {
-    Object.defineProperty(globalThis, '__DEV__', { value: development, configurable: true, writable: true });
-  }
+test('settings offer no control that alters a signed reading, in any build', async () => {
+  const view = await render('settings');
+  expect(view.root.findAllByProps({ testID: 'sensor-tamper' })).toHaveLength(0);
+  expect(JSON.stringify(view.toJSON())).not.toContain('Tamper');
+  expect(JSON.stringify(view.toJSON())).toContain('Prepare export');
+  await act(async () => view.unmount());
 });
 test('permission-prompt inactive state does not pause; background does', async () => {
   const listener = jest.spyOn(AppState, 'addEventListener');

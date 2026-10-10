@@ -150,8 +150,8 @@ final class ArtifactIntegrationTests: XCTestCase {
     tabs.buttons["Settings"].tap()
     XCTAssertTrue(app.staticTexts["Settings"].firstMatch.waitForExistence(timeout: 10), "Settings is its own tab")
     XCTAssertTrue(app.buttons["Prepare export"].waitForExistence(timeout: 10))
-    // Altering a signed reading is a developer's check: present in this Debug build only.
-    XCTAssertTrue(app.buttons["sensor-tamper"].exists, "Debug builds offer the tamper check")
+    // The shipped runtime has no way to alter a signed reading, so no build offers one.
+    XCTAssertFalse(app.buttons["sensor-tamper"].exists, "No build offers a tamper control")
     let motionWindow = app.descendants(matching: .any)
       .matching(NSPredicate(format: "label == %@", "motion reading time")).firstMatch
     reveal(motionWindow)

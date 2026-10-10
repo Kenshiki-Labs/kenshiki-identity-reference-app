@@ -51,26 +51,6 @@ export function SensorSettings(props: SettingsProps) {
             }}
           />
         ) : null}
-        {/* Altering a signed reading is a developer's check that verification catches it. The
-            build configuration decides: a Release bundle compiles __DEV__ to false, so the row
-            and its request are not in it. */}
-        {__DEV__ ? (
-          <ButtonRow
-            destructive
-            testID="sensor-tamper"
-            label={t('sensors.export.tamper')}
-            disabled={busy || board.evidence.count === 0}
-            onPress={() =>
-              confirm(
-                t('sensors.export.tamperTitle'),
-                t('sensors.export.tamperBody'),
-                t('sensors.export.tamper'),
-                { action: 'tamper', consent: true },
-                perform,
-              )
-            }
-          />
-        ) : null}
         <ButtonRow
           destructive
           label={t('sensors.export.forget')}

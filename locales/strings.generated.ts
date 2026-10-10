@@ -944,7 +944,6 @@ export type MessageValues = {
   readonly "sensors.secondsSpoken": {readonly value: string | number};
   readonly "sensors.joiner": undefined;
   readonly "sensors.failureCode.saveFailed": undefined;
-  readonly "sensors.failureCode.tamperFailed": undefined;
   readonly "sensors.failureCode.forgetFailed": undefined;
   readonly "sensors.failureCode.readFailed": undefined;
   readonly "sensors.failureCode.noFixMeetsContract": undefined;
@@ -966,9 +965,6 @@ export type MessageValues = {
   readonly "sensors.export.share": undefined;
   readonly "sensors.export.shareFailed": undefined;
   readonly "sensors.export.notLocal": undefined;
-  readonly "sensors.export.tamper": undefined;
-  readonly "sensors.export.tamperTitle": undefined;
-  readonly "sensors.export.tamperBody": undefined;
   readonly "sensors.export.forget": undefined;
   readonly "sensors.export.forgetTitle": undefined;
   readonly "sensors.export.forgetBody": undefined;
@@ -1979,7 +1975,6 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "sensors.secondsSpoken": [["arg", "value"], " seconds"],
       "sensors.joiner": " · ",
       "sensors.failureCode.saveFailed": "The signed reading could not be saved.",
-      "sensors.failureCode.tamperFailed": "The newest reading could not be altered.",
       "sensors.failureCode.forgetFailed": "The kept readings could not be deleted.",
       "sensors.failureCode.readFailed": "The kept readings could not be read.",
       "sensors.failureCode.noFixMeetsContract": "No position iOS delivered met the fix terms.",
@@ -2001,9 +1996,6 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "sensors.export.share": "Share export",
       "sensors.export.shareFailed": "The export could not be shared.",
       "sensors.export.notLocal": "The export is not a local file.",
-      "sensors.export.tamper": "Tamper with newest reading",
-      "sensors.export.tamperTitle": "Tamper with reading",
-      "sensors.export.tamperBody": "This deliberately changes the newest local evidence to test verification.",
       "sensors.export.forget": "Forget exported readings",
       "sensors.export.forgetTitle": "Forget readings",
       "sensors.export.forgetBody": "Remove this host’s retained export evidence.",

@@ -1225,7 +1225,6 @@
     // used where it has them (collection, export, erase and weather-provider failures).
     "failureCode": {
       "saveFailed": "The signed reading could not be saved.",
-      "tamperFailed": "The newest reading could not be altered.",
       "forgetFailed": "The kept readings could not be deleted.",
       "readFailed": "The kept readings could not be read.",
       "noFixMeetsContract": "No position iOS delivered met the fix terms.",
@@ -1251,9 +1250,6 @@
       "share": "Share export",
       "shareFailed": "The export could not be shared.",
       "notLocal": "The export is not a local file.",
-      "tamper": "Tamper with newest reading",
-      "tamperTitle": "Tamper with reading",
-      "tamperBody": "This deliberately changes the newest local evidence to test verification.",
       "forget": "Forget exported readings",
       "forgetTitle": "Forget readings",
       "forgetBody": "Remove this host’s retained export evidence."

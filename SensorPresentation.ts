@@ -122,7 +122,6 @@ export function failureText(code: string): string {
     collectionFailed: copy('collection.failure'),
     saveFailed: t('sensors.failureCode.saveFailed'),
     exportFailed: copy('export.failed'),
-    tamperFailed: t('sensors.failureCode.tamperFailed'),
     forgetFailed: t('sensors.failureCode.forgetFailed'),
     eraseFailed: copy('erase.outcome.failed'),
     readFailed: t('sensors.failureCode.readFailed'),
