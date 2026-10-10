@@ -107,7 +107,7 @@ Debug's `INFOPLIST_FILE`, leave `IDENTITY_HOST_EMBEDDED_JAVASCRIPT` unset and ru
 from the host root. Release keeps the generated Info.plist with unrestricted loads disabled.
 
 The app opens on a native tab bar: Fusion, Sensors, Identity and Settings, each its own navigation stack.
-Sensors, Identity and Settings use the same `Page` container; Fusion keeps native large titles.
+All four tabs use the same `Page` container for their header, branding and layout; native stacks own navigation transitions.
 Fusion presents Air Check, Continuity, their native calculation terms, illustrative
 Over Time projections, Three Proofs and Glossary. Fusion, Sensors and Settings share one session.
 Air Check and continuity evaluation are explicit actions; continuity evaluates the signed Sensors

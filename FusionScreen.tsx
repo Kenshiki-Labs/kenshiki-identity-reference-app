@@ -32,13 +32,6 @@ export function FusionScreen({ onOpen }: Readonly<{ onOpen: (page: FusionDestina
           : copy('fusion.notRunYet');
   return (
     <FusionPage testID="fusion-screen" title={copy('fusion.navigationTitle')}>
-      <ListSection header={copy('fusion.proofs.header')} footer={t('fusionUI.receiptLimit')}>
-        {['device', 'presence', 'person'].map((proof) => (
-          <TextRow key={proof} text={copy(`fusion.proofs.${proof}`)} />
-        ))}
-        <ListRow label={copy('threeProofs.row')} onPress={() => onOpen('ThreeProofs')} />
-        <ListRow label={copy('glossary.row')} onPress={() => onOpen('Glossary')} />
-      </ListSection>
       <ListSection header={copy('airCheck.header')} footer={copy('fusion.airCheck.meaning')}>
         <ValueRow label={copy('sensorGroup.now')} value={airSummary} />
         <ListRow label={copy('airCheck.header')} onPress={() => onOpen('AirCheck')} />
@@ -46,6 +39,13 @@ export function FusionScreen({ onOpen }: Readonly<{ onOpen: (page: FusionDestina
       <ListSection header={copy('continuity.header')} footer={copy('fusion.continuity.meaning')}>
         <ValueRow label={copy('sensorGroup.now')} value={continuitySummary} />
         <ListRow label={copy('continuity.header')} onPress={() => onOpen('Continuity')} />
+      </ListSection>
+      <ListSection header={copy('fusion.proofs.header')} footer={t('fusionUI.receiptLimit')}>
+        {['device', 'presence', 'person'].map((proof) => (
+          <TextRow key={proof} text={copy(`fusion.proofs.${proof}`)} />
+        ))}
+        <ListRow label={copy('threeProofs.row')} onPress={() => onOpen('ThreeProofs')} />
+        <ListRow label={copy('glossary.row')} onPress={() => onOpen('Glossary')} />
       </ListSection>
     </FusionPage>
   );

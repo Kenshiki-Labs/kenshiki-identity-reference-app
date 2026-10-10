@@ -112,8 +112,14 @@ final class ArtifactIntegrationTests: XCTestCase {
         "Sensors could not be opened.",
         "Sensors are not configured in this app.",
         "The request stopped. Check permissions or try again.",
+        "The sensor session could not be opened. Go back and try again.",
+        "The request could not finish. Open Identity, then return to Sensors to try again.",
+        "The sensor refresh stopped. Open Identity, then return to Sensors to try again.",
+        "The sensors could not be read. Trying again.",
         "Sensors could not change activity state.",
-        "Sensors could not close"
+        "Sensors could not close",
+        "The sensor session could not close.",
+        "Close and reopen the app before starting another check. Your saved results have not been erased."
       ] {
         XCTAssertFalse(app.staticTexts[failure].exists, failure)
       }
@@ -168,7 +174,7 @@ final class ArtifactIntegrationTests: XCTestCase {
   /// Exercises the real native navigation and shared signed-reading flow on a simulator.
   /// No synthetic pressure comparison is injected, and this does not qualify physical sensors.
   @MainActor
-  func testFusionFirstTabMathAndSharedPausedEnvelope() throws {
+  func testFusionFirstTabMathAndSharedLiveReading() throws {
     #if !targetEnvironment(simulator)
     throw XCTSkip("This navigation check avoids acquiring personal device observations")
     #endif
@@ -179,7 +185,13 @@ final class ArtifactIntegrationTests: XCTestCase {
     let tabs = app.tabBars.firstMatch
     XCTAssertTrue(tabs.waitForExistence(timeout: 30))
     XCTAssertEqual(tabs.buttons.allElementsBoundByIndex.map(\.label), ["Fusion", "Sensors", "Identity", "Settings"])
-    XCTAssertTrue(app.navigationBars["Fusion"].waitForExistence(timeout: 10), "Fusion opens first")
+    func assertPage(_ title: String) {
+      let heading = app.staticTexts["page-title"].firstMatch
+      let shown = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", title), object: heading)
+      XCTAssertEqual(XCTWaiter.wait(for: [shown], timeout: 10), .completed, "The shared Page must show \(title)")
+      XCTAssertTrue(app.staticTexts["page-wordmark"].firstMatch.exists)
+    }
+    assertPage("Fusion")
 
     func reveal(_ element: XCUIElement) {
       for _ in 0..<30 where !element.isHittable { app.swipeUp() }
@@ -198,14 +210,13 @@ final class ArtifactIntegrationTests: XCTestCase {
     XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 30), .completed,
       "Initial Fusion focus opens the session and produces a signed Sensors reading")
     tabs.buttons["Sensors"].tap()
-    let pause = app.buttons["Pause sensors"]
-    XCTAssertTrue(pause.waitForExistence(timeout: 20), "Initial Fusion focus must open a real shared session")
-    // Hold one signed envelope fixed so navigation/re-evaluation cannot manufacture new passes.
-    pause.tap()
-    XCTAssertTrue(app.buttons["Resume sensors"].waitForExistence(timeout: 10))
+    assertPage("Sensors")
+    XCTAssertTrue(app.buttons["About Motion"].waitForExistence(timeout: 20), "The shared sensor board must load")
+    XCTAssertFalse(app.buttons["Pause sensors"].exists)
+    XCTAssertFalse(app.buttons["Resume sensors"].exists)
     tabs.buttons["Fusion"].tap()
-    XCTAssertTrue(app.navigationBars["Continuity"].waitForExistence(timeout: 10))
-    XCTAssertTrue(evaluate.isEnabled, "The paused Sensors reading is available in Fusion")
+    assertPage("Continuity")
+    XCTAssertTrue(evaluate.isEnabled, "The live Sensors reading is available in Fusion")
     evaluate.tap()
     let count = app.otherElements["continuity-pass-count"]
     XCTAssertTrue(count.waitForExistence(timeout: 10))
@@ -216,34 +227,42 @@ final class ArtifactIntegrationTests: XCTestCase {
     let math = app.buttons["How this was worked out"]
     for _ in 0..<30 where !math.isHittable { app.swipeDown() }
     math.tap()
-    XCTAssertTrue(app.otherElements["fusion-math"].waitForExistence(timeout: 10))
-    let done = app.buttons["Done"]
-    reveal(done)
+    let mathSheet = app.otherElements["fusion-math"]
+    XCTAssertTrue(mathSheet.waitForExistence(timeout: 10))
+    let done = mathSheet.buttons["modal-cancel"]
+    XCTAssertTrue(done.waitForExistence(timeout: 10))
     done.tap()
-    XCTAssertFalse(app.otherElements["fusion-math"].waitForExistence(timeout: 2))
+    XCTAssertFalse(mathSheet.waitForExistence(timeout: 2))
 
     tabs.buttons["Sensors"].tap()
-    XCTAssertTrue(app.buttons["Resume sensors"].waitForExistence(timeout: 10), "Switching tabs must preserve pause and session")
+    assertPage("Sensors")
+    XCTAssertTrue(app.buttons["About Motion"].waitForExistence(timeout: 10))
+    XCTAssertFalse(app.buttons["Pause sensors"].exists)
+    XCTAssertFalse(app.buttons["Resume sensors"].exists)
     tabs.buttons["Fusion"].tap()
-    XCTAssertTrue(app.navigationBars["Continuity"].waitForExistence(timeout: 10), "Fusion retains its own navigation stack")
+    assertPage("Continuity")
+    reveal(count)
+    XCTAssertEqual(count.label, original, "Switching tabs retains the result without evaluating another reading")
     for _ in 0..<30 where !evaluate.isHittable { app.swipeDown() }
     evaluate.tap()
+    let evaluated = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: evaluate)
+    XCTAssertEqual(XCTWaiter.wait(for: [evaluated], timeout: 30), .completed)
     reveal(count)
-    XCTAssertEqual(count.label, original, "Re-evaluating the same envelope cannot increment history")
+    XCTAssertTrue(count.exists, "An explicit evaluation of the current live reading must return a result")
     let forget = app.buttons["Forget continuity history"]
     reveal(forget)
     forget.tap()
     XCTAssertTrue(app.sheets.firstMatch.waitForExistence(timeout: 10))
     app.sheets.buttons["Cancel"].tap()
     back()
-    XCTAssertTrue(app.navigationBars["Fusion"].waitForExistence(timeout: 10))
+    assertPage("Fusion")
     let air = app.buttons["Air check"]
     reveal(air)
     air.tap()
-    XCTAssertTrue(app.navigationBars["Air check"].waitForExistence(timeout: 10))
+    assertPage("Air check")
     XCTAssertTrue(app.buttons["Run air check"].exists, "Air Check remains an explicit acquisition")
     back()
-    XCTAssertTrue(app.navigationBars["Fusion"].waitForExistence(timeout: 10))
+    assertPage("Fusion")
   }
 
   /// The native navigation: a tab bar whose tabs keep their own stacks; a pushed screen returns by

@@ -1130,9 +1130,9 @@
       "request": "The request stopped. Check permissions or try again.",
       "notConfigured": "Sensors are not configured in this app.",
       "session": "The sensor session could not be opened. Go back and try again.",
-      "requestUnfinished": "The request could not finish. Resume sensors to try again.",
+      "requestUnfinished": "The request could not finish. Open Identity, then return to Sensors to try again.",
       "close": "The sensor session could not close.",
-      "refresh": "The sensor refresh stopped. Pause and resume to try again.",
+      "refresh": "The sensor refresh stopped. Open Identity, then return to Sensors to try again.",
       "read": "The sensors could not be read. Trying again.",
       "settings": "iOS Settings could not be opened."
     },
