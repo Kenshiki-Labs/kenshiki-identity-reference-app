@@ -110,3 +110,30 @@ test('provider errors offer local restore and never automatically repeat a check
   expect(f.native.documentCheckRestore).toHaveBeenCalledTimes(2);
   await act(async () => f.view.unmount());
 });
+
+// A native reading failure must remain distinguishable from a service rejection.
+// Rendering it must not retry a potentially paid check.
+test.each([
+  ['missingPreparedDocument', 'The saved photo has no prepared license image. Retake the license.'],
+  ['analysisNotCompleted', 'The reader did not finish analyzing the prepared license image.'],
+  [
+    'fullPhotoAnalysisNotCompleted',
+    'The reader read the prepared license image but did not finish analyzing the full photo.',
+  ],
+  [
+    'observationsRejected',
+    'The reader’s extracted details did not meet the checking service’s required format.',
+  ],
+  ['retentionFailed', 'The reader’s analysis could not be saved securely on this phone.'],
+  ['engineUnavailable', 'The document reader could not start or finish its processing.'],
+] as const)('shows the specific %s failure without dispatching another check', async (failure, message) => {
+  const f = await setup();
+  f.native.documentCheck.mockResolvedValueOnce({ ...initial, state: 'readerUnavailable', failure });
+  await f.press('Check license record');
+  const rendered = JSON.stringify(f.view.toJSON());
+  expect(rendered).toContain(message);
+  expect(rendered).not.toContain('The document reader could not complete this check.');
+  expect(f.native.documentCheck).toHaveBeenCalledTimes(1);
+  expect(f.native.documentCheckAskAgain).not.toHaveBeenCalled();
+  await act(async () => f.view.unmount());
+});

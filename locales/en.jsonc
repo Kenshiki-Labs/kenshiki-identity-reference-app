@@ -803,6 +803,16 @@
       "other": "The checking service asked you to review this detail."
     },
     "failure": {
+      "missingPreparedDocument": "The saved photo has no prepared license image. Retake the license.",
+      "sourceIntegrityFailure": "The saved photo and its analysis could not be verified as belonging to the same capture.",
+      "analysisNotCompleted": "The reader did not finish analyzing the prepared license image.",
+      "fullPhotoAnalysisNotCompleted": "The reader read the prepared license image but did not finish analyzing the full photo.",
+      "observationsRejected": "The reader’s extracted details did not meet the checking service’s required format.",
+      "retentionFailed": "The reader’s analysis could not be saved securely on this phone.",
+      "engineUnavailable": "The document reader could not start or finish its processing.",
+      "authenticityFailed": "The document reader did not accept the license’s authenticity.",
+      "documentNotLive": "The document reader did not confirm a live document capture.",
+      "notCameraCapture": "This check requires a license photo taken with this app’s camera.",
       "readerUnbound": "The document reader is not set up for this check. Your photos and barcode details remain available.",
       "requestRejected": "The checking service refused this request. Your photos and barcode details remain available.",
       "serviceUnavailable": "The checking service did not answer. You can ask for this check’s answer later; no new check is started.",

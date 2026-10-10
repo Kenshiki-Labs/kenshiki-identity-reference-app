@@ -586,6 +586,16 @@ export type MessageValues = {
   readonly "documentCheck.correction.mismatch": undefined;
   readonly "documentCheck.correction.invalid": undefined;
   readonly "documentCheck.correction.other": undefined;
+  readonly "documentCheck.failure.missingPreparedDocument": undefined;
+  readonly "documentCheck.failure.sourceIntegrityFailure": undefined;
+  readonly "documentCheck.failure.analysisNotCompleted": undefined;
+  readonly "documentCheck.failure.fullPhotoAnalysisNotCompleted": undefined;
+  readonly "documentCheck.failure.observationsRejected": undefined;
+  readonly "documentCheck.failure.retentionFailed": undefined;
+  readonly "documentCheck.failure.engineUnavailable": undefined;
+  readonly "documentCheck.failure.authenticityFailed": undefined;
+  readonly "documentCheck.failure.documentNotLive": undefined;
+  readonly "documentCheck.failure.notCameraCapture": undefined;
   readonly "documentCheck.failure.readerUnbound": undefined;
   readonly "documentCheck.failure.requestRejected": undefined;
   readonly "documentCheck.failure.serviceUnavailable": undefined;
@@ -1548,6 +1558,16 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "documentCheck.correction.mismatch": "This detail did not match the record.",
       "documentCheck.correction.invalid": "This detail was not in a usable form.",
       "documentCheck.correction.other": "The checking service asked you to review this detail.",
+      "documentCheck.failure.missingPreparedDocument": "The saved photo has no prepared license image. Retake the license.",
+      "documentCheck.failure.sourceIntegrityFailure": "The saved photo and its analysis could not be verified as belonging to the same capture.",
+      "documentCheck.failure.analysisNotCompleted": "The reader did not finish analyzing the prepared license image.",
+      "documentCheck.failure.fullPhotoAnalysisNotCompleted": "The reader read the prepared license image but did not finish analyzing the full photo.",
+      "documentCheck.failure.observationsRejected": "The reader’s extracted details did not meet the checking service’s required format.",
+      "documentCheck.failure.retentionFailed": "The reader’s analysis could not be saved securely on this phone.",
+      "documentCheck.failure.engineUnavailable": "The document reader could not start or finish its processing.",
+      "documentCheck.failure.authenticityFailed": "The document reader did not accept the license’s authenticity.",
+      "documentCheck.failure.documentNotLive": "The document reader did not confirm a live document capture.",
+      "documentCheck.failure.notCameraCapture": "This check requires a license photo taken with this app’s camera.",
       "documentCheck.failure.readerUnbound": "The document reader is not set up for this check. Your photos and barcode details remain available.",
       "documentCheck.failure.requestRejected": "The checking service refused this request. Your photos and barcode details remain available.",
       "documentCheck.failure.serviceUnavailable": "The checking service did not answer. You can ask for this check’s answer later; no new check is started.",

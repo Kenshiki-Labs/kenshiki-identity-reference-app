@@ -34,8 +34,19 @@ const checkFailures = {
   cancelled: t('documentCheck.failure.cancelled'),
 } satisfies Partial<Record<Extract<DocumentCheckFailureCode, CaptureErrorCode>, string>>;
 /** `DocumentCheckSnapshot.failure` has its own closed vocabulary. */
-const snapshotFailures: Partial<Record<DocumentCheckFailureCode, string>> = {
+const snapshotFailures: Record<DocumentCheckFailureCode, string> = {
   ...checkFailures,
+  missingPreparedDocument: t('documentCheck.failure.missingPreparedDocument'),
+  sourceIntegrityFailure: t('documentCheck.failure.sourceIntegrityFailure'),
+  analysisNotCompleted: t('documentCheck.failure.analysisNotCompleted'),
+  fullPhotoAnalysisNotCompleted: t('documentCheck.failure.fullPhotoAnalysisNotCompleted'),
+  observationsRejected: t('documentCheck.failure.observationsRejected'),
+  retentionFailed: t('documentCheck.failure.retentionFailed'),
+  engineUnavailable: t('documentCheck.failure.engineUnavailable'),
+  authenticityFailed: t('documentCheck.failure.authenticityFailed'),
+  documentNotLive: t('documentCheck.failure.documentNotLive'),
+  notCameraCapture: t('documentCheck.failure.notCameraCapture'),
+  cancelled: t('documentCheck.failure.cancelled'),
   custodyUnavailable: t('documentCheck.failure.custodyUnavailable'),
 };
 /** Command rejections, by code. */
