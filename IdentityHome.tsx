@@ -3,7 +3,7 @@ import { Text } from 'react-native';
 import { isCompleteDocument } from './DocumentFlowController';
 import { t } from './locales/i18n';
 import { phoneCheckStopped } from './PhonePolicy';
-import { ssnSummary } from './SSNFlow';
+import { ssnSummary } from './SSNResultDetails';
 import { ListRow, ListSection } from './ui/List';
 import { Page } from './ui/Page';
 import { styles } from './ui/styles';

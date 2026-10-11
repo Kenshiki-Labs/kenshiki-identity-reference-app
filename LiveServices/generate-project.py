@@ -19,7 +19,7 @@ for package in spec['packages'].values():
 for name in ('IdentityGateway', 'IdentityEvidenceRegula'):
     spec['packages'][name] = {'path': str(root / 'Packages' / name)}
 target = spec['targets']['IdentityCaptureRuntime']
-target['sources'] = [str(base / 'Sources'), str(Path(__file__).parent / 'ReferenceLiveServices.swift')]
+target['sources'] = [str(base / 'Sources'), *[str(p) for p in sorted(Path(__file__).parent.glob('*.swift'))]]
 for name in ('SensorSSNService', 'SensorPhoneService', 'SensorPhoneWireEvidence', 'WorkerDocumentChecker', 'SensorPhoneDocumentContext'):
     target['sources'].append(str(root / 'Hosts/SensorHost/Sources' / (name + '.swift')))
 for name in ('IdentityGateway', 'IdentityEvidenceRegula'):

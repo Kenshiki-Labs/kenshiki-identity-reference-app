@@ -871,6 +871,7 @@
 
   // The five Social Security number observations bound to the checked ID and phone.
   "ssn": {
+    "loading": "Opening your SSN check…",
     "intro": "Check issuance, the death file, and the name, address and phone associated with your Social Security number. Your checked ID and confirmed phone supply the comparison details.",
     "checking": "Checking…",
     "saveBody": "The answer arrived but could not be saved on this phone. Saving again will not send another check.",

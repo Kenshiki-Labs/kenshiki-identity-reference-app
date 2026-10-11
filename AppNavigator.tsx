@@ -317,7 +317,7 @@ function HolderNavigator({
             {() => (
               <IdentityPrerequisiteGate reason={workspace.ssn.blocked} onExit={workspace.ssn.exit}>
                 <SSNFlow
-                  configuration={configuration}
+                  configuration={workspace.phone.configuration}
                   saved={workspace.ssn.input}
                   onComplete={workspace.ssn.accept}
                   onClaim={workspace.ssn.claim}

@@ -31,7 +31,7 @@ import { DocumentFlowController } from './DocumentFlowController';
 import { DocumentResultDetails } from './DocumentResultDetails';
 import { CaptureResultDetails } from './IdentityCaptureFlow';
 import { PhoneResultDetails } from './PhoneFlow';
-import { SSNResultDetails } from './SSNFlow';
+import { SSNResultDetails } from './SSNResultDetails';
 import { SubscriberResultDetails } from './SubscriberResultDetails';
 import { styles } from './ui/styles';
 

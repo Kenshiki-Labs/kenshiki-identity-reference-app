@@ -1,18 +1,19 @@
-import type { Configuration, SSNVerificationReceipt } from '@kenshiki/identity-capture';
+import type { Configuration } from '@kenshiki/identity-capture';
 import { IdentityCaptureSession } from '@kenshiki/identity-capture';
 import { useCallback, useRef, useState } from 'react';
 import { AppState, Keyboard, Text, TextInput, View } from 'react-native';
-import { formatCalendarDate, formatMoment } from './HolderText';
 import { t } from './locales/i18n';
 import { type SavedSSNCheck, SSNFlowController, type SSNFlowState } from './SSNFlowController';
+import { SSNResultDetails } from './SSNResultDetails';
 import { Action } from './ui/Action';
 import { ControllerStartup } from './ui/ControllerStartup';
+import { LoadingCard } from './ui/LoadingCard';
 import { NativeSheet, useConfirmation } from './ui/NativeSheet';
 import { Page } from './ui/Page';
 import { styles } from './ui/styles';
 import { useControllerState } from './ui/useControllerState';
 
-const initialState: SSNFlowState = { digits: '', busy: false, editing: false };
+const initialState: SSNFlowState = { digits: '', busy: false, editing: false, opening: true };
 
 export function SSNFlow({
   configuration,
@@ -94,11 +95,12 @@ export function SSNFlow({
         onClose={onExit}
         failed={failed}
         cancelStartup={cancelStartup}
+        loadingMessage={t('ssn.loading')}
       />
     );
   const activeController = controller;
   const busy = state.busy || finishing;
-  const snapshot = state.snapshot;
+  const snapshot = state.opening ? undefined : state.snapshot;
   const receipt = snapshot?.receipt;
   const needsRecovery = snapshot?.recoveryNeeded;
   const confirmation = snapshot?.confirmation;
@@ -113,7 +115,9 @@ export function SSNFlow({
   );
   const recovery = state.sheet?.kind === 'recovery' ? state.sheet : undefined;
   function renderSSNStage() {
+    if (state.opening) return <LoadingCard message={t('ssn.loading')} testID="ssn-loading" />;
     if (busy) {
+      if (receipt && !state.editing && !needsRecovery) return null;
       return (
         <Text accessibilityLiveRegion="polite" style={styles.body}>
           {t('ssn.checking')}
@@ -158,7 +162,7 @@ export function SSNFlow({
         </>
       );
     }
-    if (!receipt) {
+    if (!receipt && snapshot) {
       return (
         <Action
           label={t('ssn.enter')}
@@ -308,93 +312,6 @@ function SSNEntry({
   );
 }
 
-/** Present the aggregate independently of the issuance observation. */
-export function ssnSummary(receipt: SSNVerificationReceipt): string {
-  if (receipt.reportKind !== 'fiveChecks') return t('ssn.summary.historical');
-  return receipt.reportedOutcome === 'affirmative'
-    ? t('ssn.summary.fiveSatisfied')
-    : receipt.reportedOutcome === 'negative'
-      ? t('ssn.summary.fiveNotSatisfied')
-      : t('ssn.summary.fiveIncomplete');
-}
-export function SSNResultDetails({ receipt }: Readonly<{ receipt: SSNVerificationReceipt }>) {
-  const details = receipt.details;
-  const reported = (value?: string | null) => value?.trim() || t('common.notReturned');
-  return (
-    <View style={styles.card} testID="ssn-result">
-      <Text accessibilityRole="header" style={styles.sheetTitle}>
-        {ssnSummary(receipt)}
-      </Text>
-      {receipt.fiveChecks && (
-        <>
-          <ResultRow
-            label={t('ssn.result.check.deathMasterFile')}
-            value={t(`ssn.result.outcome.${receipt.fiveChecks.checks.death_master_file.outcome}`)}
-          />
-          <ResultRow
-            label={t('ssn.result.check.name')}
-            value={t(`ssn.result.outcome.${receipt.fiveChecks.checks.ssn_name_association.outcome}`)}
-          />
-          <ResultRow
-            label={t('ssn.result.check.address')}
-            value={t(`ssn.result.outcome.${receipt.fiveChecks.checks.ssn_address_association.outcome}`)}
-          />
-          <ResultRow
-            label={t('ssn.result.check.phone')}
-            value={t(`ssn.result.outcome.${receipt.fiveChecks.checks.ssn_phone_association.outcome}`)}
-          />
-        </>
-      )}
-      <ResultRow
-        label={receipt.fiveChecks ? t('ssn.result.check.issuance') : t('ssn.result.reportedLabel')}
-        value={
-          receipt.issuance === 'issued'
-            ? t('ssn.result.issued')
-            : receipt.issuance === 'notIssued'
-              ? t('ssn.result.notIssued')
-              : t('ssn.result.unavailable')
-        }
-      />
-      {details ? (
-        <>
-          <Text accessibilityRole="header" style={styles.sheetTitle}>
-            {t('ssn.result.findings')}
-          </Text>
-          <ResultRow label={t('ssn.result.region')} value={reported(details.region)} />
-          <ResultRow
-            label={t('ssn.result.issueStart')}
-            value={details.issueStart ? formatCalendarDate(details.issueStart) : t('common.notReturned')}
-          />
-          <ResultRow
-            label={t('ssn.result.issueEnd')}
-            value={details.issueEnd ? formatCalendarDate(details.issueEnd) : t('common.notReturned')}
-          />
-          <ResultRow label={t('ssn.result.classification')} value={reported(details.codeDescription)} />
-          <ResultRow label={t('ssn.result.classificationCode')} value={reported(details.code)} />
-          <ResultRow label={t('ssn.result.reportedStatus')} value={reported(details.reportedStatus)} />
-          <ResultRow
-            label={t('ssn.result.responseCode')}
-            value={details.responseCode == null ? t('common.notReturned') : String(details.responseCode)}
-          />
-        </>
-      ) : !receipt.fiveChecks ? (
-        <Text style={styles.body}>
-          {receipt.reportKind === 'fiveChecks' ? t('ssn.result.noReport') : t('ssn.result.issuanceOnly')}
-        </Text>
-      ) : null}
-      <ResultRow label={t('ssn.result.checked')} value={formatMoment(receipt.checkedAt)} />
-      <Text style={styles.body}>{t('ssn.result.ownership')}</Text>
-    </View>
-  );
-}
-function ResultRow({ label, value }: Readonly<{ label: string; value: string }>) {
-  return (
-    <View style={styles.detail}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.body}>{value}</Text>
-    </View>
-  );
-}
 function formatNumber(digits: string): string {
   return [digits.slice(0, 3), digits.slice(3, 5), digits.slice(5, 9)].filter(Boolean).join('-');
 }

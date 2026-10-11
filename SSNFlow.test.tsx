@@ -5,7 +5,7 @@ import { completedPhone, phoneConfiguration } from './__tests__/phoneFixture';
 import { ssnBinding, ssnOperationID, ssnReceipt } from './__tests__/ssnFixture';
 import { invoke, required } from './__tests__/support';
 import App from './App';
-import { SSNResultDetails } from './SSNFlow';
+import { SSNResultDetails } from './SSNResultDetails';
 
 const mockReceipt: SSNVerificationReceipt = ssnReceipt;
 const mockReady: SSNSessionSnapshot = {
@@ -317,4 +317,27 @@ test('pasted text that is not only digits restarts the field from the digits kep
   expect(restarted.props.defaultValue).toBe('000001234');
   expect(restarted.props.autoFocus).toBe(true);
   await act(async () => view.unmount());
+});
+
+test('delayed receipt restoration shows one loading surface and never flashes the entry action', async () => {
+  const { view, tap } = await renderApp();
+  let resolve!: (snapshot: SSNSessionSnapshot) => void;
+  mockSession.ssnSnapshot.mockReturnValueOnce(
+    new Promise((done) => {
+      resolve = done;
+    }),
+  );
+  await tap('open-ssn');
+  expect(view.root.findAllByProps({ testID: 'ssn-loading' }).length).toBeGreaterThan(0);
+  expect(view.root.findAllByProps({ testID: 'ssn-begin-entry' })).toHaveLength(0);
+  expect(view.root.findAllByProps({ testID: 'ssn-result' })).toHaveLength(0);
+  await act(async () => {
+    resolve({ ...mockReady, state: 'completed', receipt: mockReceipt });
+  });
+  expect(view.root.findAllByProps({ testID: 'ssn-loading' })).toHaveLength(0);
+  expect(view.root.findByProps({ testID: 'ssn-result' })).toBeDefined();
+  expect(view.root.findAllByProps({ testID: 'ssn-begin-entry' })).toHaveLength(0);
+  await act(async () => {
+    view.unmount();
+  });
 });

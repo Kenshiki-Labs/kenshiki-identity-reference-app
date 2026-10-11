@@ -89,6 +89,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
           phone["workflowID"] = holder.workflowID("phone")
           phone["policy"] = ["pollInterval": 3.0, "rateLimitBackoff": 15.0, "resendDelay": 45.0]
           configuration["phone"] = phone
+          var ssn = holder.store("SSN", service: "ssn", account: "ssn-evidence-v1")
+          ssn["contextID"] = holder.workflowID("ssn")
+          ssn["providerID"] = "reference-live"
+          configuration["ssn"] = ssn
         } catch {
           // Leave the affected capabilities unconfigured; never manufacture a working provider.
           properties["configurationIssue"] = "liveServicesUnavailable"

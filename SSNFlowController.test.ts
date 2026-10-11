@@ -381,3 +381,31 @@ test('W2 recovery queries status without resending digits to the supplier', asyn
   expect(f.native.ssnResendUnresolved).not.toHaveBeenCalled();
   expect(f.native.ssnConfirm).not.toHaveBeenCalled();
 });
+
+test('opening waits for native custody before presenting a saved result', async () => {
+  const f = fixture();
+  const read = deferred<SSNSessionSnapshot>();
+  f.native.ssnSnapshot.mockReturnValueOnce(read.promise);
+  const opening = f.c.open();
+  await tick();
+  expect(f.c.state.opening).toBe(true);
+  expect(f.c.state.snapshot).toBeUndefined();
+  read.resolve(complete);
+  await opening;
+  expect(f.c.state.opening).toBe(false);
+  expect(f.c.state.snapshot?.receipt).toEqual(receipt);
+  expect(f.native.ssnConfirm).not.toHaveBeenCalled();
+});
+
+test('a changed native context clears the previously displayed receipt', async () => {
+  const f = fixture(complete);
+  await f.c.open();
+  f.native.ssnSnapshot.mockRejectedValue({ code: 'contextChanged' });
+  await f.c.open();
+  expect(f.c.state.snapshot).toBeUndefined();
+  expect(f.c.state.opening).toBe(false);
+  expect(f.c.state.sheet).toMatchObject({ kind: 'recovery', recovery: 'exit' });
+  expect(f.native.ssnConfirm).not.toHaveBeenCalled();
+  await expect(f.c.handoff()).resolves.toBeUndefined();
+  expect(f.native.release).toHaveBeenCalledTimes(1);
+});

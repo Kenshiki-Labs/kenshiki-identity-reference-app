@@ -675,6 +675,7 @@ export type MessageValues = {
   readonly "documentCheck.failure.documentCustodyFailed": undefined;
   readonly "documentCheck.failure.sessionUnavailable": undefined;
   readonly "documentCheck.failure.other": undefined;
+  readonly "ssn.loading": undefined;
   readonly "ssn.intro": undefined;
   readonly "ssn.checking": undefined;
   readonly "ssn.saveBody": undefined;
@@ -1709,6 +1710,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "documentCheck.failure.documentCustodyFailed": "The saved card photos could not be opened on this phone. Reopen the saved status.",
       "documentCheck.failure.sessionUnavailable": "This screen closed before the check finished. Open the card again to see its saved status.",
       "documentCheck.failure.other": "The check could not finish. Reopen the saved status before sending another request.",
+      "ssn.loading": "Opening your SSN check…",
       "ssn.intro": "Check issuance, the death file, and the name, address and phone associated with your Social Security number. Your checked ID and confirmed phone supply the comparison details.",
       "ssn.checking": "Checking…",
       "ssn.saveBody": "The answer arrived but could not be saved on this phone. Saving again will not send another check.",

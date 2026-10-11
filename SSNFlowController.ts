@@ -21,6 +21,7 @@ export type SSNFlowState = {
   snapshot?: SSNSessionSnapshot | undefined;
   digits: string;
   busy: boolean;
+  opening: boolean;
   editing: boolean;
   sheet?:
     | (
@@ -49,7 +50,7 @@ const entryErrors: ErrorText = {
 /** The native SDK owns exact confirmation, status-first recovery and encrypted custody.
  * This reference controller owns entry, presentation and the live session handoff only. */
 export class SSNFlowController {
-  state: SSNFlowState = { digits: '', busy: false, editing: false };
+  state: SSNFlowState = { digits: '', busy: false, editing: false, opening: true };
   private current?: CaptureSession | undefined;
   private closed = false;
   private epoch = 0;
@@ -90,6 +91,7 @@ export class SSNFlowController {
     const presented = allowConfirmation ? snapshot : redact(snapshot);
     this.update({
       snapshot: presented,
+      opening: false,
       digits: allowConfirmation ? snapshot.entryDigits : '',
       editing: !!presented.confirmation,
       sheet: presented.confirmation ? { kind: 'confirmation' } : undefined,
@@ -137,6 +139,7 @@ export class SSNFlowController {
   open = async () => {
     if (!this.configuration.ssn) {
       this.update({
+        opening: false,
         sheet: {
           kind: 'recovery',
           title: t('ssn.sheet.notReadyTitle'),
@@ -229,7 +232,9 @@ export class SSNFlowController {
   }
   private showFailure(code?: CaptureErrorCode) {
     const sheet = this.failureSheet(code);
-    this.update({ digits: '', snapshot: this.state.snapshot && redact(this.state.snapshot), sheet });
+    // A refused binding must not leave the previous person's receipt behind the error sheet.
+    const snapshot = code === 'contextChanged' ? undefined : this.state.snapshot;
+    this.update({ digits: '', opening: false, snapshot: snapshot && redact(snapshot), sheet });
   }
   private async settle() {
     const session = this.current;
@@ -288,6 +293,12 @@ export class SSNFlowController {
   };
   handoff = async (): Promise<SavedSSNCheck | undefined> => {
     if (this.closed) return undefined;
+    // An invalidated source cannot produce another snapshot. Drain and release the owner
+    // instead of trapping Back in the same failed context-resolution loop.
+    if (this.state.sheet?.kind === 'recovery' && this.state.sheet.recovery === 'exit') {
+      await this.dispose();
+      return undefined;
+    }
     ++this.epoch;
     this.update({
       digits: '',

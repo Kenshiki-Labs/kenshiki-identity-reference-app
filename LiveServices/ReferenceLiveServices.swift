@@ -37,6 +37,7 @@ extension CaptureRuntime {
         locale: Locale.current.identifier), credentialService: credentialService)
     let configuration = try referenceRegulaConfiguration(directory: regulaDirectory)
     let selections = NativeDocumentSelectionRegistry()
+    let phones = NativePhoneSelectionRegistry()
     nativeServicesFactories["reference-live"] = { document, domain, now in
       let checker = WorkerDocumentChecker(configuration: .init(baseURL: authorization.baseURL),
         authorize: { domain, canonical in
@@ -57,7 +58,9 @@ extension CaptureRuntime {
         guard result == current else { throw PhonePossessionFailure.contextChanged }
         return try ReferencePhoneProvider.context(result: current, credentialID: credentialID)
       }
-      return NativeCaptureServices(document: checks, phone: phone)
+      return NativeCaptureServices(document: checks, phone: phone,
+        registerPhone: { phones.register($0) },
+        ssn: { ReferenceSSNVerifier(reference: $0, phones: phones, authorization: authorization) })
     }
   }
 }
