@@ -1,7 +1,7 @@
-"""Deterministically copy SensorHost presentation resources; run from any directory.
+"""Deterministically generate the sensor presentation resources; run from any directory.
 
-`--check` writes nothing and exits 1 when a committed resource differs from what SensorHost's
-sources produce. The boundary gate runs it, because the React Native host's sensor screens read
+`--check` writes nothing and exits 1 when a committed resource differs from what `source/`
+produces. The boundary gate runs it, because the React Native host's sensor screens read
 their words and layout numbers from these files rather than from locales/ and ui/.
 """
 import argparse
@@ -9,9 +9,8 @@ import json
 import re
 import sys
 from pathlib import Path
-root = Path(__file__).resolve().parents[3]
-source = root / 'Hosts/SensorHost/Sources'
 out = Path(__file__).parent
+source = out / 'source'
 
 def jsonc(path):
     text = re.sub(r'"(?:\\.|[^"\\])*"|//[^\n]*|/\*[\s\S]*?\*/', lambda m: m[0] if m[0].startswith('"') else '', path.read_text())

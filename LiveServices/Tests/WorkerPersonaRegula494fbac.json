@@ -1,0 +1,1371 @@
+{
+  "observation": {
+    "v": "regula.document-observations.v2",
+    "sourceSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "apiVersion": "9.7.6818",
+    "coreVersion": "9.7.19685",
+    "databaseVersion": "synthetic-test",
+    "dateFormat": "yyyy-mm-dd",
+    "documents": [
+      {
+        "documentID": 123456789,
+        "name": "Synthetic license fixture",
+        "countryCode": "USA",
+        "documentType": 49,
+        "pageIndex": 0
+      }
+    ],
+    "fields": [
+      {
+        "fieldType": 1,
+        "lcid": 0,
+        "value": "USA",
+        "status": 2,
+        "validityStatus": 2,
+        "comparisonStatus": 2,
+        "values": [
+          {
+            "sourceType": 17,
+            "value": "USA",
+            "originalValue": "USA",
+            "pageIndex": 0,
+            "probability": 100
+          }
+        ],
+        "validity": [],
+        "comparisons": []
+      },
+      {
+        "fieldType": 2,
+        "lcid": 0,
+        "value": "SYNTHETIC000001",
+        "status": 2,
+        "validityStatus": 2,
+        "comparisonStatus": 2,
+        "values": [
+          {
+            "sourceType": 17,
+            "value": "SYNTHETIC000001",
+            "originalValue": "SYNTHETIC000001",
+            "pageIndex": 0,
+            "probability": 100
+          }
+        ],
+        "validity": [],
+        "comparisons": []
+      },
+      {
+        "fieldType": 3,
+        "lcid": 0,
+        "value": "2030-12-31",
+        "status": 2,
+        "validityStatus": 2,
+        "comparisonStatus": 2,
+        "values": [
+          {
+            "sourceType": 17,
+            "value": "2030-12-31",
+            "originalValue": "2030-12-31",
+            "pageIndex": 0,
+            "probability": 100
+          }
+        ],
+        "validity": [],
+        "comparisons": []
+      },
+      {
+        "fieldType": 4,
+        "lcid": 0,
+        "value": "2020-01-02",
+        "status": 2,
+        "validityStatus": 2,
+        "comparisonStatus": 2,
+        "values": [
+          {
+            "sourceType": 17,
+            "value": "2020-01-02",
+            "originalValue": "2020-01-02",
+            "pageIndex": 0,
+            "probability": 100
+          }
+        ],
+        "validity": [],
+        "comparisons": []
+      },
+      {
+        "fieldType": 5,
+        "lcid": 0,
+        "value": "1990-01-02",
+        "status": 2,
+        "validityStatus": 2,
+        "comparisonStatus": 2,
+        "values": [
+          {
+            "sourceType": 17,
+            "value": "1990-01-02",
+            "originalValue": "1990-01-02",
+            "pageIndex": 0,
+            "probability": 100
+          }
+        ],
+        "validity": [],
+        "comparisons": []
+      },
+      {
+        "fieldType": 8,
+        "lcid": 0,
+        "value": "EXAMPLE",
+        "status": 2,
+        "validityStatus": 2,
+        "comparisonStatus": 2,
+        "values": [
+          {
+            "sourceType": 17,
+            "value": "EXAMPLE",
+            "originalValue": "EXAMPLE",
+            "pageIndex": 0,
+            "probability": 100
+          }
+        ],
+        "validity": [],
+        "comparisons": []
+      },
+      {
+        "fieldType": 645,
+        "lcid": 0,
+        "value": "ALEX",
+        "status": 2,
+        "validityStatus": 2,
+        "comparisonStatus": 2,
+        "values": [
+          {
+            "sourceType": 17,
+            "value": "ALEX",
+            "originalValue": "ALEX",
+            "pageIndex": 0,
+            "probability": 100
+          }
+        ],
+        "validity": [],
+        "comparisons": []
+      },
+      {
+        "fieldType": 146,
+        "lcid": 0,
+        "value": "R",
+        "status": 2,
+        "validityStatus": 2,
+        "comparisonStatus": 2,
+        "values": [
+          {
+            "sourceType": 17,
+            "value": "R",
+            "originalValue": "R",
+            "pageIndex": 0,
+            "probability": 100
+          }
+        ],
+        "validity": [],
+        "comparisons": []
+      },
+      {
+        "fieldType": 641,
+        "lcid": 0,
+        "value": "636014",
+        "status": 2,
+        "validityStatus": 2,
+        "comparisonStatus": 2,
+        "values": [
+          {
+            "sourceType": 17,
+            "value": "636014",
+            "originalValue": "636014",
+            "pageIndex": 0,
+            "probability": 100
+          }
+        ],
+        "validity": [],
+        "comparisons": []
+      },
+      {
+        "fieldType": 76,
+        "lcid": 0,
+        "value": "100 EXAMPLE WAY",
+        "status": 2,
+        "validityStatus": 2,
+        "comparisonStatus": 2,
+        "values": [
+          {
+            "sourceType": 17,
+            "value": "100 EXAMPLE WAY",
+            "originalValue": "100 EXAMPLE WAY",
+            "pageIndex": 0,
+            "probability": 100
+          }
+        ],
+        "validity": [],
+        "comparisons": []
+      },
+      {
+        "fieldType": 77,
+        "lcid": 0,
+        "value": "SAMPLE CITY",
+        "status": 2,
+        "validityStatus": 2,
+        "comparisonStatus": 2,
+        "values": [
+          {
+            "sourceType": 17,
+            "value": "SAMPLE CITY",
+            "originalValue": "SAMPLE CITY",
+            "pageIndex": 0,
+            "probability": 100
+          }
+        ],
+        "validity": [],
+        "comparisons": []
+      },
+      {
+        "fieldType": 78,
+        "lcid": 0,
+        "value": "OR",
+        "status": 2,
+        "validityStatus": 2,
+        "comparisonStatus": 2,
+        "values": [
+          {
+            "sourceType": 17,
+            "value": "OR",
+            "originalValue": "OR",
+            "pageIndex": 0,
+            "probability": 100
+          }
+        ],
+        "validity": [],
+        "comparisons": []
+      },
+      {
+        "fieldType": 79,
+        "lcid": 0,
+        "value": "97001",
+        "status": 2,
+        "validityStatus": 2,
+        "comparisonStatus": 2,
+        "values": [
+          {
+            "sourceType": 17,
+            "value": "97001",
+            "originalValue": "97001",
+            "pageIndex": 0,
+            "probability": 100
+          }
+        ],
+        "validity": [],
+        "comparisons": []
+      }
+    ],
+    "authenticity": {
+      "outcome": "passed",
+      "checks": [
+        {
+          "type": 512,
+          "status": 1,
+          "elements": [
+            {
+              "type": 2,
+              "status": 1,
+              "diagnosis": 1
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "observationJSON": "{\"v\":\"regula.document-observations.v2\",\"sourceSHA256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"apiVersion\":\"9.7.6818\",\"coreVersion\":\"9.7.19685\",\"databaseVersion\":\"synthetic-test\",\"dateFormat\":\"yyyy-mm-dd\",\"documents\":[{\"documentID\":123456789,\"name\":\"Synthetic license fixture\",\"countryCode\":\"USA\",\"documentType\":49,\"pageIndex\":0}],\"fields\":[{\"fieldType\":1,\"lcid\":0,\"value\":\"USA\",\"status\":2,\"validityStatus\":2,\"comparisonStatus\":2,\"values\":[{\"sourceType\":17,\"value\":\"USA\",\"originalValue\":\"USA\",\"pageIndex\":0,\"probability\":100}],\"validity\":[],\"comparisons\":[]},{\"fieldType\":2,\"lcid\":0,\"value\":\"SYNTHETIC000001\",\"status\":2,\"validityStatus\":2,\"comparisonStatus\":2,\"values\":[{\"sourceType\":17,\"value\":\"SYNTHETIC000001\",\"originalValue\":\"SYNTHETIC000001\",\"pageIndex\":0,\"probability\":100}],\"validity\":[],\"comparisons\":[]},{\"fieldType\":3,\"lcid\":0,\"value\":\"2030-12-31\",\"status\":2,\"validityStatus\":2,\"comparisonStatus\":2,\"values\":[{\"sourceType\":17,\"value\":\"2030-12-31\",\"originalValue\":\"2030-12-31\",\"pageIndex\":0,\"probability\":100}],\"validity\":[],\"comparisons\":[]},{\"fieldType\":4,\"lcid\":0,\"value\":\"2020-01-02\",\"status\":2,\"validityStatus\":2,\"comparisonStatus\":2,\"values\":[{\"sourceType\":17,\"value\":\"2020-01-02\",\"originalValue\":\"2020-01-02\",\"pageIndex\":0,\"probability\":100}],\"validity\":[],\"comparisons\":[]},{\"fieldType\":5,\"lcid\":0,\"value\":\"1990-01-02\",\"status\":2,\"validityStatus\":2,\"comparisonStatus\":2,\"values\":[{\"sourceType\":17,\"value\":\"1990-01-02\",\"originalValue\":\"1990-01-02\",\"pageIndex\":0,\"probability\":100}],\"validity\":[],\"comparisons\":[]},{\"fieldType\":8,\"lcid\":0,\"value\":\"EXAMPLE\",\"status\":2,\"validityStatus\":2,\"comparisonStatus\":2,\"values\":[{\"sourceType\":17,\"value\":\"EXAMPLE\",\"originalValue\":\"EXAMPLE\",\"pageIndex\":0,\"probability\":100}],\"validity\":[],\"comparisons\":[]},{\"fieldType\":645,\"lcid\":0,\"value\":\"ALEX\",\"status\":2,\"validityStatus\":2,\"comparisonStatus\":2,\"values\":[{\"sourceType\":17,\"value\":\"ALEX\",\"originalValue\":\"ALEX\",\"pageIndex\":0,\"probability\":100}],\"validity\":[],\"comparisons\":[]},{\"fieldType\":146,\"lcid\":0,\"value\":\"R\",\"status\":2,\"validityStatus\":2,\"comparisonStatus\":2,\"values\":[{\"sourceType\":17,\"value\":\"R\",\"originalValue\":\"R\",\"pageIndex\":0,\"probability\":100}],\"validity\":[],\"comparisons\":[]},{\"fieldType\":641,\"lcid\":0,\"value\":\"636014\",\"status\":2,\"validityStatus\":2,\"comparisonStatus\":2,\"values\":[{\"sourceType\":17,\"value\":\"636014\",\"originalValue\":\"636014\",\"pageIndex\":0,\"probability\":100}],\"validity\":[],\"comparisons\":[]},{\"fieldType\":76,\"lcid\":0,\"value\":\"100 EXAMPLE WAY\",\"status\":2,\"validityStatus\":2,\"comparisonStatus\":2,\"values\":[{\"sourceType\":17,\"value\":\"100 EXAMPLE WAY\",\"originalValue\":\"100 EXAMPLE WAY\",\"pageIndex\":0,\"probability\":100}],\"validity\":[],\"comparisons\":[]},{\"fieldType\":77,\"lcid\":0,\"value\":\"SAMPLE CITY\",\"status\":2,\"validityStatus\":2,\"comparisonStatus\":2,\"values\":[{\"sourceType\":17,\"value\":\"SAMPLE CITY\",\"originalValue\":\"SAMPLE CITY\",\"pageIndex\":0,\"probability\":100}],\"validity\":[],\"comparisons\":[]},{\"fieldType\":78,\"lcid\":0,\"value\":\"OR\",\"status\":2,\"validityStatus\":2,\"comparisonStatus\":2,\"values\":[{\"sourceType\":17,\"value\":\"OR\",\"originalValue\":\"OR\",\"pageIndex\":0,\"probability\":100}],\"validity\":[],\"comparisons\":[]},{\"fieldType\":79,\"lcid\":0,\"value\":\"97001\",\"status\":2,\"validityStatus\":2,\"comparisonStatus\":2,\"values\":[{\"sourceType\":17,\"value\":\"97001\",\"originalValue\":\"97001\",\"pageIndex\":0,\"probability\":100}],\"validity\":[],\"comparisons\":[]}],\"authenticity\":{\"outcome\":\"passed\",\"checks\":[{\"type\":512,\"status\":1,\"elements\":[{\"type\":2,\"status\":1,\"diagnosis\":1}]}]}}",
+  "observationSHA256": "d29126a8879656c9eec7c8a8424bf12dc260d1b7ea82917a848a5583ed85b938",
+  "request": {
+    "v": "pulse.persona-regula.v2",
+    "operationId": "12345678-1234-4234-9234-123456789abc",
+    "captureId": "87654321-1234-4234-9234-123456789abc",
+    "observationBase64": "eyJ2IjoicmVndWxhLmRvY3VtZW50LW9ic2VydmF0aW9ucy52MiIsInNvdXJjZVNIQTI1NiI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJhcGlWZXJzaW9uIjoiOS43LjY4MTgiLCJjb3JlVmVyc2lvbiI6IjkuNy4xOTY4NSIsImRhdGFiYXNlVmVyc2lvbiI6InN5bnRoZXRpYy10ZXN0IiwiZGF0ZUZvcm1hdCI6Inl5eXktbW0tZGQiLCJkb2N1bWVudHMiOlt7ImRvY3VtZW50SUQiOjEyMzQ1Njc4OSwibmFtZSI6IlN5bnRoZXRpYyBsaWNlbnNlIGZpeHR1cmUiLCJjb3VudHJ5Q29kZSI6IlVTQSIsImRvY3VtZW50VHlwZSI6NDksInBhZ2VJbmRleCI6MH1dLCJmaWVsZHMiOlt7ImZpZWxkVHlwZSI6MSwibGNpZCI6MCwidmFsdWUiOiJVU0EiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IlVTQSIsIm9yaWdpbmFsVmFsdWUiOiJVU0EiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjoyLCJsY2lkIjowLCJ2YWx1ZSI6IlNZTlRIRVRJQzAwMDAwMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiU1lOVEhFVElDMDAwMDAxIiwib3JpZ2luYWxWYWx1ZSI6IlNZTlRIRVRJQzAwMDAwMSIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjMsImxjaWQiOjAsInZhbHVlIjoiMjAzMC0xMi0zMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiMjAzMC0xMi0zMSIsIm9yaWdpbmFsVmFsdWUiOiIyMDMwLTEyLTMxIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NCwibGNpZCI6MCwidmFsdWUiOiIyMDIwLTAxLTAyIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiIyMDIwLTAxLTAyIiwib3JpZ2luYWxWYWx1ZSI6IjIwMjAtMDEtMDIiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo1LCJsY2lkIjowLCJ2YWx1ZSI6IjE5OTAtMDEtMDIiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IjE5OTAtMDEtMDIiLCJvcmlnaW5hbFZhbHVlIjoiMTk5MC0wMS0wMiIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjgsImxjaWQiOjAsInZhbHVlIjoiRVhBTVBMRSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiRVhBTVBMRSIsIm9yaWdpbmFsVmFsdWUiOiJFWEFNUExFIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NjQ1LCJsY2lkIjowLCJ2YWx1ZSI6IkFMRVgiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IkFMRVgiLCJvcmlnaW5hbFZhbHVlIjoiQUxFWCIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjE0NiwibGNpZCI6MCwidmFsdWUiOiJSIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiJSIiwib3JpZ2luYWxWYWx1ZSI6IlIiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo2NDEsImxjaWQiOjAsInZhbHVlIjoiNjM2MDE0Iiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiI2MzYwMTQiLCJvcmlnaW5hbFZhbHVlIjoiNjM2MDE0IiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzYsImxjaWQiOjAsInZhbHVlIjoiMTAwIEVYQU1QTEUgV0FZIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiIxMDAgRVhBTVBMRSBXQVkiLCJvcmlnaW5hbFZhbHVlIjoiMTAwIEVYQU1QTEUgV0FZIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzcsImxjaWQiOjAsInZhbHVlIjoiU0FNUExFIENJVFkiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IlNBTVBMRSBDSVRZIiwib3JpZ2luYWxWYWx1ZSI6IlNBTVBMRSBDSVRZIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzgsImxjaWQiOjAsInZhbHVlIjoiT1IiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6Ik9SIiwib3JpZ2luYWxWYWx1ZSI6Ik9SIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzksImxjaWQiOjAsInZhbHVlIjoiOTcwMDEiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6Ijk3MDAxIiwib3JpZ2luYWxWYWx1ZSI6Ijk3MDAxIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfV0sImF1dGhlbnRpY2l0eSI6eyJvdXRjb21lIjoicGFzc2VkIiwiY2hlY2tzIjpbeyJ0eXBlIjo1MTIsInN0YXR1cyI6MSwiZWxlbWVudHMiOlt7InR5cGUiOjIsInN0YXR1cyI6MSwiZGlhZ25vc2lzIjoxfV19XX19",
+    "revision": 0,
+    "previousRequestHash": null,
+    "corrections": []
+  },
+  "canonicalJSON": "{\"captureId\":\"87654321-1234-4234-9234-123456789abc\",\"corrections\":[],\"observationBase64\":\"eyJ2IjoicmVndWxhLmRvY3VtZW50LW9ic2VydmF0aW9ucy52MiIsInNvdXJjZVNIQTI1NiI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJhcGlWZXJzaW9uIjoiOS43LjY4MTgiLCJjb3JlVmVyc2lvbiI6IjkuNy4xOTY4NSIsImRhdGFiYXNlVmVyc2lvbiI6InN5bnRoZXRpYy10ZXN0IiwiZGF0ZUZvcm1hdCI6Inl5eXktbW0tZGQiLCJkb2N1bWVudHMiOlt7ImRvY3VtZW50SUQiOjEyMzQ1Njc4OSwibmFtZSI6IlN5bnRoZXRpYyBsaWNlbnNlIGZpeHR1cmUiLCJjb3VudHJ5Q29kZSI6IlVTQSIsImRvY3VtZW50VHlwZSI6NDksInBhZ2VJbmRleCI6MH1dLCJmaWVsZHMiOlt7ImZpZWxkVHlwZSI6MSwibGNpZCI6MCwidmFsdWUiOiJVU0EiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IlVTQSIsIm9yaWdpbmFsVmFsdWUiOiJVU0EiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjoyLCJsY2lkIjowLCJ2YWx1ZSI6IlNZTlRIRVRJQzAwMDAwMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiU1lOVEhFVElDMDAwMDAxIiwib3JpZ2luYWxWYWx1ZSI6IlNZTlRIRVRJQzAwMDAwMSIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjMsImxjaWQiOjAsInZhbHVlIjoiMjAzMC0xMi0zMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiMjAzMC0xMi0zMSIsIm9yaWdpbmFsVmFsdWUiOiIyMDMwLTEyLTMxIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NCwibGNpZCI6MCwidmFsdWUiOiIyMDIwLTAxLTAyIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiIyMDIwLTAxLTAyIiwib3JpZ2luYWxWYWx1ZSI6IjIwMjAtMDEtMDIiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo1LCJsY2lkIjowLCJ2YWx1ZSI6IjE5OTAtMDEtMDIiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IjE5OTAtMDEtMDIiLCJvcmlnaW5hbFZhbHVlIjoiMTk5MC0wMS0wMiIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjgsImxjaWQiOjAsInZhbHVlIjoiRVhBTVBMRSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiRVhBTVBMRSIsIm9yaWdpbmFsVmFsdWUiOiJFWEFNUExFIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NjQ1LCJsY2lkIjowLCJ2YWx1ZSI6IkFMRVgiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IkFMRVgiLCJvcmlnaW5hbFZhbHVlIjoiQUxFWCIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjE0NiwibGNpZCI6MCwidmFsdWUiOiJSIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiJSIiwib3JpZ2luYWxWYWx1ZSI6IlIiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo2NDEsImxjaWQiOjAsInZhbHVlIjoiNjM2MDE0Iiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiI2MzYwMTQiLCJvcmlnaW5hbFZhbHVlIjoiNjM2MDE0IiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzYsImxjaWQiOjAsInZhbHVlIjoiMTAwIEVYQU1QTEUgV0FZIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiIxMDAgRVhBTVBMRSBXQVkiLCJvcmlnaW5hbFZhbHVlIjoiMTAwIEVYQU1QTEUgV0FZIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzcsImxjaWQiOjAsInZhbHVlIjoiU0FNUExFIENJVFkiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IlNBTVBMRSBDSVRZIiwib3JpZ2luYWxWYWx1ZSI6IlNBTVBMRSBDSVRZIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzgsImxjaWQiOjAsInZhbHVlIjoiT1IiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6Ik9SIiwib3JpZ2luYWxWYWx1ZSI6Ik9SIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzksImxjaWQiOjAsInZhbHVlIjoiOTcwMDEiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6Ijk3MDAxIiwib3JpZ2luYWxWYWx1ZSI6Ijk3MDAxIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfV0sImF1dGhlbnRpY2l0eSI6eyJvdXRjb21lIjoicGFzc2VkIiwiY2hlY2tzIjpbeyJ0eXBlIjo1MTIsInN0YXR1cyI6MSwiZWxlbWVudHMiOlt7InR5cGUiOjIsInN0YXR1cyI6MSwiZGlhZ25vc2lzIjoxfV19XX19\",\"operationId\":\"12345678-1234-4234-9234-123456789abc\",\"previousRequestHash\":null,\"revision\":0,\"v\":\"pulse.persona-regula.v2\"}",
+  "payloadSHA256": "e488ee5d7cd7585384614dddd1fb5ed59047259a31a3bb5e0bd1611376bf9fad",
+  "clientDataHashSHA256": "38f65e0270b6fb503e8fea520f2286f8ce5ba3f7e9fea0cc40f29f82e269ffa5",
+  "responses": [
+    {
+      "name": "complete",
+      "request": {
+        "v": "pulse.persona-regula.v2",
+        "operationId": "12345678-1234-4234-9234-123456789abc",
+        "captureId": "87654321-1234-4234-9234-123456789abc",
+        "observationBase64": "eyJ2IjoicmVndWxhLmRvY3VtZW50LW9ic2VydmF0aW9ucy52MiIsInNvdXJjZVNIQTI1NiI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJhcGlWZXJzaW9uIjoiOS43LjY4MTgiLCJjb3JlVmVyc2lvbiI6IjkuNy4xOTY4NSIsImRhdGFiYXNlVmVyc2lvbiI6InN5bnRoZXRpYy10ZXN0IiwiZGF0ZUZvcm1hdCI6Inl5eXktbW0tZGQiLCJkb2N1bWVudHMiOlt7ImRvY3VtZW50SUQiOjEyMzQ1Njc4OSwibmFtZSI6IlN5bnRoZXRpYyBsaWNlbnNlIGZpeHR1cmUiLCJjb3VudHJ5Q29kZSI6IlVTQSIsImRvY3VtZW50VHlwZSI6NDksInBhZ2VJbmRleCI6MH1dLCJmaWVsZHMiOlt7ImZpZWxkVHlwZSI6MSwibGNpZCI6MCwidmFsdWUiOiJVU0EiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IlVTQSIsIm9yaWdpbmFsVmFsdWUiOiJVU0EiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjoyLCJsY2lkIjowLCJ2YWx1ZSI6IlNZTlRIRVRJQzAwMDAwMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiU1lOVEhFVElDMDAwMDAxIiwib3JpZ2luYWxWYWx1ZSI6IlNZTlRIRVRJQzAwMDAwMSIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjMsImxjaWQiOjAsInZhbHVlIjoiMjAzMC0xMi0zMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiMjAzMC0xMi0zMSIsIm9yaWdpbmFsVmFsdWUiOiIyMDMwLTEyLTMxIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NCwibGNpZCI6MCwidmFsdWUiOiIyMDIwLTAxLTAyIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiIyMDIwLTAxLTAyIiwib3JpZ2luYWxWYWx1ZSI6IjIwMjAtMDEtMDIiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo1LCJsY2lkIjowLCJ2YWx1ZSI6IjE5OTAtMDEtMDIiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IjE5OTAtMDEtMDIiLCJvcmlnaW5hbFZhbHVlIjoiMTk5MC0wMS0wMiIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjgsImxjaWQiOjAsInZhbHVlIjoiRVhBTVBMRSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiRVhBTVBMRSIsIm9yaWdpbmFsVmFsdWUiOiJFWEFNUExFIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NjQ1LCJsY2lkIjowLCJ2YWx1ZSI6IkFMRVgiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IkFMRVgiLCJvcmlnaW5hbFZhbHVlIjoiQUxFWCIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjE0NiwibGNpZCI6MCwidmFsdWUiOiJSIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiJSIiwib3JpZ2luYWxWYWx1ZSI6IlIiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo2NDEsImxjaWQiOjAsInZhbHVlIjoiNjM2MDE0Iiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiI2MzYwMTQiLCJvcmlnaW5hbFZhbHVlIjoiNjM2MDE0IiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzYsImxjaWQiOjAsInZhbHVlIjoiMTAwIEVYQU1QTEUgV0FZIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiIxMDAgRVhBTVBMRSBXQVkiLCJvcmlnaW5hbFZhbHVlIjoiMTAwIEVYQU1QTEUgV0FZIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzcsImxjaWQiOjAsInZhbHVlIjoiU0FNUExFIENJVFkiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IlNBTVBMRSBDSVRZIiwib3JpZ2luYWxWYWx1ZSI6IlNBTVBMRSBDSVRZIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzgsImxjaWQiOjAsInZhbHVlIjoiT1IiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6Ik9SIiwib3JpZ2luYWxWYWx1ZSI6Ik9SIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzksImxjaWQiOjAsInZhbHVlIjoiOTcwMDEiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6Ijk3MDAxIiwib3JpZ2luYWxWYWx1ZSI6Ijk3MDAxIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfV0sImF1dGhlbnRpY2l0eSI6eyJvdXRjb21lIjoicGFzc2VkIiwiY2hlY2tzIjpbeyJ0eXBlIjo1MTIsInN0YXR1cyI6MSwiZWxlbWVudHMiOlt7InR5cGUiOjIsInN0YXR1cyI6MSwiZGlhZ25vc2lzIjoxfV19XX19",
+        "revision": 0,
+        "previousRequestHash": null,
+        "corrections": []
+      },
+      "statusCode": 200,
+      "body": {
+        "v": "pulse.persona-regula-result.v2",
+        "operationId": "12345678-1234-4234-9234-123456789abc",
+        "captureId": "87654321-1234-4234-9234-123456789abc",
+        "revision": 0,
+        "requestHash": "e488ee5d7cd7585384614dddd1fb5ed59047259a31a3bb5e0bd1611376bf9fad",
+        "observationSHA256": "d29126a8879656c9eec7c8a8424bf12dc260d1b7ea82917a848a5583ed85b938",
+        "adapterVersion": "regula-persona-4",
+        "replayed": false,
+        "state": "providerOutcome",
+        "issues": [],
+        "plan": {
+          "aamva": {
+            "name-first": "ALEX",
+            "name-middle": "R",
+            "name-last": "EXAMPLE",
+            "birthdate": "1990-01-02",
+            "address-street-1": "100 EXAMPLE WAY",
+            "address-city": "SAMPLE CITY",
+            "address-subdivision": "OR",
+            "address-postal-code": "97001",
+            "country-code": "US",
+            "identification-number": "SYNTHETIC000001",
+            "issuing-authority": "CA",
+            "issue-date": "2020-01-02",
+            "expiration-date": "2030-12-31"
+          },
+          "transformations": [
+            {
+              "field": "nameFirst",
+              "source": "regula.field.645.0",
+              "value": "ALEX",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "nameMiddle",
+              "source": "regula.field.146.0",
+              "value": "R",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "nameLast",
+              "source": "regula.field.8.0",
+              "value": "EXAMPLE",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "birthdate",
+              "source": "regula.field.5.0",
+              "value": "1990-01-02",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "issueDate",
+              "source": "regula.field.4.0",
+              "value": "2020-01-02",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "expirationDate",
+              "source": "regula.field.3.0",
+              "value": "2030-12-31",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "identificationNumber",
+              "source": "regula.field.2.0",
+              "value": "SYNTHETIC000001",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "issuingJurisdiction",
+              "source": "regula.field.641.0",
+              "value": "CA",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressStreet1",
+              "source": "regula.field.76.0",
+              "value": "100 EXAMPLE WAY",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressCity",
+              "source": "regula.field.77.0",
+              "value": "SAMPLE CITY",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressSubdivision",
+              "source": "regula.field.78.0",
+              "value": "OR",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressPostalCode",
+              "source": "regula.field.79.0",
+              "value": "97001",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            }
+          ]
+        },
+        "results": [
+          {
+            "kind": "aamva",
+            "verificationId": "ver_RegulaAamva",
+            "exchanges": [
+              {
+                "stage": "create",
+                "request": {
+                  "method": "POST",
+                  "url": "https://api.withpersona.com/api/v1/verification/aamvas",
+                  "body": {
+                    "data": {
+                      "attributes": {
+                        "config": {
+                          "api": true
+                        },
+                        "name-first": "ALEX",
+                        "name-middle": "R",
+                        "name-last": "EXAMPLE",
+                        "birthdate": "1990-01-02",
+                        "address-street-1": "100 EXAMPLE WAY",
+                        "address-city": "SAMPLE CITY",
+                        "address-subdivision": "OR",
+                        "address-postal-code": "97001",
+                        "country-code": "US",
+                        "identification-number": "SYNTHETIC000001",
+                        "issuing-authority": "CA",
+                        "issue-date": "2020-01-02",
+                        "expiration-date": "2030-12-31"
+                      }
+                    }
+                  }
+                },
+                "response": {
+                  "status": 201,
+                  "body": {
+                    "data": {
+                      "id": "ver_RegulaAamva",
+                      "type": "verification/aamva",
+                      "attributes": {
+                        "status": "passed",
+                        "checks": [
+                          {
+                            "name": "synthetic-check",
+                            "status": "failed",
+                            "reasons": [
+                              "synthetic-reason"
+                            ],
+                            "requirement": "not_required",
+                            "metadata": {
+                              "preserved": true
+                            }
+                          }
+                        ],
+                        "created-at": "2026-09-01T00:00:00Z",
+                        "completed-at": "2026-09-01T00:00:01Z"
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "outcome": "complete",
+            "error": null
+          }
+        ],
+        "licence": {
+          "verificationId": "ver_RegulaAamva",
+          "status": "passed",
+          "checks": [
+            {
+              "name": "synthetic-check",
+              "status": "failed",
+              "reasons": [
+                "synthetic-reason"
+              ],
+              "requirement": "not_required",
+              "metadata": {
+                "preserved": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "needsCorrection",
+      "request": {
+        "v": "pulse.persona-regula.v2",
+        "operationId": "12345678-1234-4234-9234-123456789abc",
+        "captureId": "87654321-1234-4234-9234-123456789abc",
+        "observationBase64": "eyJ2IjoicmVndWxhLmRvY3VtZW50LW9ic2VydmF0aW9ucy52MiIsInNvdXJjZVNIQTI1NiI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJhcGlWZXJzaW9uIjoiOS43LjY4MTgiLCJjb3JlVmVyc2lvbiI6IjkuNy4xOTY4NSIsImRhdGFiYXNlVmVyc2lvbiI6InN5bnRoZXRpYy10ZXN0IiwiZGF0ZUZvcm1hdCI6Inl5eXktbW0tZGQiLCJkb2N1bWVudHMiOlt7ImRvY3VtZW50SUQiOjEyMzQ1Njc4OSwibmFtZSI6IlN5bnRoZXRpYyBsaWNlbnNlIGZpeHR1cmUiLCJjb3VudHJ5Q29kZSI6IlVTQSIsImRvY3VtZW50VHlwZSI6NDksInBhZ2VJbmRleCI6MH1dLCJmaWVsZHMiOlt7ImZpZWxkVHlwZSI6MSwibGNpZCI6MCwidmFsdWUiOiJVU0EiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IlVTQSIsIm9yaWdpbmFsVmFsdWUiOiJVU0EiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjoyLCJsY2lkIjowLCJ2YWx1ZSI6IlNZTlRIRVRJQzAwMDAwMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiU1lOVEhFVElDMDAwMDAxIiwib3JpZ2luYWxWYWx1ZSI6IlNZTlRIRVRJQzAwMDAwMSIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjMsImxjaWQiOjAsInZhbHVlIjoiMjAzMC0xMi0zMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiMjAzMC0xMi0zMSIsIm9yaWdpbmFsVmFsdWUiOiIyMDMwLTEyLTMxIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NCwibGNpZCI6MCwidmFsdWUiOiIyMDIwLTAxLTAyIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiIyMDIwLTAxLTAyIiwib3JpZ2luYWxWYWx1ZSI6IjIwMjAtMDEtMDIiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo1LCJsY2lkIjowLCJ2YWx1ZSI6IjE5OTAtMDEtMDIiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IjE5OTAtMDEtMDIiLCJvcmlnaW5hbFZhbHVlIjoiMTk5MC0wMS0wMiIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjgsImxjaWQiOjAsInZhbHVlIjoiRVhBTVBMRSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiRVhBTVBMRSIsIm9yaWdpbmFsVmFsdWUiOiJFWEFNUExFIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NjQ1LCJsY2lkIjowLCJ2YWx1ZSI6IkFMRVgiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IkFMRVgiLCJvcmlnaW5hbFZhbHVlIjoiQUxFWCIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjE0NiwibGNpZCI6MCwidmFsdWUiOiJSIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiJSIiwib3JpZ2luYWxWYWx1ZSI6IlIiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo3NiwibGNpZCI6MCwidmFsdWUiOiIxMDAgRVhBTVBMRSBXQVkiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IjEwMCBFWEFNUExFIFdBWSIsIm9yaWdpbmFsVmFsdWUiOiIxMDAgRVhBTVBMRSBXQVkiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo3NywibGNpZCI6MCwidmFsdWUiOiJTQU1QTEUgQ0lUWSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiU0FNUExFIENJVFkiLCJvcmlnaW5hbFZhbHVlIjoiU0FNUExFIENJVFkiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo3OCwibGNpZCI6MCwidmFsdWUiOiJPUiIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiT1IiLCJvcmlnaW5hbFZhbHVlIjoiT1IiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo3OSwibGNpZCI6MCwidmFsdWUiOiI5NzAwMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiOTcwMDEiLCJvcmlnaW5hbFZhbHVlIjoiOTcwMDEiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119XSwiYXV0aGVudGljaXR5Ijp7Im91dGNvbWUiOiJwYXNzZWQiLCJjaGVja3MiOlt7InR5cGUiOjUxMiwic3RhdHVzIjoxLCJlbGVtZW50cyI6W3sidHlwZSI6Miwic3RhdHVzIjoxLCJkaWFnbm9zaXMiOjF9XX1dfX0=",
+        "revision": 0,
+        "previousRequestHash": null,
+        "corrections": []
+      },
+      "statusCode": 200,
+      "body": {
+        "v": "pulse.persona-regula-result.v2",
+        "operationId": "12345678-1234-4234-9234-123456789abc",
+        "captureId": "87654321-1234-4234-9234-123456789abc",
+        "revision": 0,
+        "requestHash": "f6360cedbb03fbba6bdac67e62aa7e4ba67f652e485ee61126887aa408435b3d",
+        "observationSHA256": "d22a445247ae41457493d39c49aaa7bcb1e92835d59c61a2442ba41f892efd28",
+        "adapterVersion": "regula-persona-4",
+        "replayed": false,
+        "state": "needsCorrection",
+        "issues": [
+          {
+            "field": "issuingJurisdiction",
+            "code": "missing_issuing_jurisdiction",
+            "correctable": true
+          }
+        ],
+        "plan": null,
+        "results": [],
+        "licence": null
+      }
+    },
+    {
+      "name": "pending",
+      "request": {
+        "v": "pulse.persona-regula.v2",
+        "operationId": "12345678-1234-4234-9234-123456789abc",
+        "captureId": "87654321-1234-4234-9234-123456789abc",
+        "observationBase64": "eyJ2IjoicmVndWxhLmRvY3VtZW50LW9ic2VydmF0aW9ucy52MiIsInNvdXJjZVNIQTI1NiI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJhcGlWZXJzaW9uIjoiOS43LjY4MTgiLCJjb3JlVmVyc2lvbiI6IjkuNy4xOTY4NSIsImRhdGFiYXNlVmVyc2lvbiI6InN5bnRoZXRpYy10ZXN0IiwiZGF0ZUZvcm1hdCI6Inl5eXktbW0tZGQiLCJkb2N1bWVudHMiOlt7ImRvY3VtZW50SUQiOjEyMzQ1Njc4OSwibmFtZSI6IlN5bnRoZXRpYyBsaWNlbnNlIGZpeHR1cmUiLCJjb3VudHJ5Q29kZSI6IlVTQSIsImRvY3VtZW50VHlwZSI6NDksInBhZ2VJbmRleCI6MH1dLCJmaWVsZHMiOlt7ImZpZWxkVHlwZSI6MSwibGNpZCI6MCwidmFsdWUiOiJVU0EiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IlVTQSIsIm9yaWdpbmFsVmFsdWUiOiJVU0EiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjoyLCJsY2lkIjowLCJ2YWx1ZSI6IlNZTlRIRVRJQzAwMDAwMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiU1lOVEhFVElDMDAwMDAxIiwib3JpZ2luYWxWYWx1ZSI6IlNZTlRIRVRJQzAwMDAwMSIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjMsImxjaWQiOjAsInZhbHVlIjoiMjAzMC0xMi0zMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiMjAzMC0xMi0zMSIsIm9yaWdpbmFsVmFsdWUiOiIyMDMwLTEyLTMxIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NCwibGNpZCI6MCwidmFsdWUiOiIyMDIwLTAxLTAyIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiIyMDIwLTAxLTAyIiwib3JpZ2luYWxWYWx1ZSI6IjIwMjAtMDEtMDIiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo1LCJsY2lkIjowLCJ2YWx1ZSI6IjE5OTAtMDEtMDIiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IjE5OTAtMDEtMDIiLCJvcmlnaW5hbFZhbHVlIjoiMTk5MC0wMS0wMiIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjgsImxjaWQiOjAsInZhbHVlIjoiRVhBTVBMRSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiRVhBTVBMRSIsIm9yaWdpbmFsVmFsdWUiOiJFWEFNUExFIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NjQ1LCJsY2lkIjowLCJ2YWx1ZSI6IkFMRVgiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IkFMRVgiLCJvcmlnaW5hbFZhbHVlIjoiQUxFWCIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjE0NiwibGNpZCI6MCwidmFsdWUiOiJSIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiJSIiwib3JpZ2luYWxWYWx1ZSI6IlIiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo2NDEsImxjaWQiOjAsInZhbHVlIjoiNjM2MDE0Iiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiI2MzYwMTQiLCJvcmlnaW5hbFZhbHVlIjoiNjM2MDE0IiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzYsImxjaWQiOjAsInZhbHVlIjoiMTAwIEVYQU1QTEUgV0FZIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiIxMDAgRVhBTVBMRSBXQVkiLCJvcmlnaW5hbFZhbHVlIjoiMTAwIEVYQU1QTEUgV0FZIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzcsImxjaWQiOjAsInZhbHVlIjoiU0FNUExFIENJVFkiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IlNBTVBMRSBDSVRZIiwib3JpZ2luYWxWYWx1ZSI6IlNBTVBMRSBDSVRZIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzgsImxjaWQiOjAsInZhbHVlIjoiT1IiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6Ik9SIiwib3JpZ2luYWxWYWx1ZSI6Ik9SIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzksImxjaWQiOjAsInZhbHVlIjoiOTcwMDEiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6Ijk3MDAxIiwib3JpZ2luYWxWYWx1ZSI6Ijk3MDAxIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfV0sImF1dGhlbnRpY2l0eSI6eyJvdXRjb21lIjoicGFzc2VkIiwiY2hlY2tzIjpbeyJ0eXBlIjo1MTIsInN0YXR1cyI6MSwiZWxlbWVudHMiOlt7InR5cGUiOjIsInN0YXR1cyI6MSwiZGlhZ25vc2lzIjoxfV19XX19",
+        "revision": 0,
+        "previousRequestHash": null,
+        "corrections": []
+      },
+      "statusCode": 200,
+      "body": {
+        "v": "pulse.persona-regula-result.v2",
+        "operationId": "12345678-1234-4234-9234-123456789abc",
+        "captureId": "87654321-1234-4234-9234-123456789abc",
+        "revision": 0,
+        "requestHash": "e488ee5d7cd7585384614dddd1fb5ed59047259a31a3bb5e0bd1611376bf9fad",
+        "observationSHA256": "d29126a8879656c9eec7c8a8424bf12dc260d1b7ea82917a848a5583ed85b938",
+        "adapterVersion": "regula-persona-4",
+        "replayed": false,
+        "state": "providerPending",
+        "issues": [],
+        "plan": {
+          "aamva": {
+            "name-first": "ALEX",
+            "name-middle": "R",
+            "name-last": "EXAMPLE",
+            "birthdate": "1990-01-02",
+            "address-street-1": "100 EXAMPLE WAY",
+            "address-city": "SAMPLE CITY",
+            "address-subdivision": "OR",
+            "address-postal-code": "97001",
+            "country-code": "US",
+            "identification-number": "SYNTHETIC000001",
+            "issuing-authority": "CA",
+            "issue-date": "2020-01-02",
+            "expiration-date": "2030-12-31"
+          },
+          "transformations": [
+            {
+              "field": "nameFirst",
+              "source": "regula.field.645.0",
+              "value": "ALEX",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "nameMiddle",
+              "source": "regula.field.146.0",
+              "value": "R",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "nameLast",
+              "source": "regula.field.8.0",
+              "value": "EXAMPLE",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "birthdate",
+              "source": "regula.field.5.0",
+              "value": "1990-01-02",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "issueDate",
+              "source": "regula.field.4.0",
+              "value": "2020-01-02",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "expirationDate",
+              "source": "regula.field.3.0",
+              "value": "2030-12-31",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "identificationNumber",
+              "source": "regula.field.2.0",
+              "value": "SYNTHETIC000001",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "issuingJurisdiction",
+              "source": "regula.field.641.0",
+              "value": "CA",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressStreet1",
+              "source": "regula.field.76.0",
+              "value": "100 EXAMPLE WAY",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressCity",
+              "source": "regula.field.77.0",
+              "value": "SAMPLE CITY",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressSubdivision",
+              "source": "regula.field.78.0",
+              "value": "OR",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressPostalCode",
+              "source": "regula.field.79.0",
+              "value": "97001",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            }
+          ]
+        },
+        "results": [
+          {
+            "kind": "aamva",
+            "verificationId": "ver_RegulaAamva",
+            "exchanges": [
+              {
+                "stage": "create",
+                "request": {
+                  "method": "POST",
+                  "url": "https://api.withpersona.com/api/v1/verification/aamvas",
+                  "body": {
+                    "data": {
+                      "attributes": {
+                        "config": {
+                          "api": true
+                        },
+                        "name-first": "ALEX",
+                        "name-middle": "R",
+                        "name-last": "EXAMPLE",
+                        "birthdate": "1990-01-02",
+                        "address-street-1": "100 EXAMPLE WAY",
+                        "address-city": "SAMPLE CITY",
+                        "address-subdivision": "OR",
+                        "address-postal-code": "97001",
+                        "country-code": "US",
+                        "identification-number": "SYNTHETIC000001",
+                        "issuing-authority": "CA",
+                        "issue-date": "2020-01-02",
+                        "expiration-date": "2030-12-31"
+                      }
+                    }
+                  }
+                },
+                "response": {
+                  "status": 201,
+                  "body": {
+                    "data": {
+                      "id": "ver_RegulaAamva",
+                      "type": "verification/aamva",
+                      "attributes": {
+                        "status": "submitted",
+                        "checks": [
+                          {
+                            "name": "synthetic-check",
+                            "status": "failed",
+                            "reasons": [
+                              "synthetic-reason"
+                            ],
+                            "requirement": "not_required",
+                            "metadata": {
+                              "preserved": true
+                            }
+                          }
+                        ],
+                        "created-at": "2026-09-01T00:00:00Z",
+                        "completed-at": "2026-09-01T00:00:01Z"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "stage": "read",
+                "request": {
+                  "method": "GET",
+                  "url": "https://api.withpersona.com/api/v1/verification/aamvas/ver_RegulaAamva",
+                  "body": null
+                },
+                "response": {
+                  "status": 200,
+                  "body": {
+                    "data": {
+                      "id": "ver_RegulaAamva",
+                      "type": "verification/aamva",
+                      "attributes": {
+                        "status": "submitted",
+                        "checks": [
+                          {
+                            "name": "synthetic-check",
+                            "status": "failed",
+                            "reasons": [
+                              "synthetic-reason"
+                            ],
+                            "requirement": "not_required",
+                            "metadata": {
+                              "preserved": true
+                            }
+                          }
+                        ],
+                        "created-at": "2026-09-01T00:00:00Z",
+                        "completed-at": "2026-09-01T00:00:01Z"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "stage": "read",
+                "request": {
+                  "method": "GET",
+                  "url": "https://api.withpersona.com/api/v1/verification/aamvas/ver_RegulaAamva",
+                  "body": null
+                },
+                "response": {
+                  "status": 200,
+                  "body": {
+                    "data": {
+                      "id": "ver_RegulaAamva",
+                      "type": "verification/aamva",
+                      "attributes": {
+                        "status": "submitted",
+                        "checks": [
+                          {
+                            "name": "synthetic-check",
+                            "status": "failed",
+                            "reasons": [
+                              "synthetic-reason"
+                            ],
+                            "requirement": "not_required",
+                            "metadata": {
+                              "preserved": true
+                            }
+                          }
+                        ],
+                        "created-at": "2026-09-01T00:00:00Z",
+                        "completed-at": "2026-09-01T00:00:01Z"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "stage": "read",
+                "request": {
+                  "method": "GET",
+                  "url": "https://api.withpersona.com/api/v1/verification/aamvas/ver_RegulaAamva",
+                  "body": null
+                },
+                "response": {
+                  "status": 200,
+                  "body": {
+                    "data": {
+                      "id": "ver_RegulaAamva",
+                      "type": "verification/aamva",
+                      "attributes": {
+                        "status": "submitted",
+                        "checks": [
+                          {
+                            "name": "synthetic-check",
+                            "status": "failed",
+                            "reasons": [
+                              "synthetic-reason"
+                            ],
+                            "requirement": "not_required",
+                            "metadata": {
+                              "preserved": true
+                            }
+                          }
+                        ],
+                        "created-at": "2026-09-01T00:00:00Z",
+                        "completed-at": "2026-09-01T00:00:01Z"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "stage": "read",
+                "request": {
+                  "method": "GET",
+                  "url": "https://api.withpersona.com/api/v1/verification/aamvas/ver_RegulaAamva",
+                  "body": null
+                },
+                "response": {
+                  "status": 200,
+                  "body": {
+                    "data": {
+                      "id": "ver_RegulaAamva",
+                      "type": "verification/aamva",
+                      "attributes": {
+                        "status": "submitted",
+                        "checks": [
+                          {
+                            "name": "synthetic-check",
+                            "status": "failed",
+                            "reasons": [
+                              "synthetic-reason"
+                            ],
+                            "requirement": "not_required",
+                            "metadata": {
+                              "preserved": true
+                            }
+                          }
+                        ],
+                        "created-at": "2026-09-01T00:00:00Z",
+                        "completed-at": "2026-09-01T00:00:01Z"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "stage": "read",
+                "request": {
+                  "method": "GET",
+                  "url": "https://api.withpersona.com/api/v1/verification/aamvas/ver_RegulaAamva",
+                  "body": null
+                },
+                "response": {
+                  "status": 200,
+                  "body": {
+                    "data": {
+                      "id": "ver_RegulaAamva",
+                      "type": "verification/aamva",
+                      "attributes": {
+                        "status": "submitted",
+                        "checks": [
+                          {
+                            "name": "synthetic-check",
+                            "status": "failed",
+                            "reasons": [
+                              "synthetic-reason"
+                            ],
+                            "requirement": "not_required",
+                            "metadata": {
+                              "preserved": true
+                            }
+                          }
+                        ],
+                        "created-at": "2026-09-01T00:00:00Z",
+                        "completed-at": "2026-09-01T00:00:01Z"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "stage": "read",
+                "request": {
+                  "method": "GET",
+                  "url": "https://api.withpersona.com/api/v1/verification/aamvas/ver_RegulaAamva",
+                  "body": null
+                },
+                "response": {
+                  "status": 200,
+                  "body": {
+                    "data": {
+                      "id": "ver_RegulaAamva",
+                      "type": "verification/aamva",
+                      "attributes": {
+                        "status": "submitted",
+                        "checks": [
+                          {
+                            "name": "synthetic-check",
+                            "status": "failed",
+                            "reasons": [
+                              "synthetic-reason"
+                            ],
+                            "requirement": "not_required",
+                            "metadata": {
+                              "preserved": true
+                            }
+                          }
+                        ],
+                        "created-at": "2026-09-01T00:00:00Z",
+                        "completed-at": "2026-09-01T00:00:01Z"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "stage": "read",
+                "request": {
+                  "method": "GET",
+                  "url": "https://api.withpersona.com/api/v1/verification/aamvas/ver_RegulaAamva",
+                  "body": null
+                },
+                "response": {
+                  "status": 200,
+                  "body": {
+                    "data": {
+                      "id": "ver_RegulaAamva",
+                      "type": "verification/aamva",
+                      "attributes": {
+                        "status": "submitted",
+                        "checks": [
+                          {
+                            "name": "synthetic-check",
+                            "status": "failed",
+                            "reasons": [
+                              "synthetic-reason"
+                            ],
+                            "requirement": "not_required",
+                            "metadata": {
+                              "preserved": true
+                            }
+                          }
+                        ],
+                        "created-at": "2026-09-01T00:00:00Z",
+                        "completed-at": "2026-09-01T00:00:01Z"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "stage": "read",
+                "request": {
+                  "method": "GET",
+                  "url": "https://api.withpersona.com/api/v1/verification/aamvas/ver_RegulaAamva",
+                  "body": null
+                },
+                "response": {
+                  "status": 200,
+                  "body": {
+                    "data": {
+                      "id": "ver_RegulaAamva",
+                      "type": "verification/aamva",
+                      "attributes": {
+                        "status": "submitted",
+                        "checks": [
+                          {
+                            "name": "synthetic-check",
+                            "status": "failed",
+                            "reasons": [
+                              "synthetic-reason"
+                            ],
+                            "requirement": "not_required",
+                            "metadata": {
+                              "preserved": true
+                            }
+                          }
+                        ],
+                        "created-at": "2026-09-01T00:00:00Z",
+                        "completed-at": "2026-09-01T00:00:01Z"
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "outcome": "pending",
+            "error": null
+          }
+        ],
+        "licence": {
+          "verificationId": "ver_RegulaAamva",
+          "status": "submitted",
+          "checks": [
+            {
+              "name": "synthetic-check",
+              "status": "failed",
+              "reasons": [
+                "synthetic-reason"
+              ],
+              "requirement": "not_required",
+              "metadata": {
+                "preserved": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "unknownCreate",
+      "request": {
+        "v": "pulse.persona-regula.v2",
+        "operationId": "12345678-1234-4234-9234-123456789abc",
+        "captureId": "87654321-1234-4234-9234-123456789abc",
+        "observationBase64": "eyJ2IjoicmVndWxhLmRvY3VtZW50LW9ic2VydmF0aW9ucy52MiIsInNvdXJjZVNIQTI1NiI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJhcGlWZXJzaW9uIjoiOS43LjY4MTgiLCJjb3JlVmVyc2lvbiI6IjkuNy4xOTY4NSIsImRhdGFiYXNlVmVyc2lvbiI6InN5bnRoZXRpYy10ZXN0IiwiZGF0ZUZvcm1hdCI6Inl5eXktbW0tZGQiLCJkb2N1bWVudHMiOlt7ImRvY3VtZW50SUQiOjEyMzQ1Njc4OSwibmFtZSI6IlN5bnRoZXRpYyBsaWNlbnNlIGZpeHR1cmUiLCJjb3VudHJ5Q29kZSI6IlVTQSIsImRvY3VtZW50VHlwZSI6NDksInBhZ2VJbmRleCI6MH1dLCJmaWVsZHMiOlt7ImZpZWxkVHlwZSI6MSwibGNpZCI6MCwidmFsdWUiOiJVU0EiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IlVTQSIsIm9yaWdpbmFsVmFsdWUiOiJVU0EiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjoyLCJsY2lkIjowLCJ2YWx1ZSI6IlNZTlRIRVRJQzAwMDAwMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiU1lOVEhFVElDMDAwMDAxIiwib3JpZ2luYWxWYWx1ZSI6IlNZTlRIRVRJQzAwMDAwMSIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjMsImxjaWQiOjAsInZhbHVlIjoiMjAzMC0xMi0zMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiMjAzMC0xMi0zMSIsIm9yaWdpbmFsVmFsdWUiOiIyMDMwLTEyLTMxIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NCwibGNpZCI6MCwidmFsdWUiOiIyMDIwLTAxLTAyIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiIyMDIwLTAxLTAyIiwib3JpZ2luYWxWYWx1ZSI6IjIwMjAtMDEtMDIiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo1LCJsY2lkIjowLCJ2YWx1ZSI6IjE5OTAtMDEtMDIiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IjE5OTAtMDEtMDIiLCJvcmlnaW5hbFZhbHVlIjoiMTk5MC0wMS0wMiIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjgsImxjaWQiOjAsInZhbHVlIjoiRVhBTVBMRSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiRVhBTVBMRSIsIm9yaWdpbmFsVmFsdWUiOiJFWEFNUExFIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NjQ1LCJsY2lkIjowLCJ2YWx1ZSI6IkFMRVgiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IkFMRVgiLCJvcmlnaW5hbFZhbHVlIjoiQUxFWCIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjE0NiwibGNpZCI6MCwidmFsdWUiOiJSIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiJSIiwib3JpZ2luYWxWYWx1ZSI6IlIiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo2NDEsImxjaWQiOjAsInZhbHVlIjoiNjM2MDE0Iiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiI2MzYwMTQiLCJvcmlnaW5hbFZhbHVlIjoiNjM2MDE0IiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzYsImxjaWQiOjAsInZhbHVlIjoiMTAwIEVYQU1QTEUgV0FZIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiIxMDAgRVhBTVBMRSBXQVkiLCJvcmlnaW5hbFZhbHVlIjoiMTAwIEVYQU1QTEUgV0FZIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzcsImxjaWQiOjAsInZhbHVlIjoiU0FNUExFIENJVFkiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IlNBTVBMRSBDSVRZIiwib3JpZ2luYWxWYWx1ZSI6IlNBTVBMRSBDSVRZIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzgsImxjaWQiOjAsInZhbHVlIjoiT1IiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6Ik9SIiwib3JpZ2luYWxWYWx1ZSI6Ik9SIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzksImxjaWQiOjAsInZhbHVlIjoiOTcwMDEiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6Ijk3MDAxIiwib3JpZ2luYWxWYWx1ZSI6Ijk3MDAxIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfV0sImF1dGhlbnRpY2l0eSI6eyJvdXRjb21lIjoicGFzc2VkIiwiY2hlY2tzIjpbeyJ0eXBlIjo1MTIsInN0YXR1cyI6MSwiZWxlbWVudHMiOlt7InR5cGUiOjIsInN0YXR1cyI6MSwiZGlhZ25vc2lzIjoxfV19XX19",
+        "revision": 0,
+        "previousRequestHash": null,
+        "corrections": []
+      },
+      "statusCode": 502,
+      "body": {
+        "v": "pulse.persona-regula-result.v2",
+        "operationId": "12345678-1234-4234-9234-123456789abc",
+        "captureId": "87654321-1234-4234-9234-123456789abc",
+        "revision": 0,
+        "requestHash": "e488ee5d7cd7585384614dddd1fb5ed59047259a31a3bb5e0bd1611376bf9fad",
+        "observationSHA256": "d29126a8879656c9eec7c8a8424bf12dc260d1b7ea82917a848a5583ed85b938",
+        "adapterVersion": "regula-persona-4",
+        "replayed": false,
+        "state": "unavailable",
+        "issues": [],
+        "plan": {
+          "aamva": {
+            "name-first": "ALEX",
+            "name-middle": "R",
+            "name-last": "EXAMPLE",
+            "birthdate": "1990-01-02",
+            "address-street-1": "100 EXAMPLE WAY",
+            "address-city": "SAMPLE CITY",
+            "address-subdivision": "OR",
+            "address-postal-code": "97001",
+            "country-code": "US",
+            "identification-number": "SYNTHETIC000001",
+            "issuing-authority": "CA",
+            "issue-date": "2020-01-02",
+            "expiration-date": "2030-12-31"
+          },
+          "transformations": [
+            {
+              "field": "nameFirst",
+              "source": "regula.field.645.0",
+              "value": "ALEX",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "nameMiddle",
+              "source": "regula.field.146.0",
+              "value": "R",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "nameLast",
+              "source": "regula.field.8.0",
+              "value": "EXAMPLE",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "birthdate",
+              "source": "regula.field.5.0",
+              "value": "1990-01-02",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "issueDate",
+              "source": "regula.field.4.0",
+              "value": "2020-01-02",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "expirationDate",
+              "source": "regula.field.3.0",
+              "value": "2030-12-31",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "identificationNumber",
+              "source": "regula.field.2.0",
+              "value": "SYNTHETIC000001",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "issuingJurisdiction",
+              "source": "regula.field.641.0",
+              "value": "CA",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressStreet1",
+              "source": "regula.field.76.0",
+              "value": "100 EXAMPLE WAY",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressCity",
+              "source": "regula.field.77.0",
+              "value": "SAMPLE CITY",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressSubdivision",
+              "source": "regula.field.78.0",
+              "value": "OR",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressPostalCode",
+              "source": "regula.field.79.0",
+              "value": "97001",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            }
+          ]
+        },
+        "results": [
+          {
+            "kind": "aamva",
+            "verificationId": null,
+            "exchanges": [
+              {
+                "stage": "create",
+                "request": {
+                  "method": "POST",
+                  "url": "https://api.withpersona.com/api/v1/verification/aamvas",
+                  "body": {
+                    "data": {
+                      "attributes": {
+                        "config": {
+                          "api": true
+                        },
+                        "name-first": "ALEX",
+                        "name-middle": "R",
+                        "name-last": "EXAMPLE",
+                        "birthdate": "1990-01-02",
+                        "address-street-1": "100 EXAMPLE WAY",
+                        "address-city": "SAMPLE CITY",
+                        "address-subdivision": "OR",
+                        "address-postal-code": "97001",
+                        "country-code": "US",
+                        "identification-number": "SYNTHETIC000001",
+                        "issuing-authority": "CA",
+                        "issue-date": "2020-01-02",
+                        "expiration-date": "2030-12-31"
+                      }
+                    }
+                  }
+                },
+                "response": null
+              }
+            ],
+            "outcome": "error",
+            "error": {
+              "code": "transport_error",
+              "message": "Persona create outcome is unknown: TypeError: synthetic connection loss"
+            }
+          }
+        ],
+        "licence": null
+      }
+    },
+    {
+      "name": "failedSubmit",
+      "request": {
+        "v": "pulse.persona-regula.v2",
+        "operationId": "12345678-1234-4234-9234-123456789abc",
+        "captureId": "87654321-1234-4234-9234-123456789abc",
+        "observationBase64": "eyJ2IjoicmVndWxhLmRvY3VtZW50LW9ic2VydmF0aW9ucy52MiIsInNvdXJjZVNIQTI1NiI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJhcGlWZXJzaW9uIjoiOS43LjY4MTgiLCJjb3JlVmVyc2lvbiI6IjkuNy4xOTY4NSIsImRhdGFiYXNlVmVyc2lvbiI6InN5bnRoZXRpYy10ZXN0IiwiZGF0ZUZvcm1hdCI6Inl5eXktbW0tZGQiLCJkb2N1bWVudHMiOlt7ImRvY3VtZW50SUQiOjEyMzQ1Njc4OSwibmFtZSI6IlN5bnRoZXRpYyBsaWNlbnNlIGZpeHR1cmUiLCJjb3VudHJ5Q29kZSI6IlVTQSIsImRvY3VtZW50VHlwZSI6NDksInBhZ2VJbmRleCI6MH1dLCJmaWVsZHMiOlt7ImZpZWxkVHlwZSI6MSwibGNpZCI6MCwidmFsdWUiOiJVU0EiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IlVTQSIsIm9yaWdpbmFsVmFsdWUiOiJVU0EiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjoyLCJsY2lkIjowLCJ2YWx1ZSI6IlNZTlRIRVRJQzAwMDAwMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiU1lOVEhFVElDMDAwMDAxIiwib3JpZ2luYWxWYWx1ZSI6IlNZTlRIRVRJQzAwMDAwMSIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjMsImxjaWQiOjAsInZhbHVlIjoiMjAzMC0xMi0zMSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiMjAzMC0xMi0zMSIsIm9yaWdpbmFsVmFsdWUiOiIyMDMwLTEyLTMxIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NCwibGNpZCI6MCwidmFsdWUiOiIyMDIwLTAxLTAyIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiIyMDIwLTAxLTAyIiwib3JpZ2luYWxWYWx1ZSI6IjIwMjAtMDEtMDIiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo1LCJsY2lkIjowLCJ2YWx1ZSI6IjE5OTAtMDEtMDIiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IjE5OTAtMDEtMDIiLCJvcmlnaW5hbFZhbHVlIjoiMTk5MC0wMS0wMiIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjgsImxjaWQiOjAsInZhbHVlIjoiRVhBTVBMRSIsInN0YXR1cyI6MiwidmFsaWRpdHlTdGF0dXMiOjIsImNvbXBhcmlzb25TdGF0dXMiOjIsInZhbHVlcyI6W3sic291cmNlVHlwZSI6MTcsInZhbHVlIjoiRVhBTVBMRSIsIm9yaWdpbmFsVmFsdWUiOiJFWEFNUExFIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NjQ1LCJsY2lkIjowLCJ2YWx1ZSI6IkFMRVgiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IkFMRVgiLCJvcmlnaW5hbFZhbHVlIjoiQUxFWCIsInBhZ2VJbmRleCI6MCwicHJvYmFiaWxpdHkiOjEwMH1dLCJ2YWxpZGl0eSI6W10sImNvbXBhcmlzb25zIjpbXX0seyJmaWVsZFR5cGUiOjE0NiwibGNpZCI6MCwidmFsdWUiOiJSIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiJSIiwib3JpZ2luYWxWYWx1ZSI6IlIiLCJwYWdlSW5kZXgiOjAsInByb2JhYmlsaXR5IjoxMDB9XSwidmFsaWRpdHkiOltdLCJjb21wYXJpc29ucyI6W119LHsiZmllbGRUeXBlIjo2NDEsImxjaWQiOjAsInZhbHVlIjoiNjM2MDE0Iiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiI2MzYwMTQiLCJvcmlnaW5hbFZhbHVlIjoiNjM2MDE0IiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzYsImxjaWQiOjAsInZhbHVlIjoiMTAwIEVYQU1QTEUgV0FZIiwic3RhdHVzIjoyLCJ2YWxpZGl0eVN0YXR1cyI6MiwiY29tcGFyaXNvblN0YXR1cyI6MiwidmFsdWVzIjpbeyJzb3VyY2VUeXBlIjoxNywidmFsdWUiOiIxMDAgRVhBTVBMRSBXQVkiLCJvcmlnaW5hbFZhbHVlIjoiMTAwIEVYQU1QTEUgV0FZIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzcsImxjaWQiOjAsInZhbHVlIjoiU0FNUExFIENJVFkiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6IlNBTVBMRSBDSVRZIiwib3JpZ2luYWxWYWx1ZSI6IlNBTVBMRSBDSVRZIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzgsImxjaWQiOjAsInZhbHVlIjoiT1IiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6Ik9SIiwib3JpZ2luYWxWYWx1ZSI6Ik9SIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfSx7ImZpZWxkVHlwZSI6NzksImxjaWQiOjAsInZhbHVlIjoiOTcwMDEiLCJzdGF0dXMiOjIsInZhbGlkaXR5U3RhdHVzIjoyLCJjb21wYXJpc29uU3RhdHVzIjoyLCJ2YWx1ZXMiOlt7InNvdXJjZVR5cGUiOjE3LCJ2YWx1ZSI6Ijk3MDAxIiwib3JpZ2luYWxWYWx1ZSI6Ijk3MDAxIiwicGFnZUluZGV4IjowLCJwcm9iYWJpbGl0eSI6MTAwfV0sInZhbGlkaXR5IjpbXSwiY29tcGFyaXNvbnMiOltdfV0sImF1dGhlbnRpY2l0eSI6eyJvdXRjb21lIjoicGFzc2VkIiwiY2hlY2tzIjpbeyJ0eXBlIjo1MTIsInN0YXR1cyI6MSwiZWxlbWVudHMiOlt7InR5cGUiOjIsInN0YXR1cyI6MSwiZGlhZ25vc2lzIjoxfV19XX19",
+        "revision": 0,
+        "previousRequestHash": null,
+        "corrections": []
+      },
+      "statusCode": 502,
+      "body": {
+        "v": "pulse.persona-regula-result.v2",
+        "operationId": "12345678-1234-4234-9234-123456789abc",
+        "captureId": "87654321-1234-4234-9234-123456789abc",
+        "revision": 0,
+        "requestHash": "e488ee5d7cd7585384614dddd1fb5ed59047259a31a3bb5e0bd1611376bf9fad",
+        "observationSHA256": "d29126a8879656c9eec7c8a8424bf12dc260d1b7ea82917a848a5583ed85b938",
+        "adapterVersion": "regula-persona-4",
+        "replayed": false,
+        "state": "unavailable",
+        "issues": [],
+        "plan": {
+          "aamva": {
+            "name-first": "ALEX",
+            "name-middle": "R",
+            "name-last": "EXAMPLE",
+            "birthdate": "1990-01-02",
+            "address-street-1": "100 EXAMPLE WAY",
+            "address-city": "SAMPLE CITY",
+            "address-subdivision": "OR",
+            "address-postal-code": "97001",
+            "country-code": "US",
+            "identification-number": "SYNTHETIC000001",
+            "issuing-authority": "CA",
+            "issue-date": "2020-01-02",
+            "expiration-date": "2030-12-31"
+          },
+          "transformations": [
+            {
+              "field": "nameFirst",
+              "source": "regula.field.645.0",
+              "value": "ALEX",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "nameMiddle",
+              "source": "regula.field.146.0",
+              "value": "R",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "nameLast",
+              "source": "regula.field.8.0",
+              "value": "EXAMPLE",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "birthdate",
+              "source": "regula.field.5.0",
+              "value": "1990-01-02",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "issueDate",
+              "source": "regula.field.4.0",
+              "value": "2020-01-02",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "expirationDate",
+              "source": "regula.field.3.0",
+              "value": "2030-12-31",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "identificationNumber",
+              "source": "regula.field.2.0",
+              "value": "SYNTHETIC000001",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "issuingJurisdiction",
+              "source": "regula.field.641.0",
+              "value": "CA",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressStreet1",
+              "source": "regula.field.76.0",
+              "value": "100 EXAMPLE WAY",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressCity",
+              "source": "regula.field.77.0",
+              "value": "SAMPLE CITY",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressSubdivision",
+              "source": "regula.field.78.0",
+              "value": "OR",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            },
+            {
+              "field": "addressPostalCode",
+              "source": "regula.field.79.0",
+              "value": "97001",
+              "reason": "Provider observation, with surrounding padding removed; no authenticity or calibrated accuracy claim."
+            }
+          ]
+        },
+        "results": [
+          {
+            "kind": "aamva",
+            "verificationId": "ver_RegulaAamva",
+            "exchanges": [
+              {
+                "stage": "create",
+                "request": {
+                  "method": "POST",
+                  "url": "https://api.withpersona.com/api/v1/verification/aamvas",
+                  "body": {
+                    "data": {
+                      "attributes": {
+                        "config": {
+                          "api": true
+                        },
+                        "name-first": "ALEX",
+                        "name-middle": "R",
+                        "name-last": "EXAMPLE",
+                        "birthdate": "1990-01-02",
+                        "address-street-1": "100 EXAMPLE WAY",
+                        "address-city": "SAMPLE CITY",
+                        "address-subdivision": "OR",
+                        "address-postal-code": "97001",
+                        "country-code": "US",
+                        "identification-number": "SYNTHETIC000001",
+                        "issuing-authority": "CA",
+                        "issue-date": "2020-01-02",
+                        "expiration-date": "2030-12-31"
+                      }
+                    }
+                  }
+                },
+                "response": {
+                  "status": 201,
+                  "body": {
+                    "data": {
+                      "id": "ver_RegulaAamva",
+                      "type": "verification/aamva",
+                      "attributes": {
+                        "status": "initiated",
+                        "checks": [
+                          {
+                            "name": "synthetic-check",
+                            "status": "failed",
+                            "reasons": [
+                              "synthetic-reason"
+                            ],
+                            "requirement": "not_required",
+                            "metadata": {
+                              "preserved": true
+                            }
+                          }
+                        ],
+                        "created-at": "2026-09-01T00:00:00Z",
+                        "completed-at": "2026-09-01T00:00:01Z"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "stage": "submit",
+                "request": {
+                  "method": "POST",
+                  "url": "https://api.withpersona.com/api/v1/verification/aamvas/ver_RegulaAamva/submit",
+                  "body": {
+                    "data": {
+                      "attributes": {}
+                    }
+                  }
+                },
+                "response": null
+              }
+            ],
+            "outcome": "error",
+            "error": {
+              "code": "transport_error",
+              "message": "Persona submit outcome is unknown: TypeError: synthetic connection loss"
+            }
+          }
+        ],
+        "licence": null
+      }
+    }
+  ]
+}

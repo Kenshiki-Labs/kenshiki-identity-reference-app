@@ -1,0 +1,308 @@
+// SensorHostConfig.jsonc — every number, name and format choice this HOST makes for itself.
+//
+// Decoded once at launch into `SensorHostConfig` (SensorHostConfig.swift) with
+// `JSONDecoder.allowsJSON5 = true`, which is what lets this file carry comments. There are NO
+// fallback defaults in Swift: a missing key, a wrong type or an unknown enum word stops the app at
+// launch with the file name and the decoding error. A fallback would be the hard-coded value again.
+//
+// WHAT IS NOT HERE, ON PURPOSE. The SDK's own defaults — its 1.5 s capture window, the 0.2 s it
+// adds to the barometer's window, which sensors need which permission — belong to the SDK and are
+// read from `KenshikiDeviceConfiguration()` at run time. Restating them here would give the host a
+// second copy to drift from the one the SDK actually uses.
+//
+// Words the screen shows are not here either: they live in Localizable.xcstrings.
+{
+    // The names and locations this host hands the SDK through `HostEnvironmentHolder.configure`.
+    // Per docs/boundary-contract.md, "the host supplies every name, location and number; the SDK
+    // keeps every construction". These are deliberately an adopter's names, not Kenshiki's.
+    "evidence": {
+        // The UserDefaults suite every SDK key is confined to. Naming a suite keeps SDK state out
+        // of this app's own defaults, which is what makes an erase a bounded claim.
+        "defaultsSuiteName": "org.example.sensorhost.evidence",
+        // The folder, inside this app's Application Support directory, the SDK writes its files
+        // under. The app creates it at launch; the SDK makes every file call inside it.
+        "durableRootFolderName": "SensorHostEvidence",
+        // The session identifier on the one `KenshikiSessionContext` every collection pass uses.
+        // One fixed value because this screen is one long debug session, not a user sign-in.
+        "sessionIdentifier": "sensor-host-debug-screen"
+    },
+
+    // How often the screen re-reads.
+    "refresh": {
+        // Pause after one collection pass finishes and before the next starts. The pass itself
+        // already takes a capture window, so this is added on top; 1 s keeps the board feeling
+        // live without running the sensors back to back.
+        "pauseBetweenPassesSeconds": 1,
+        // How often the ticking rows ("clock reads", a fix's "age") redraw. 1 s because both are
+        // shown to the second.
+        "clockTickSeconds": 1
+    },
+
+    // The three capture-window sliders on the Settings tab. They START at the SDK's own default
+    // window, read from the SDK; only the range and step are this host's.
+    "captureWindowSlider": {
+        // Lowest window a slider allows, in seconds. 0.1 s is short enough to starve the barometer
+        // on a real phone, which is exactly what the barometer slider's note tells you to try.
+        "minimumSeconds": 0.1,
+        // Highest window, in seconds. Each pass takes at least the longest window, so at 5 s the
+        // board already refreshes only every six seconds or so; longer stops being watchable.
+        "maximumSeconds": 5.0,
+        // Slider step, in seconds. Matches the one decimal place the window is shown with
+        // (decimals.captureWindowSeconds), so every stop reads as a distinct number.
+        "stepSeconds": 0.1
+    },
+
+    // The session's trail of fixes on the Location map.
+    "map": {
+        // Most fixes kept on the map. Enough to see the position wander, few enough to read. The
+        // oldest fix drops off when a new one would exceed this. Memory only, never saved.
+        "trailLimit": 20,
+        // Height of the map, in points. Enough to see a trail's spread, while leaving the fix's
+        // rows visible below it in the Location section.
+        "height": 280,
+        // Corner radius of the map's clip shape, in points.
+        "cornerRadius": 10,
+        // Smallest accuracy circle drawn, in metres. A zero or unstated (negative) accuracy would
+        // otherwise give a circle with no radius, so the circle is never smaller than this.
+        "minimumCircleRadiusMeters": 1,
+        // How the NEWEST fix is drawn: the loudest mark on the map.
+        "newest": {
+            // Dot diameter, in points.
+            "markerDiameter": 12,
+            // Dot opacity, 0 to 1.
+            "markerOpacity": 1,
+            // Fill opacity of its accuracy circle, 0 to 1. Faint enough to see the map through.
+            "circleFillOpacity": 0.18,
+            // Stroke opacity of its accuracy circle's edge, 0 to 1.
+            "circleStrokeOpacity": 0.9,
+            // Stroke width of its accuracy circle's edge, in points.
+            "circleStrokeWidth": 2
+        },
+        // How every OLDER fix is drawn: present but quieter, so the newest stands out.
+        "older": {
+            "markerDiameter": 8,
+            "markerOpacity": 0.5,
+            "circleFillOpacity": 0.06,
+            "circleStrokeOpacity": 0.35,
+            "circleStrokeWidth": 1
+        },
+        // The ring around the fix the SDK's estimate policy keeps as "where the phone is now".
+        "estimateRing": {
+            // Ring diameter, in points. Wider than the newest dot (12) so it reads as a ring
+            // around it rather than a border on it.
+            "diameter": 22,
+            // Ring line width, in points.
+            "lineWidth": 2
+        },
+        // The notice drawn over an empty map ("No fixes yet…" / "Location is off…").
+        "emptyNotice": {
+            // Padding inside the notice's rounded background, in points.
+            "padding": 10,
+            // Corner radius of that background, in points.
+            "cornerRadius": 8
+        }
+    },
+
+    // Named colours the screen uses to MEAN something. Allowed words (the palette): blue,
+    // orange, red, green, yellow, purple, pink, teal, gray, indigo, mint, cyan, brown. System styles (.primary, .secondary) are not choices and
+    // stay in code.
+    //
+    // CAREFUL: some notes NAME these colours to the reader ("Blue is precise, orange is
+    // approximate", "Keys in orange survived the wipe"). Change a colour here and change that
+    // wording in Localizable.xcstrings in the same commit.
+    "colors": {
+        // A fix that arrived while iOS gave precise location: its dot and circle.
+        "preciseFix": "blue",
+        // A fix that arrived while iOS gave only approximate location.
+        "approximateFix": "orange",
+        // Something failed: a collection error, a store that reported FAILED, its reason.
+        "failure": "red",
+        // A store that reported erased.
+        "success": "green",
+        // Worth a second look but not a failure: a key that survived the wipe, a fix-contract
+        // term a fix did not meet.
+        "warning": "orange",
+        // On a sensor's page, the row the person tapped to get there is tinted with this colour,
+        // at this opacity, so they can see which value they asked about.
+        "highlight": "blue",
+        "highlightOpacity": 0.18
+    },
+
+    // Gaps between the parts of one row block, and in a section title, in points.
+    "layout": {
+        // A value row and the note under it.
+        "rowSpacing": 4,
+        // Tightly bound lines: a title over its state word, a store name over its outcome.
+        "compactSpacing": 2,
+        // The map, its "fixes on the map" row and its note.
+        "mapBlockSpacing": 6,
+        // Horizontal gap between a section's icon and its title, in points.
+        "headerIconSpacing": 10
+    },
+
+    // SF Symbol names for the two tabs. Names, not words: they are never translated.
+    "symbols": {
+        "identityTab": "person.text.rectangle",
+        "identityPassport": "book.closed",
+        "identityDocument": "creditcard",
+        "identityFace": "faceid",
+        "identitySSN": "number",
+        "captureTab": "viewfinder",
+        "sensorsTab": "waveform.path.ecg",
+        "settingsTab": "gearshape",
+        // On a sensor's page: beside each row that opens Apple's documentation, and beside each
+        // known limit of the values.
+        "externalLink": "arrow.up.right",
+        "knownLimit": "exclamationmark.triangle",
+        // The Air check tab, and its two answers: the phone's air agreed with the area's weather,
+        // or it did not.
+        // The Fusion tab, and the Air check fusion inside it.
+        "fusionTab": "point.3.connected.trianglepath.dotted",
+        "airCheckTab": "barometer",
+        "airCheckMatch": "checkmark.circle.fill",
+        "airCheckMismatch": "exclamationmark.circle.fill",
+        "disclosure": "chevron.right"
+    },
+
+    // The icon beside each section title: an SF Symbol, white, on a small rounded square filled
+    // with a colour, the way iOS Settings marks its rows. Every symbol name below was checked
+    // against the system symbol table and exists on iOS 16 or earlier (this app targets 18); a
+    // misspelt name draws nothing, so check the screen after changing one.
+    //
+    // "color" is a word from the palette `colors` uses: blue, orange, red, green, yellow,
+    // purple, pink, teal, gray, indigo, mint, cyan, brown. White on yellow or mint is hard to
+    // read, so they are not used here.
+    "sectionIcon": {
+        // Side of the rounded square, in points at the default text size. It grows with
+        // Dynamic Type alongside the heading.
+        "size": 28,
+        // Corner radius of the square, in points at the default text size. A quarter of the side
+        // is the iOS Settings look.
+        "cornerRadius": 7,
+        // Size of the glyph inside the square, in points at the default text size.
+        "glyphSize": 15
+    },
+    // The Air Check tab: how long one run may take, and how many decimals its numbers show.
+    // Capture has separate encrypted custody; sensor erase never claims to erase these records.
+    "capture": {
+        "folderName": "SensorHostCaptures",
+        "keychainService": "com.kenshiki.sensors.capture",
+        "keychainAccount": "capture-evidence-v1",
+        "previewHeight": 340,
+        "previewCornerRadius": 10
+    },
+    // Signed readings kept for the export an auditor checks without this app.
+    "evidenceExport": { "keptReadings": 50 },
+
+    "airCheck": {
+        // The package cancels a run that has not answered by then; a fix, a barometer window and
+        // a weather lookup have to fit inside it.
+        "timeoutSeconds": 30,
+        // Explicit diagnostic envelope, not validated identity-assurance calibration. Both
+        // numbers are dev's, from the reviewed change; the two settings below are additions.
+        "maximumObservationAgeSeconds": 5400,
+        "maximumStationDistanceMeters": 50000,
+        // How many stations, nearest first, may be asked. The nearest often reports no sea-level
+        // pressure at all, so stopping at the first few answers "no weather for this area" where a
+        // usable station stands a few kilometres further on.
+        "maximumStationsTried": 8,
+        // api.weather.gov asks callers to identify themselves with a contact.
+        "weatherUserAgent": "KenshikiSensorHost/1.0 (https://github.com/Kenshiki-Labs)",
+        // The cocked hat drawing above the numbers: the ring is the allowance, the triangle the
+        // disagreement between the three witnesses.
+        "diagram": {
+            "height": 200,
+            "lineWidth": 1.5,
+            "ringOpacity": 0.5,
+            "hatFillOpacity": 0.18
+        },
+        // Pressures in hectopascals: the same two places the Barometer section shows.
+        "pressureDecimals": 2,
+        // Height terms (altitude, accuracy, scale height) in metres.
+        "metreDecimals": 1,
+        // Air temperature in degrees Celsius, as the weather observation reports it.
+        "temperatureDecimals": 1
+    },
+
+    "sections": {
+        // Sensors tab, A to Z as the screen shows them, after the status block.
+        "status":        { "symbol": "clock",                              "color": "gray" },
+        "audioRoute":    { "symbol": "speaker.wave.2",                     "color": "pink" },
+        "barometer":     { "symbol": "barometer",                          "color": "teal" },
+        "bluetooth":     { "symbol": "antenna.radiowaves.left.and.right",  "color": "blue" },
+        "calls":         { "symbol": "phone",                              "color": "green" },
+        "network":       { "symbol": "wifi",                               "color": "blue" },
+        "device":        { "symbol": "iphone",                             "color": "gray" },
+        "location":      { "symbol": "location.fill",                      "color": "blue" },
+        "compass":       { "symbol": "safari",                             "color": "red" },
+        "motion":        { "symbol": "gyroscope",                          "color": "orange" },
+        "mobileNetwork": { "symbol": "cellularbars",                       "color": "green" },
+        "power":         { "symbol": "thermometer.medium",                 "color": "red" },
+        // The area's weather, read from the nearest US station for this phone's position.
+        "weather":       { "symbol": "cloud.sun",                          "color": "teal" },
+        // The card at the top of the Fusion tab: the three proofs, and what each one carries.
+        "proofs":        { "symbol": "checkmark.seal",                     "color": "purple" },
+        // The continuity fusion: this pass against the one before it.
+        "continuity":    { "symbol": "link",                               "color": "indigo" },
+        // Settings tab, in screen order.
+        "permissions":   { "symbol": "hand.raised",                        "color": "blue" },
+        "units":         { "symbol": "ruler",                              "color": "indigo" },
+        "export":        { "symbol": "square.and.arrow.up.on.square",       "color": "green" },
+        "readingTime":   { "symbol": "timer",                              "color": "orange" },
+        "erase":         { "symbol": "trash",                              "color": "red" },
+        "saved":         { "symbol": "internaldrive",                      "color": "gray" },
+        "whereKept":     { "symbol": "folder",                             "color": "indigo" },
+        "batteryReader": { "symbol": "battery.100",                        "color": "green" },
+        "limits":        { "symbol": "questionmark.circle",                "color": "purple" }
+    },
+
+    // Decimal places each quantity is shown with. Formatting is locale-aware (FormatStyle), so a
+    // German phone shows a decimal comma; these control only how many digits.
+    "decimals": {
+        // Motion, compass and relative-height readings (g, rad/s, µT, m). Three places is fine
+        // enough to see a reading move when the phone is moved.
+        "sensorReading": 3,
+        // Air pressure in hectopascals. The SDK reports kilopascals and the screen shows hPa
+        // (×10), so two places here is the same precision as the three kPa places shown before,
+        // and fine enough to see the 0.12 hPa per metre of climb the Barometer note describes.
+        "pressureHectopascals": 2,
+        // Battery level as a percentage. Whole percent, which is how iOS shows it everywhere else,
+        // so the number here can be compared with the status bar at a glance.
+        "batteryPercent": 0,
+        // Capture windows, in seconds. One place, matching captureWindowSlider.stepSeconds.
+        "captureWindowSeconds": 1,
+        // Horizontal and vertical accuracy of a fix, in metres.
+        "accuracyMeters": 1,
+        // Altitude of a fix, in metres.
+        "altitudeMeters": 1,
+        // Speed of a fix, in metres per second.
+        "speedMetersPerSecond": 1,
+        // Course of a fix, in degrees from north. Whole degrees.
+        "courseDegrees": 0,
+        // The MOST decimal places a latitude or longitude is shown with. The screen promises the
+        // position "as iOS reported it, not rounded", so this is a ceiling, not a fixed width:
+        // 15 is at or beyond the precision a Double holds for a coordinate, so nothing iOS
+        // reports is cut, and trailing zeros are not padded on.
+        // Feet, where heights are read that way, and inches of mercury, as US weather reports
+        // give pressure (29.92 inHg is one standard atmosphere).
+        "feet": 1,
+        "inchesOfMercury": 2,
+        "coordinateMaximum": 15
+    },
+
+    // How times and durations are written. Date and time words come from the phone's locale;
+    // these choose only how much of each is shown.
+    "formats": {
+        // Timestamps on the board: collected at, last call event, observer started, erased at,
+        // clock reads. Time only, to the second, because everything here happened today.
+        // date: omitted | numeric | abbreviated | long | complete
+        // time: omitted | shortened | standard | complete
+        "clockStamp": { "date": "omitted", "time": "standard" },
+        // When iOS measured a location fix. Includes the date, because iOS can hand back a
+        // cached position from before today.
+        "fixMeasuredAt": { "date": "abbreviated", "time": "standard" },
+        // A fix's age. units: any of weeks, days, hours, minutes, seconds.
+        // width: abbreviated | condensedAbbreviated | narrow | wide
+        "fixAge": { "units": ["hours", "minutes", "seconds"], "width": "abbreviated" }
+    }
+}

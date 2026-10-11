@@ -20,16 +20,23 @@ for name in ('IdentityGateway', 'IdentityEvidenceRegula'):
     spec['packages'][name] = {'path': str(root / 'Packages' / name)}
 target = spec['targets']['IdentityCaptureRuntime']
 target['sources'] = [str(base / 'Sources'), *[str(p) for p in sorted(Path(__file__).parent.glob('*.swift'))]]
-for name in ('SensorSSNService', 'SensorPhoneService', 'SensorPhoneWireEvidence', 'WorkerDocumentChecker', 'SensorPhoneDocumentContext'):
-    target['sources'].append(str(root / 'Hosts/SensorHost/Sources' / (name + '.swift')))
 for name in ('IdentityGateway', 'IdentityEvidenceRegula'):
     dependency = {'package': name, 'product': name}
     if dependency not in target['dependencies']:
         target['dependencies'].append(dependency)
 # This host framework is built with its application, not distributed as a stable SDK artifact.
 target['settings']['base']['BUILD_LIBRARY_FOR_DISTRIBUTION'] = False
-spec['targets'] = {'IdentityCaptureRuntime': target}
-spec['schemes']['IdentityCaptureRuntime'].pop('test', None)
+# The adapters' contract tests run against the Worker's own fixture, beside the adapters.
+tests = {'type': 'bundle.unit-test', 'platform': 'iOS',
+         'sources': [str(Path(__file__).parent / 'Tests')],
+         'settings': {'base': {'GENERATE_INFOPLIST_FILE': 'YES', 'SWIFT_VERSION': '6.0',
+                               'PRODUCT_BUNDLE_IDENTIFIER': 'org.identity.capture.runtime.live-services-tests'}},
+         'dependencies': [{'target': 'IdentityCaptureRuntime'},
+                          {'package': 'KenshikiIdentitySDK', 'product': 'IdentityDocumentCheck'},
+                          {'package': 'KenshikiIdentitySDK', 'product': 'KenshikiIdentity'},
+                          {'package': 'IdentityGateway', 'product': 'IdentityGateway'}]}
+spec['targets'] = {'IdentityCaptureRuntime': target, 'LiveServicesTests': tests}
+spec['schemes']['IdentityCaptureRuntime']['test'] = {'targets': ['LiveServicesTests']}
 output = args.output.resolve()
 output.mkdir(parents=True, exist_ok=True)
 path = output / 'project.yml'
