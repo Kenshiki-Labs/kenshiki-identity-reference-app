@@ -40,19 +40,21 @@ function InspectionContent({ result }: Readonly<{ result: SavedDocumentCapture }
         <Text accessibilityRole="header" style={styles.sheetTitle}>
           {t('inspection.title')}
         </Text>
-        <View style={inspectionStyles.choices}>
-          {(['front', 'back'] as const)
-            .filter((value) => !!document[value])
-            .map((value) => (
-              <Choice
-                key={value}
-                label={t(`license.result.${value}`)}
-                selected={side === value}
-                testID={`inspect-${value}`}
-                onPress={() => setSide(value)}
-              />
-            ))}
-        </View>
+        {document.front && document.back && (
+          <View style={inspectionStyles.choices}>
+            {(['front', 'back'] as const)
+              .filter((value) => !!document[value])
+              .map((value) => (
+                <Choice
+                  key={value}
+                  label={t(`license.result.${value}`)}
+                  selected={side === value}
+                  testID={`inspect-${value}`}
+                  onPress={() => setSide(value)}
+                />
+              ))}
+          </View>
+        )}
         <View style={inspectionStyles.choices}>
           {(['original', 'normalized', 'spatial'] as const).map((value) => (
             <Choice
@@ -139,7 +141,7 @@ function Choice({
 }>) {
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole="tab"
       accessibilityState={{ selected }}
       testID={testID}
       onPress={onPress}
@@ -151,18 +153,23 @@ function Choice({
 }
 
 const inspectionStyles = StyleSheet.create({
-  choices: { flexDirection: 'row', gap: spacing.xs },
+  choices: {
+    flexDirection: 'row',
+    padding: spacing.xxs,
+    borderRadius: radius.group,
+    backgroundColor: color.background,
+  },
   choice: {
     flex: 1,
     minHeight: size.touchTarget,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.xxs,
     paddingVertical: spacing.xs,
     borderRadius: radius.group,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  selected: { backgroundColor: color.tint },
-  choiceText: { ...text.plainAction, color: color.tint, textAlign: 'center' },
-  selectedText: { color: color.onTint },
+  selected: { backgroundColor: color.card },
+  choiceText: { ...text.label, color: color.secondaryText, textAlign: 'center' },
+  selectedText: { color: color.text },
   image: { height: size.documentInspectionHeight },
 });

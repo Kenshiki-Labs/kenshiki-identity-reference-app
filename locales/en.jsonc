@@ -588,8 +588,8 @@
   // License and state-ID capture.
   "inspection": {
     "title": "Inspect your card",
-    "original": "Original photo",
-    "normalized": "Lifted card",
+    "original": "Photo",
+    "normalized": "Card",
     "spatial": "Features",
     "portrait": "Document portrait",
     "spatialExplanation": "Observed image features: pink inside the candidate card mask, blue outside. These colors do not establish authenticity or confirm the physical card edge.",
