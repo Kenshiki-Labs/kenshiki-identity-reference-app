@@ -438,6 +438,9 @@ export type MessageValues = {
   readonly "inspection.image": {readonly representation: string | number; readonly side: string | number};
   readonly "inspection.originalExplanation": undefined;
   readonly "inspection.normalizedExplanation": undefined;
+  readonly "inspection.zoomFit": undefined;
+  readonly "inspection.zoomActual": undefined;
+  readonly "inspection.zoomPixel": undefined;
   readonly "inspection.zoom": undefined;
   readonly "inspection.noCapture": undefined;
   readonly "inspection.loading": undefined;
@@ -1434,6 +1437,9 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "inspection.image": [["arg", "side"], " · ", ["arg", "representation"]],
       "inspection.originalExplanation": "The original photo retained by the SDK, including the area around your card.",
       "inspection.normalizedExplanation": "The card extracted and straightened from this photo. This view does not establish authenticity or a record match.",
+      "inspection.zoomFit": "Fit",
+      "inspection.zoomActual": "1:1",
+      "inspection.zoomPixel": "Pixel",
       "inspection.zoom": "Pinch to zoom. Drag to inspect details. Double-tap to zoom in or reset.",
       "inspection.noCapture": "No saved card image is available.",
       "inspection.loading": "Loading saved image…",

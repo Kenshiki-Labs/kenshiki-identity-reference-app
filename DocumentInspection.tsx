@@ -76,6 +76,9 @@ function InspectionContent({ result }: Readonly<{ result: SavedDocumentCapture }
             accessibilityLabel={imageLabel}
             presentation={{
               loading: t('inspection.loading'),
+              zoomFit: t('inspection.zoomFit'),
+              zoomActual: t('inspection.zoomActual'),
+              zoomPixel: t('inspection.zoomPixel'),
               inactive: t('inspection.inactive'),
               deselected: t('inspection.deselected'),
               missing: t(representation === 'spatial' ? 'inspection.spatialMissing' : 'inspection.missing'),
@@ -115,6 +118,9 @@ function DocumentPortrait({ result }: Readonly<{ result: SavedDocumentCapture }>
         accessibilityLabel={imageLabel}
         presentation={{
           loading: t('inspection.loading'),
+          zoomFit: t('inspection.zoomFit'),
+          zoomActual: t('inspection.zoomActual'),
+          zoomPixel: t('inspection.zoomPixel'),
           inactive: t('inspection.inactive'),
           deselected: t('inspection.deselected'),
           missing: t('inspection.portraitMissing'),
