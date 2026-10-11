@@ -345,3 +345,27 @@ test.each(['outcomeUnknown', 'capabilityUnavailable'] as const)(
     });
   },
 );
+
+test('an erased completed receipt offers explicit replacement instead of a resume loop', async () => {
+  mockSnapshot = { ...mockReady, pending: true, failure: 'receiptUnavailable' };
+  const sheets = actionSheets();
+  const { view, tap } = await renderApp();
+  await tap('open-phone');
+  expect(JSON.stringify(view.toJSON())).toContain('can no longer be recovered');
+  expect(mockSession.phoneResume).not.toHaveBeenCalled();
+  expect(mockSession.phoneSend).not.toHaveBeenCalled();
+  expect(view.root.findAllByProps({ testID: 'phone-resume' })).toHaveLength(0);
+  expect(view.root.findAllByProps({ testID: 'phone-result' })).toHaveLength(0);
+  await tap('phone-sheet-dismiss');
+  await tap('phone-start-new');
+  expect(mockSession.phoneStartOver).not.toHaveBeenCalled();
+  await act(async () => {
+    sheets.last().choose(0);
+    await settle();
+  });
+  expect(mockSession.phoneStartOver).toHaveBeenCalledWith(true);
+  expect(mockSession.phoneSend).not.toHaveBeenCalled();
+  await act(async () => {
+    view.unmount();
+  });
+});

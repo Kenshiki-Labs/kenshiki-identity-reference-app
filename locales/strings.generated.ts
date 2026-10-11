@@ -827,6 +827,7 @@ export type MessageValues = {
   readonly "phone.setupError.contextChanged": undefined;
   readonly "phone.setupError.recoveryRequired": undefined;
   readonly "phone.setupError.messageNotSent": undefined;
+  readonly "phone.checkError.receiptUnavailable": undefined;
   readonly "phone.checkError.expired": undefined;
   readonly "phone.checkError.unknownChallenge": undefined;
   readonly "phone.checkError.conflict": undefined;
@@ -1861,6 +1862,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "phone.setupError.contextChanged": "The checked ID or installation changed. Return to Identity and review your ID check.",
       "phone.setupError.recoveryRequired": "Resume the existing check before starting another one. Your text may already have arrived.",
       "phone.setupError.messageNotSent": "The text was not sent. You can send the same message again.",
+      "phone.checkError.receiptUnavailable": "Your text arrived, but its receipt was not saved on this phone and can no longer be recovered. Start a new phone check.",
       "phone.checkError.expired": "This text challenge can no longer complete. Start a new check when you are ready.",
       "phone.checkError.unknownChallenge": "This text challenge can no longer complete. Start a new check when you are ready.",
       "phone.checkError.conflict": "The service could not bind this text to one sender. Start a new check when you are ready.",

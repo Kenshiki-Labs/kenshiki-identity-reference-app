@@ -184,6 +184,7 @@ private final class ReferencePhoneProvider: NSObject, PhoneCheckProvider {
       case .contextChanged: .contextChanged
       case .invalidResponse: .invalidResponse
       case .recoveryRequired: .recoveryRequired
+      case .receiptUnavailable: .receiptUnavailable
       default: .unavailable
       }
       throw NSError(domain: "IDPhoneCheckProvider", code: code.rawValue)

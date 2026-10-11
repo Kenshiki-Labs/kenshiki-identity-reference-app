@@ -94,7 +94,9 @@ export function PhoneFlow({
   const busy = state.busy || leaving;
   const waiting = snapshot?.stage === 'waiting';
   const saving = snapshot?.stage === 'finishing';
-  const terminal = ['expired', 'unknownChallenge', 'conflict', 'refused'].includes(snapshot?.failure ?? '');
+  const terminal = ['expired', 'unknownChallenge', 'conflict', 'refused', 'receiptUnavailable'].includes(
+    snapshot?.failure ?? '',
+  );
   const stopped = !!snapshot?.receipt && phoneCheckStopped(snapshot.receipt);
   function renderPhoneStage() {
     if (saving) {
@@ -213,6 +215,7 @@ export function PhoneFlow({
           secondary
           onPress={activeController.dismiss}
           disabled={busy}
+          testID="phone-sheet-dismiss"
         />
         <Action
           label={t('common.backToIdentity')}
@@ -233,7 +236,12 @@ export function PhoneFlow({
         </Text>
       )}
       {terminal && (
-        <Action label={t('phone.startNew')} onPress={() => activeController.ask('restart')} disabled={busy} />
+        <Action
+          label={t('phone.startNew')}
+          onPress={() => activeController.ask('restart')}
+          disabled={busy}
+          testID="phone-start-new"
+        />
       )}
       {renderReceipt()}
       {snapshot && (

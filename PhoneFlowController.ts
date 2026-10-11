@@ -34,6 +34,7 @@ const setupErrors: ErrorText = {
 };
 const checkErrors: ErrorText = {
   expired: t('phone.checkError.expired'),
+  receiptUnavailable: t('phone.checkError.receiptUnavailable'),
   unknownChallenge: t('phone.checkError.unknownChallenge'),
   conflict: t('phone.checkError.conflict'),
   refused: t('phone.checkError.refused'),

@@ -1067,6 +1067,7 @@
       "messageNotSent": "The text was not sent. You can send the same message again."
     },
     "checkError": {
+      "receiptUnavailable": "Your text arrived, but its receipt was not saved on this phone and can no longer be recovered. Start a new phone check.",
       "expired": "This text challenge can no longer complete. Start a new check when you are ready.",
       "unknownChallenge": "This text challenge can no longer complete. Start a new check when you are ready.",
       "conflict": "The service could not bind this text to one sender. Start a new check when you are ready.",
