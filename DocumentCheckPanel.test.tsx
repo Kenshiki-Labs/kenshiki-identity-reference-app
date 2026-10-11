@@ -56,7 +56,7 @@ async function setup(saved: DocumentCheckSnapshot = initial, onRetake?: () => vo
             answeredRequestSHA256: 'request-digest',
             observationSHA256: 'observation-digest',
           },
-          submittedFields: { givenName: 'SYNTHETIC' },
+          submittedFields: { 'name-first': 'SYNTHETIC' },
           correctable: [],
         },
       }),
@@ -181,5 +181,53 @@ test('an unreadable photo exposes the capture owner callback without invoking a 
   expect(retake).toHaveBeenCalledTimes(1);
   expect(f.native.documentCheck).not.toHaveBeenCalled();
   expect(f.native.documentCheckAskAgain).not.toHaveBeenCalled();
+  await act(async () => f.view.unmount());
+});
+
+// Use the same wire vocabulary as WorkerDocumentChecker's plan.aamva projection,
+// not UI-invented camelCase keys that could conceal a broken production label map.
+test('submitted document fields retain their meaning in the production wire vocabulary', async () => {
+  const fields = {
+    'name-first': 'ALEX',
+    'name-middle': 'R',
+    'name-last': 'EXAMPLE',
+    birthdate: '1990-01-02',
+    'identification-number': 'SYNTHETIC000001',
+    'expiration-date': '2030-12-31',
+    'issue-date': '2020-01-02',
+    'address-street-1': '100 EXAMPLE WAY',
+    'address-street-2': 'UNIT 2',
+    'address-city': 'SAMPLE CITY',
+    'address-subdivision': 'OR',
+    'address-postal-code': '97001',
+    'issuing-authority': 'OR',
+    'country-code': 'US',
+    'future-field': 'extension',
+  };
+  const f = await setup({
+    ...correction,
+    result: { ...required(correction.result), submittedFields: fields },
+  });
+  const rendered = JSON.stringify(f.view.toJSON());
+  for (const label of [
+    'Given name',
+    'Family name',
+    'Middle name',
+    'Date of birth',
+    'Document number',
+    'Expiry date',
+    'Issue date',
+    'Street address',
+    'Address line 2',
+    'City',
+    'State',
+    'Postal code',
+    'Issuing state',
+    'Country',
+    'Field future-field',
+  ])
+    expect(rendered).toContain(label);
+  expect(rendered).not.toContain('Other detail');
+  for (const value of Object.values(fields)) expect(rendered).toContain(value);
   await act(async () => f.view.unmount());
 });

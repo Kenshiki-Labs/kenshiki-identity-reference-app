@@ -12,12 +12,13 @@ export type DocumentCheckPort = Pick<
 export type DocumentCheckState = {
   snapshot: DocumentCheckSnapshot | undefined;
   busy: boolean;
+  loaded: boolean;
   failure: { cause: unknown } | undefined;
 };
 
 /** One controller owns one session's pending work. Disposed work cannot publish to a new holder. */
 export class DocumentCheckController {
-  state: DocumentCheckState = { snapshot: undefined, busy: false, failure: undefined };
+  state: DocumentCheckState = { snapshot: undefined, busy: false, loaded: false, failure: undefined };
   private closed = false;
   private epoch = 0;
   private pending: Promise<DocumentCheckSnapshot> | undefined;
@@ -44,11 +45,15 @@ export class DocumentCheckController {
     } catch (failure) {
       if (epoch === this.epoch) this.update({ failure: { cause: failure } });
     } finally {
-      if (epoch === this.epoch) {
-        this.pending = undefined;
-        this.update({ busy: false });
-      }
+      this.finish(epoch);
     }
+  }
+
+  /** Completion belongs to the current operation; cancellation cannot release a successor's busy state. */
+  private finish(epoch: number) {
+    if (epoch !== this.epoch) return;
+    this.pending = undefined;
+    this.update({ busy: false, loaded: true });
   }
 
   restore = () => this.run(() => this.session.documentCheckRestore());
@@ -56,7 +61,7 @@ export class DocumentCheckController {
   askAgain = () => this.run(() => this.session.documentCheckAskAgain(true));
   correct = (corrections: Record<string, string>) =>
     this.run(() => this.session.documentCheckCorrect(corrections, true));
-  fail = (failure: unknown) => this.update({ failure: { cause: failure }, busy: false });
+  fail = (failure: unknown) => this.update({ failure: { cause: failure }, busy: false, loaded: true });
 
   pause = async () => {
     if (this.closed) return;
@@ -71,10 +76,7 @@ export class DocumentCheckController {
     } catch (failure) {
       if (epoch === this.epoch) this.update({ failure: { cause: failure } });
     } finally {
-      if (epoch === this.epoch) {
-        this.pending = undefined;
-        this.update({ busy: false });
-      }
+      this.finish(epoch);
     }
   };
 
@@ -82,6 +84,6 @@ export class DocumentCheckController {
     this.closed = true;
     ++this.epoch;
     this.pending = undefined;
-    this.state = { snapshot: undefined, busy: false, failure: undefined };
+    this.state = { snapshot: undefined, busy: false, loaded: false, failure: undefined };
   }
 }

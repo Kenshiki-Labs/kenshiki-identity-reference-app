@@ -28,7 +28,7 @@ import App from './App';
 import { CaptureFlowController } from './CaptureFlowController';
 import { DocumentCheckPanel } from './DocumentCheckPanel';
 import { DocumentFlowController } from './DocumentFlowController';
-import { DocumentResultDetails } from './DriverLicenseFlow';
+import { DocumentResultDetails } from './DocumentResultDetails';
 import { CaptureResultDetails } from './IdentityCaptureFlow';
 import { PhoneResultDetails } from './PhoneFlow';
 import { SSNResultDetails } from './SSNFlow';

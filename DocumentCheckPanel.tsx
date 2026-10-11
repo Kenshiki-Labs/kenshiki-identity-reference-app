@@ -1,136 +1,49 @@
-import type { CaptureErrorCode, DocumentCheckFailureCode } from '@kenshiki/identity-capture';
-import { useCallback, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AppState, Text, TextInput, View } from 'react-native';
-import {
-  DocumentCheckController,
-  type DocumentCheckPort,
-  type DocumentCheckState,
-} from './DocumentCheckController';
+import type { DocumentCheckState } from './DocumentCheckController';
 import { documentCheckAction } from './DocumentCheckRecovery';
-import { type ErrorText, errorCode, errorText, formatMoment } from './HolderText';
+import { correctionText, failures, fieldLabel, labels, snapshotFailures } from './DocumentCheckText';
+import { errorCode, errorText, formatMoment } from './HolderText';
 import { t } from './locales/i18n';
 import { Action } from './ui/Action';
 import { NativeSheet } from './ui/NativeSheet';
 import { styles } from './ui/styles';
-import { useControllerState } from './ui/useControllerState';
-
-const labels = {
-  recordMatched: t('documentCheck.outcome.recordMatched'),
-  recordNotMatched: t('documentCheck.outcome.recordNotMatched'),
-  pending: t('documentCheck.outcome.pending'),
-  unavailable: t('documentCheck.outcome.unavailable'),
-  needsCorrection: t('documentCheck.outcome.needsCorrection'),
-  inconclusive: t('documentCheck.outcome.inconclusive'),
-};
-/** Text shared by the snapshot's failure field and command rejections. */
-const checkFailures = {
-  readerUnbound: t('documentCheck.failure.readerUnbound'),
-  requestRejected: t('documentCheck.failure.requestRejected'),
-  serviceUnavailable: t('documentCheck.failure.serviceUnavailable'),
-  replyRejected: t('documentCheck.failure.replyRejected'),
-  requestConflict: t('documentCheck.failure.requestConflict'),
-  nothingToAskAgain: t('documentCheck.failure.nothingToAskAgain'),
-  correctionNotRequested: t('documentCheck.failure.correctionNotRequested'),
-  busy: t('documentCheck.failure.busy'),
-  cancelled: t('documentCheck.failure.cancelled'),
-} satisfies Partial<Record<Extract<DocumentCheckFailureCode, CaptureErrorCode>, string>>;
-/** `DocumentCheckSnapshot.failure` has its own closed vocabulary. */
-const snapshotFailures: Record<DocumentCheckFailureCode, string> = {
-  ...checkFailures,
-  missingPreparedDocument: t('documentCheck.failure.missingPreparedDocument'),
-  sourceIntegrityFailure: t('documentCheck.failure.sourceIntegrityFailure'),
-  analysisNotCompleted: t('documentCheck.failure.analysisNotCompleted'),
-  fullPhotoAnalysisNotCompleted: t('documentCheck.failure.fullPhotoAnalysisNotCompleted'),
-  observationsRejected: t('documentCheck.failure.observationsRejected'),
-  retentionFailed: t('documentCheck.failure.retentionFailed'),
-  engineUnavailable: t('documentCheck.failure.engineUnavailable'),
-  authenticityFailed: t('documentCheck.failure.authenticityFailed'),
-  documentNotLive: t('documentCheck.failure.documentNotLive'),
-  notCameraCapture: t('documentCheck.failure.notCameraCapture'),
-  cancelled: t('documentCheck.failure.cancelled'),
-  custodyUnavailable: t('documentCheck.failure.custodyUnavailable'),
-};
-/** Command rejections, by code. */
-const failures: ErrorText = {
-  ...checkFailures,
-  consentRequired: t('documentCheck.failure.consentRequired'),
-  documentCheckNotConfigured: t('documentCheck.failure.documentCheckNotConfigured'),
-  documentFrontRequired: t('documentCheck.failure.documentFrontRequired'),
-  invalidArgument: t('documentCheck.failure.invalidArgument'),
-  documentCustodyFailed: t('documentCheck.failure.documentCustodyFailed'),
-  sessionUnavailable: t('documentCheck.failure.sessionUnavailable'),
-};
-const fieldNames: Record<string, string> = {
-  givenName: t('documentCheck.field.givenName'),
-  familyName: t('documentCheck.field.familyName'),
-  middleName: t('documentCheck.field.middleName'),
-  birthDate: t('documentCheck.field.birthDate'),
-  documentNumber: t('documentCheck.field.documentNumber'),
-  expiryDate: t('documentCheck.field.expiryDate'),
-  issueDate: t('documentCheck.field.issueDate'),
-  addressLine1: t('documentCheck.field.addressLine1'),
-  addressLine2: t('documentCheck.field.addressLine2'),
-  city: t('documentCheck.field.city'),
-  region: t('documentCheck.field.region'),
-  postalCode: t('documentCheck.field.postalCode'),
-  issuingState: t('documentCheck.field.issuingState'),
-};
-const fieldLabel = (field: string) => fieldNames[field] ?? t('common.otherDetail');
-const correctionText: Record<string, string> = {
-  required: t('documentCheck.correction.required'),
-  mismatch: t('documentCheck.correction.mismatch'),
-  invalid: t('documentCheck.correction.invalid'),
-};
-
-type DocumentCheckProps = Readonly<{
-  session: DocumentCheckPort;
-  configured: boolean;
-  onRetake?: () => void;
-  onState?: (session: DocumentCheckPort, state: DocumentCheckState) => void;
-}>;
+import { type DocumentCheckProps, useDocumentCheck } from './useDocumentCheck';
 
 /** Remount the presentation when custody changes; no old holder state is rendered. */
 export function DocumentCheckPanel(props: DocumentCheckProps) {
   return <DocumentCheckView key={`${props.session.id}:${props.configured}`} {...props} />;
 }
 
-const initialState: DocumentCheckState = { snapshot: undefined, busy: false, failure: undefined };
+function DocumentCheckView(props: DocumentCheckProps) {
+  const check = useDocumentCheck(props);
+  return <DocumentCheckContent {...props} check={check} />;
+}
 
-/** Reopening restores local status. Only holder actions can dispatch a check. */
-function DocumentCheckView({ session, configured, onState, onRetake }: DocumentCheckProps) {
-  const [sheet, setSheet] = useState<'failure' | 'correction'>();
-  const [error, setError] = useState('');
+/** Presentation only; SDK commands and subscription lifetime belong to useDocumentCheck. */
+export function DocumentCheckContent({
+  configured,
+  onRetake,
+  check,
+}: DocumentCheckProps & {
+  check: ReturnType<typeof useDocumentCheck>;
+}) {
+  const { controller, state, failed } = check;
+  const [correction, setCorrection] = useState(false);
+  const [dismissedFailure, setDismissedFailure] = useState<DocumentCheckState['failure']>();
   const [edits, setEdits] = useState<Record<string, string>>({});
-  const connect = useCallback(
-    (publish: (state: DocumentCheckState) => void) => {
-      const active = new DocumentCheckController(session, (next) => {
-        publish(next);
-        onState?.(session, next);
-        if (next.failure) {
-          setError(errorText(errorCode(next.failure.cause), failures, t('documentCheck.failure.other')));
-          setSheet('failure');
-        } else if (!next.busy) setSheet(undefined);
-      });
-      if (configured) active.restore().catch(active.fail);
-      const listener = AppState.addEventListener('change', (next) => {
-        if (next === 'background') {
-          setEdits({});
-          setSheet(undefined);
-          active.pause().catch(active.fail);
-        }
-      });
-      return {
-        controller: active,
-        initialState: active.state,
-        dispose: (): undefined => {
-          active.dispose();
-          listener.remove();
-        },
-      };
-    },
-    [session, configured, onState],
-  );
-  const { controller, state, failed } = useControllerState(initialState, connect);
+  const sheet =
+    state.failure && state.failure !== dismissedFailure ? 'failure' : correction ? 'correction' : undefined;
+  const error = errorText(errorCode(state.failure?.cause), failures, t('documentCheck.failure.other'));
+  useEffect(() => {
+    const listener = AppState.addEventListener('change', (next) => {
+      if (next === 'background') {
+        setEdits({});
+        setCorrection(false);
+      }
+    });
+    return () => listener.remove();
+  }, []);
   const { snapshot, busy } = state;
   const result = snapshot?.result;
   const nextAction = state.failure ? 'restore' : documentCheckAction(snapshot);
@@ -194,7 +107,7 @@ function DocumentCheckView({ session, configured, onState, onRetake }: DocumentC
             disabled={busy}
             onPress={() => {
               setEdits({});
-              setSheet('correction');
+              setCorrection(true);
             }}
           />
         )}
@@ -225,7 +138,8 @@ function DocumentCheckView({ session, configured, onState, onRetake }: DocumentC
   }
   const closeSheet = () => {
     setEdits({});
-    setSheet(undefined);
+    setCorrection(false);
+    setDismissedFailure(state.failure);
   };
   function renderCheckSheet() {
     if (sheet) {
@@ -259,7 +173,11 @@ function DocumentCheckView({ session, configured, onState, onRetake }: DocumentC
               <Action
                 label={t('documentCheck.action.submitCorrections')}
                 disabled={busy || !Object.values(edits).some((value) => value.trim())}
-                onPress={() => controller?.correct(edits)}
+                onPress={async () => {
+                  await controller?.correct(edits);
+                  setEdits({});
+                  setCorrection(false);
+                }}
               />
             </>
           ) : (

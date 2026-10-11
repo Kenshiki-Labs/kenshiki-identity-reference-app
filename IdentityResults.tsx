@@ -1,7 +1,6 @@
 import type { Configuration } from '@kenshiki/identity-capture';
 import { Text } from 'react-native';
-import { DocumentCheckPanel } from './DocumentCheckPanel';
-import { DocumentResultDetails } from './DriverLicenseFlow';
+import { DocumentResult } from './DocumentResult';
 import { CaptureResultDetails } from './IdentityCaptureFlow';
 import { t } from './locales/i18n';
 import { Action } from './ui/Action';
@@ -21,25 +20,25 @@ export function LicenseResult({
   if (!document) return null;
   return (
     <Page title={t('hub.licenseTitle')}>
-      <DocumentCheckPanel
+      <DocumentResult
         key={document.document.front?.captureID}
-        session={document.session}
+        result={document}
         onState={workspace.license.checkChanged}
         onRetake={() => startDocument('front')}
         configured={!!configuration.document?.check}
-      />
-      <DocumentResultDetails result={document} />
-      <Action
-        label={t('license.retake')}
-        secondary
-        testID="retake-saved-document"
-        onPress={() => startDocument('front')}
-      />
-      <Action
-        label={t('hub.action.deleteLicenseScans')}
-        destructive
-        onPress={() => requestClear('document')}
-      />
+      >
+        <Action
+          label={t('license.retake')}
+          secondary
+          testID="retake-saved-document"
+          onPress={() => startDocument('front')}
+        />
+        <Action
+          label={t('hub.action.deleteLicenseScans')}
+          destructive
+          onPress={() => requestClear('document')}
+        />
+      </DocumentResult>
     </Page>
   );
 }

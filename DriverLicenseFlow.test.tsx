@@ -5,6 +5,7 @@ import type {
   DocumentObservation,
   DocumentRecordSummary,
 } from '@kenshiki/identity-capture';
+import { Text } from 'react-native';
 import renderer, { act } from 'react-test-renderer';
 import { documentConfiguration } from './__tests__/documentFixture';
 import { invoke, property, required } from './__tests__/support';
@@ -121,7 +122,13 @@ test('license capture returns to Identity and both exact photos and read details
   expect(JSON.stringify(view.toJSON())).toContain('Turn the card over');
   await tap('start-document-back');
   await capture(mockComplete);
-  expect(JSON.stringify(view.toJSON())).toContain('SYNTHETIC SPECIMEN');
+  expect(JSON.stringify(view.toJSON())).toContain('SYNTHETIC');
+  expect(JSON.stringify(view.toJSON())).toContain('SPECIMEN');
+  // Extracted fields are visible immediately, once, without an expansion action.
+  for (const value of ['TEST123', '123 SAMPLE ST']) {
+    expect(view.root.findAll((node) => node.type === Text && node.props.children === value)).toHaveLength(1);
+  }
+  expect(JSON.stringify(view.toJSON())).not.toContain(t('license.result.showAll'));
   expect(JSON.stringify(view.toJSON())).toContain('123 SAMPLE ST');
   expect(JSON.stringify(view.toJSON()).indexOf('document-check-panel')).toBeLessThan(
     JSON.stringify(view.toJSON()).indexOf('document-result'),

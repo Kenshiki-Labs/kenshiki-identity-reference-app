@@ -1,4 +1,4 @@
-import type { Configuration, DocumentObservation, DocumentSideObservation } from '@kenshiki/identity-capture';
+import type { Configuration } from '@kenshiki/identity-capture';
 import {
   IdentityCaptureImage,
   IdentityCapturePreview,
@@ -6,13 +6,12 @@ import {
 } from '@kenshiki/identity-capture';
 import { useCallback, useRef, useState } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
-import { DocumentCheckPanel } from './DocumentCheckPanel';
 import {
   DocumentFlowController,
   type DocumentFlowState,
   type SavedDocumentCapture,
 } from './DocumentFlowController';
-import { DocumentInspection } from './DocumentInspection';
+import { DocumentResult } from './DocumentResult';
 import { t } from './locales/i18n';
 import { Action } from './ui/Action';
 import { ControllerStartup } from './ui/ControllerStartup';
@@ -197,16 +196,14 @@ export function DriverLicenseFlow({
           </>
         )}
         {state.phase === 'result' && state.completed && state.session && (
-          <>
-            <DocumentCheckPanel
-              key={state.completed.front?.captureID}
-              session={state.session}
-              onRetake={() => {
-                activeController.startFront().catch(activeController.fail);
-              }}
-              configured={!!configuration.document?.check}
-            />
-            <DocumentResultDetails result={{ session: state.session, document: state.completed }} />
+          <DocumentResult
+            key={state.completed.front?.captureID}
+            result={{ session: state.session, document: state.completed }}
+            onRetake={() => {
+              activeController.startFront().catch(activeController.fail);
+            }}
+            configured={!!configuration.document?.check}
+          >
             <Action
               label={t('common.done')}
               onPress={finish}
@@ -214,7 +211,7 @@ export function DriverLicenseFlow({
               testID="finish-document"
             />
             {action(t('license.retake'), activeController.startFront, 'start-document-front', true)}
-          </>
+          </DocumentResult>
         )}
         {state.busy && state.phase !== 'loading' && (
           <Text style={styles.body} accessibilityLiveRegion="polite">
@@ -292,126 +289,4 @@ function documentHint(state: DocumentFlowState): string {
     nativeControlsPaused: t('license.hint.nativeControlsPaused'),
   };
   return hints[state.issue ?? ''] ?? t('license.hint.other');
-}
-
-function documentName(document: DocumentObservation): string {
-  const fields = document.back?.pdf417?.fields ?? {};
-  return (
-    fields.DAA || [fields.DAC, fields.DAD, fields.DCS].filter(Boolean).join(' ') || t('license.title.default')
-  );
-}
-export function DocumentResultDetails({ result }: Readonly<{ result: SavedDocumentCapture }>) {
-  const { document } = result;
-  const [details, setDetails] = useState(false);
-  const barcode = document.back?.pdf417;
-  const fields = barcode?.fields ?? {};
-  const address = [fields.DAG, fields.DAH, fields.DAI, fields.DAJ, fields.DAK].filter(Boolean).join('\n');
-  return (
-    <>
-      <DocumentInspection result={result} />
-      {document.back && (
-        <View style={styles.card} testID="document-barcode-details">
-          <Text accessibilityRole="header" style={styles.sheetTitle}>
-            {t('license.result.barcodeTitle')}
-          </Text>
-          <Text style={styles.body} testID="document-barcode-status">
-            {barcodeStatus(document.back)}
-          </Text>
-          {!!(fields.DAA || fields.DCS || fields.DAC) && (
-            <Detail label={t('license.result.name')} value={documentName(document)} />
-          )}
-          {!!fields.DAQ && <Detail label={t('license.result.licenseNumber')} value={fields.DAQ} />}
-          {!!fields.DBB && <Detail label={t('license.result.birthDate')} value={fields.DBB} />}
-          {!!fields.DBA && <Detail label={t('license.result.expiryDate')} value={fields.DBA} />}
-          {address.length > 0 && <Detail label={t('license.result.address')} value={address} />}
-        </View>
-      )}
-      {barcode && (
-        <Action
-          label={details ? t('license.result.hideAll') : t('license.result.showAll')}
-          secondary
-          onPress={() => setDetails(!details)}
-        />
-      )}
-      {details && barcode && (
-        <View style={styles.card}>
-          {Object.entries(fields).map(([field, value]) => (
-            <Detail
-              key={field}
-              label={fieldLabels[field] ?? t('license.result.unknownField', { code: field })}
-              value={value}
-            />
-          ))}
-          {!!barcode.missingRequiredElements.length && (
-            <Detail
-              label={t('license.result.missingElements')}
-              value={barcode.missingRequiredElements
-                .map((field) => fieldLabels[field] ?? field)
-                .join(t('common.listSeparator'))}
-            />
-          )}
-        </View>
-      )}
-    </>
-  );
-}
-const fieldLabels: Record<string, string> = {
-  DAA: t('license.field.DAA'),
-  DCS: t('license.field.DCS'),
-  DAC: t('license.field.DAC'),
-  DAD: t('license.field.DAD'),
-  DAQ: t('license.field.DAQ'),
-  DBB: t('license.field.DBB'),
-  DBA: t('license.field.DBA'),
-  DBD: t('license.field.DBD'),
-  DAG: t('license.field.DAG'),
-  DAH: t('license.field.DAH'),
-  DAI: t('license.field.DAI'),
-  DAJ: t('license.field.DAJ'),
-  DAK: t('license.field.DAK'),
-  DCG: t('license.field.DCG'),
-  DBC: t('license.field.DBC'),
-  DAY: t('license.field.DAY'),
-  DAU: t('license.field.DAU'),
-  DAW: t('license.field.DAW'),
-  DCA: t('license.field.DCA'),
-  DCB: t('license.field.DCB'),
-  DCD: t('license.field.DCD'),
-  DCF: t('license.field.DCF'),
-  DDA: t('license.field.DDA'),
-  DDB: t('license.field.DDB'),
-};
-/** Each decoder and parser state has its own text; none of them is issuer validation. */
-function barcodeStatus(back: DocumentSideObservation): string {
-  switch (back.pdf417Status) {
-    case 'notFound':
-      return t('license.barcode.notFound');
-    case 'ambiguous':
-      return t('license.barcode.ambiguous');
-    case 'failed':
-      return t('license.barcode.failed');
-    case 'notRequested':
-      return t('license.barcode.notRequested');
-    case 'readable':
-      switch (back.pdf417?.status) {
-        case 'readable':
-          return back.pdf417.missingRequiredElements.length
-            ? t('license.barcode.readableMissing')
-            : t('license.barcode.readable');
-        case 'malformed':
-          return t('license.barcode.malformed');
-        case 'unsupported':
-          return t('license.barcode.unsupported');
-        case undefined:
-          return t('license.barcode.unread');
-      }
-  }
-}
-function Detail({ label, value }: Readonly<{ label: string; value: string }>) {
-  return (
-    <View style={styles.detail}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.body}>{value}</Text>
-    </View>
-  );
 }

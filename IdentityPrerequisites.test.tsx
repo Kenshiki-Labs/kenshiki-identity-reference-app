@@ -237,7 +237,12 @@ test('newer document-check state supersedes a late restore and requires phone re
   });
   expect(required(workspace).phone.blocked).toBe('document');
   await act(async () => {
-    required(workspace).license.checkChanged(session, { busy: false, failure: undefined, snapshot: checked });
+    required(workspace).license.checkChanged(session, {
+      busy: false,
+      loaded: true,
+      failure: undefined,
+      snapshot: checked,
+    });
   });
   expect(required(workspace).phone.blocked).toBeUndefined();
   await act(async () => {
@@ -247,6 +252,7 @@ test('newer document-check state supersedes a late restore and requires phone re
   await act(async () => {
     required(workspace).license.checkChanged(session, {
       busy: false,
+      loaded: true,
       failure: undefined,
       snapshot: { ...checked, result: { ...required(checked.result), operationID: 'new-operation' } },
     });
@@ -255,7 +261,12 @@ test('newer document-check state supersedes a late restore and requires phone re
   expect(required(workspace).phone.blocked).toBeUndefined();
   expect(required(workspace).ssn.blocked).toBe('phone');
   await act(async () => {
-    required(workspace).license.checkChanged(session, { busy: true, failure: undefined, snapshot: checked });
+    required(workspace).license.checkChanged(session, {
+      busy: true,
+      loaded: true,
+      failure: undefined,
+      snapshot: checked,
+    });
   });
   expect(required(workspace).phone.blocked).toBe('document');
   await act(async () => {
