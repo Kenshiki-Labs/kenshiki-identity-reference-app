@@ -745,6 +745,7 @@ export type MessageValues = {
   readonly "ssn.entryError.confirmationRequired": undefined;
   readonly "ssn.entryError.invalidRequest": undefined;
   readonly "ssn.entryError.busy": undefined;
+  readonly "phone.loading": undefined;
   readonly "phone.title": undefined;
   readonly "phone.saveBody": undefined;
   readonly "phone.waitingTitle": undefined;
@@ -1778,6 +1779,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "ssn.entryError.confirmationRequired": "Confirm every digit of your number before the check starts.",
       "ssn.entryError.invalidRequest": "The number could not be sent as entered. Enter all nine digits again.",
       "ssn.entryError.busy": "The previous request is still finishing. Wait a moment, then enter your number again.",
+      "phone.loading": "Opening your phone check…",
       "phone.title": "Phone",
       "phone.saveBody": "The answer arrived. Saving again will not send another text or run another comparison.",
       "phone.waitingTitle": "Waiting for your text",

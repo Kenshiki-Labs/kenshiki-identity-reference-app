@@ -17,6 +17,7 @@ export type SavedPhoneCheck = { session: CaptureSession; snapshot: PhoneCheckSna
 export type PhoneFlowState = {
   snapshot?: PhoneCheckSnapshot | undefined;
   busy: boolean;
+  opening: boolean;
   paused: boolean;
   sheet?: ({ kind: 'restart' | 'erase' } | { kind: 'error'; message: string }) | undefined;
 };
@@ -47,7 +48,7 @@ const checkErrors: ErrorText = {
 
 /** Native SDK owns challenge identity, polling and encrypted receipts. JS only presents them. */
 export class PhoneFlowController {
-  state: PhoneFlowState = { busy: false, paused: false };
+  state: PhoneFlowState = { busy: false, paused: false, opening: true };
   private current?: CaptureSession | undefined;
   private unsubscribe?: (() => void) | undefined;
   private active?: Promise<void> | undefined;
@@ -94,7 +95,7 @@ export class PhoneFlowController {
     );
   }
   private accept(snapshot: PhoneCheckSnapshot) {
-    this.update({ snapshot, paused: snapshot.pending ? this.state.paused : false });
+    this.update({ snapshot, paused: snapshot.pending ? this.state.opening || this.state.paused : false });
     // PhonePossessionFailure is a subset of the command-rejection vocabulary.
     if (snapshot.failure) this.failure(snapshot.failure);
   }
@@ -148,12 +149,17 @@ export class PhoneFlowController {
     });
     return work;
   }
-  open = () =>
-    this.run(async (session) => {
-      const snapshot = await session.phoneSnapshot();
-      this.update({ paused: snapshot.pending });
-      return snapshot;
-    });
+  /** Hold presentation until native restoration settles, including events emitted while opening.
+   * A handed-off snapshot is provisional until the current context has been revalidated. */
+  open = async () => {
+    if (this.closed || this.active !== undefined || this.drain !== undefined) return;
+    this.update({ opening: true });
+    try {
+      await this.run((session) => session.phoneSnapshot());
+    } finally {
+      this.update({ opening: false });
+    }
+  };
   send = () =>
     this.run(async (session) => {
       this.update({ paused: false });

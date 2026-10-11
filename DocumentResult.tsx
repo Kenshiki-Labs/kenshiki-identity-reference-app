@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
 import { DocumentCheckContent } from './DocumentCheckPanel';
 import { DocumentCheckReceipt } from './DocumentCheckReceipt';
 import type { SavedDocumentCapture } from './DocumentFlowController';
 import { DocumentResultDetails } from './DocumentResultDetails';
 import { t } from './locales/i18n';
-import { styles } from './ui/styles';
+import { LoadingCard } from './ui/LoadingCard';
 import { type DocumentCheckProps, useDocumentCheck } from './useDocumentCheck';
 
 type Props = Omit<DocumentCheckProps, 'session'> & { result: SavedDocumentCapture; children?: ReactNode };
@@ -33,14 +32,7 @@ function LoadedDocumentResult({ result, children, ...props }: Props) {
   const connection = { ...props, session: result.session };
   const check = useDocumentCheck(connection);
   if (props.configured && !check.state.loaded && !check.failed) {
-    return (
-      <View testID="document-result-loading" style={styles.card}>
-        <ActivityIndicator />
-        <Text accessibilityLiveRegion="polite" style={styles.body}>
-          {t('license.loading')}
-        </Text>
-      </View>
-    );
+    return <LoadingCard message={t('license.loading')} testID="document-result-loading" />;
   }
   return (
     <>

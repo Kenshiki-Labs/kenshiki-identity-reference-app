@@ -275,3 +275,19 @@ jest.mock('@kenshiki/identity-capture', () => ({
     '../../ReactNative/identity-capture/src/codes',
   ).isCaptureErrorCode,
 }));
+
+test('a late restore reply cannot change the pause state of a newer pending event', async () => {
+  const f = fixture();
+  const restored = deferred<PhoneCheckSnapshot>();
+  f.native.phoneSnapshot.mockImplementationOnce(() => restored.promise);
+  const opening = f.c.open();
+  await tick();
+  f.emit(waiting);
+  expect(f.c.state.opening).toBe(true);
+  restored.resolve(complete);
+  await opening;
+  expect(f.c.state.opening).toBe(false);
+  expect(f.c.state.snapshot).toEqual(waiting);
+  expect(f.c.state.paused).toBe(true);
+  await f.c.dispose();
+});

@@ -10,12 +10,13 @@ import { SubscriberResultDetails } from './SubscriberResultDetails';
 import { Action } from './ui/Action';
 import { ControllerStartup } from './ui/ControllerStartup';
 import { connectBackground } from './ui/connectBackground';
+import { LoadingCard } from './ui/LoadingCard';
 import { NativeSheet, useConfirmation } from './ui/NativeSheet';
 import { Page } from './ui/Page';
 import { styles } from './ui/styles';
 import { useControllerState } from './ui/useControllerState';
 
-const initialState: PhoneFlowState = { busy: false, paused: false };
+const initialState: PhoneFlowState = { busy: false, paused: false, opening: true };
 
 export function PhoneFlow({
   configuration,
@@ -86,12 +87,14 @@ export function PhoneFlow({
         title={t('hub.phone.title')}
         onClose={onExit}
         failed={failed}
+        loadingMessage={t('phone.loading')}
         cancelStartup={cancelStartup}
       />
     );
   const activeController = controller;
-  const snapshot = state.snapshot;
+  const snapshot = state.opening ? undefined : state.snapshot;
   const busy = state.busy || leaving;
+  const loading = state.opening || (!snapshot && busy);
   const waiting = snapshot?.stage === 'waiting';
   const saving = snapshot?.stage === 'finishing';
   const terminal = ['expired', 'unknownChallenge', 'conflict', 'refused', 'receiptUnavailable'].includes(
@@ -99,6 +102,7 @@ export function PhoneFlow({
   );
   const stopped = !!snapshot?.receipt && phoneCheckStopped(snapshot.receipt);
   function renderPhoneStage() {
+    if (!snapshot) return null;
     if (saving) {
       return (
         <View style={styles.card}>
@@ -230,11 +234,7 @@ export function PhoneFlow({
   return (
     <Page title={t('hub.phone.title')} onClose={close} covered={!!state.sheet} overlay={renderPhoneSheet()}>
       {renderPhoneStage()}
-      {busy && (
-        <Text accessibilityLiveRegion="polite" style={styles.body}>
-          {t('common.pleaseWait')}
-        </Text>
-      )}
+      <PhoneProgress loading={loading} busy={busy} hasReceipt={!!snapshot?.receipt} />
       {terminal && (
         <Action
           label={t('phone.startNew')}
@@ -254,6 +254,21 @@ export function PhoneFlow({
         />
       )}
     </Page>
+  );
+}
+
+/** Background handoff work must not insert a row above a mounted receipt. */
+function PhoneProgress({
+  loading,
+  busy,
+  hasReceipt,
+}: Readonly<{ loading: boolean; busy: boolean; hasReceipt: boolean }>) {
+  if (loading) return <LoadingCard message={t('phone.loading')} testID="phone-loading" />;
+  if (!busy || hasReceipt) return null;
+  return (
+    <Text accessibilityLiveRegion="polite" style={styles.body}>
+      {t('common.pleaseWait')}
+    </Text>
   );
 }
 

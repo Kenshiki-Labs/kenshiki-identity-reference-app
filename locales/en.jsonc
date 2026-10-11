@@ -966,6 +966,7 @@
 
   // The phone possession check: the holder sends one text from this phone.
   "phone": {
+    "loading": "Opening your phone check…",
     "title": "Phone",
     "saveBody": "The answer arrived. Saving again will not send another text or run another comparison.",
     "waitingTitle": "Waiting for your text",

@@ -6,13 +6,20 @@ import type {
 } from '@kenshiki/identity-capture';
 import { IdentityCaptureSession } from '@kenshiki/identity-capture';
 import type { AppStateStatus } from 'react-native';
-import { AppState } from 'react-native';
+import { ActivityIndicator, AppState } from 'react-native';
 import renderer, { act } from 'react-test-renderer';
 import { documentConfiguration, documentSessionMethods } from './__tests__/documentFixture';
 import { phoneConfiguration } from './__tests__/phoneFixture';
-import { actionSheets, invoke, required, settle, without } from './__tests__/support';
+import {
+  actionSheets,
+  invoke,
+  mockSession as makeSession,
+  required,
+  settle,
+  without,
+} from './__tests__/support';
 import App from './App';
-import { PhoneResultDetails } from './PhoneFlow';
+import { PhoneFlow, PhoneResultDetails } from './PhoneFlow';
 
 const mockReady: PhoneCheckSnapshot = {
   stage: 'start',
@@ -363,6 +370,124 @@ test('an erased completed receipt offers explicit replacement instead of a resum
   });
   expect(mockSession.phoneStartOver).toHaveBeenCalledWith(true);
   expect(mockSession.phoneSend).not.toHaveBeenCalled();
+  await act(async () => {
+    view.unmount();
+  });
+});
+
+test.each([false, true])(
+  'delayed restoration reveals one complete result without a Send-form flash (saved: %s)',
+  async (saved) => {
+    mockDocumentSessionPending = false;
+    const completed: PhoneCheckSnapshot = { ...mockReady, stage: 'completed', receipt: mockReceipt };
+    let resolve!: (snapshot: PhoneCheckSnapshot) => void;
+    mockSession.phoneSnapshot.mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        }),
+    );
+    let view!: renderer.ReactTestRenderer;
+    await act(async () => {
+      view = renderer.create(
+        <PhoneFlow
+          configuration={{ phone: phoneConfiguration }}
+          saved={saved ? { session: makeSession(mockSession), snapshot: completed } : undefined}
+          onComplete={jest.fn()}
+          onExit={jest.fn()}
+        />,
+      );
+    });
+    for (const id of ['phone-result', 'phone-send', 'phone-erase'])
+      expect(view.root.findAllByProps({ testID: id })).toHaveLength(0);
+    expect(view.root.findAllByType(ActivityIndicator)).toHaveLength(1);
+    await act(async () => {
+      mockListener?.({ type: 'phoneSnapshot', snapshot: completed });
+    });
+    expect(view.root.findAllByProps({ testID: 'phone-result' })).toHaveLength(0);
+    // A late command reply cannot replace the newer event, nor reveal a transient start form.
+    await act(async () => {
+      resolve(mockReady);
+    });
+    expect(view.root.findAllByProps({ testID: 'phone-result' }).length).toBeGreaterThan(0);
+    expect(view.root.findAllByProps({ testID: 'phone-send' })).toHaveLength(0);
+    expect(view.root.findAllByType(ActivityIndicator)).toHaveLength(0);
+    expect(JSON.stringify(view.toJSON())).toContain('a'.repeat(64));
+    expect(mockSession.phoneSend).not.toHaveBeenCalled();
+    expect(mockSession.phoneResume).not.toHaveBeenCalled();
+    await act(async () => {
+      view.unmount();
+    });
+  },
+);
+
+test('failed revalidation never flashes a handed-off receipt or offers Send', async () => {
+  let reject!: (error: unknown) => void;
+  mockSession.phoneSnapshot.mockImplementationOnce(
+    () =>
+      new Promise((_, fail) => {
+        reject = fail;
+      }),
+  );
+  let view!: renderer.ReactTestRenderer;
+  await act(async () => {
+    view = renderer.create(
+      <PhoneFlow
+        configuration={{ phone: phoneConfiguration }}
+        saved={{
+          session: makeSession(mockSession),
+          snapshot: { ...mockReady, stage: 'completed', receipt: mockReceipt },
+        }}
+        onComplete={jest.fn()}
+        onExit={jest.fn()}
+      />,
+    );
+  });
+  expect(JSON.stringify(view.toJSON())).not.toContain(mockReceipt.sender);
+  await act(async () => {
+    reject({ code: 'contextChanged' });
+  });
+  expect(JSON.stringify(view.toJSON())).not.toContain(mockReceipt.sender);
+  expect(view.root.findAllByProps({ testID: 'phone-send' })).toHaveLength(0);
+  expect(view.root.findAllByProps({ testID: 'phone-bottom-sheet' }).length).toBeGreaterThan(0);
+  expect(view.root.findAllByType(ActivityIndicator)).toHaveLength(0);
+  await act(async () => {
+    view.unmount();
+  });
+});
+
+test('handoff keeps the receipt mounted without inserting progress above it', async () => {
+  mockSnapshot = { ...mockReady, stage: 'completed', receipt: mockReceipt };
+  mockDocumentSessionPending = false;
+  let resolve!: (snapshot: PhoneCheckSnapshot) => void;
+  mockSession.phoneCancel.mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
+  );
+  const onComplete = jest.fn();
+  let view!: renderer.ReactTestRenderer;
+  await act(async () => {
+    view = renderer.create(
+      <PhoneFlow configuration={{ phone: phoneConfiguration }} onComplete={onComplete} onExit={jest.fn()} />,
+    );
+  });
+  const result = view.root.findByProps({ testID: 'phone-result' });
+  let closing: Promise<unknown> | undefined;
+  await act(async () => {
+    closing = Promise.resolve(invoke(view.root.findByProps({ testID: 'phone-done' }), 'onPress'));
+    await settle();
+  });
+  expect(view.root.findByProps({ testID: 'phone-result' })).toBe(result);
+  expect(JSON.stringify(view.toJSON())).not.toContain('Please wait');
+  expect(view.root.findAllByType(ActivityIndicator)).toHaveLength(0);
+  expect(onComplete).not.toHaveBeenCalled();
+  await act(async () => {
+    resolve(mockSnapshot);
+    await closing;
+  });
+  expect(onComplete).toHaveBeenCalledTimes(1);
   await act(async () => {
     view.unmount();
   });
