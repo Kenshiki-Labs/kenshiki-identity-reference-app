@@ -2,11 +2,11 @@
 
 Start here to run an independent app against the delivered SDK. You need both
 `kenshiki-identity-capture-0.6.0.tgz` and `kenshiki-identity-capture-0.6.0-reference-ui.zip` from
-the same build. Their accompanying `SHA256SUMS` identifies the exact bytes; the
-[SSA distribution note](../../Distribution/SSA-DISTRIBUTION-NOTE.md) explains verification.
+the same build. Their accompanying `SHA256SUMS` identifies the exact bytes; the delivery's
+distribution note explains verification.
 The generator installs the binary tarball; it does not require an SDK source checkout.
-This is editable reference UI for the adopting team, not a finished SSA enrollment app. What it
-leaves to the SSA app is listed under [Decisions for the SSA app](#decisions-for-the-ssa-app).
+This is editable reference UI for the adopting team, not a finished enrollment app. What it
+leaves to the adopting app is listed under [Decisions for the adopting app](#decisions-for-the-adopting-app).
 
 The baseline is **bare React Native 0.87.1, React 19.2.3, New Architecture, iOS 18+**. Android,
 Expo Go and other React Native versions are not validated by this example. The generated CLI
@@ -33,8 +33,7 @@ xcrun simctl list devices available
 The development environment inspected for this guide has Node 22.22.2, npm 10.9.7, Ruby 2.6.10,
 CocoaPods 1.16.2, xcodeproj 1.27.0 and Xcode 26.6. That is an environment record, not a claim that
 all earlier or later versions work. Retain the release's executed test receipts with its artifact
-hashes; the [SSA distribution note](../../Distribution/SSA-DISTRIBUTION-NOTE.md#verification-and-acceptance)
-explains their scope and acceptance limits.
+hashes; the delivery's distribution note explains their scope and acceptance limits.
 
 React Native 0.87.1 declares Node `^22.13.0 || ^24.3.0 || >=26.0.0`. The generator enforces
 those release ranges before creating a host; a minimum-only check would incorrectly admit Node 23,
@@ -91,7 +90,7 @@ project as follows:
 host, preserve the error output and use a new destination when retrying; it will not overwrite
 an existing project.
 
-For an existing SSA app, use the [package integration guide](../../ReactNative/identity-capture/README.md)
+For an existing app, use the [package integration guide](../../ReactNative/identity-capture/README.md)
 and copy only the desired UI source. The same guide is installed at
 `node_modules/@kenshiki/identity-capture/README.md`; the package build checks that the installed copy
 matches the reviewed guide byte for byte. Do not run `configure-host.rb`
@@ -359,7 +358,7 @@ holder, so the same holder reopens the same workflow. The AppDelegate creates th
 keeps it in `UserDefaults`; if the stored value cannot be read it configures no store and the hub says
 so, rather than creating another holder. On the simulator only, `--reference-holder=<UUID>` selects the
 holder for a launch. **This is a single-holder test host with no sign-in. Do not use its unchanged configuration in a multiuser or
-shared-device SSA app.** Authenticate and select a stable local holder scope in native code before
+shared-device app.** Authenticate and select a stable local holder scope in native code before
 configuring custody or mounting the identity UI. Use the
 [scoped native configuration guidance](../../ReactNative/identity-capture/README.md#configure-in-native-code-before-mounting-react).
 On a holder switch, cancel and drain active operations, release every old session, clear personal JavaScript
@@ -429,14 +428,14 @@ For physical acceptance, capture and reopen documents; inspect document-check de
 provider; scan/review/read a passport; exercise pull-away, cancel and background recovery; compare a real
 selfie; relaunch and inspect saved results; then erase and confirm they no longer reopen. Check unsupported
 TrueDepth hardware fails closed. Record artifact hashes and device/OS with non-PII observations. VoiceOver,
-large text, translations and actual SSA React Native integration require separate product acceptance.
+large text, translations and the adopting app's own React Native integration require separate product acceptance.
 Device acceptance must be established separately for the exact artifact. Use `SHA256SUMS`, the
 embedded manifests and the release's executed test receipts; the
-[SSA distribution note](../../Distribution/SSA-DISTRIBUTION-NOTE.md) explains the remaining dependencies.
+delivery's distribution note explains the remaining dependencies.
 
-## Decisions for the SSA app
+## Decisions for the adopting app
 
-The reference app leaves these to the SSA app. They are product decisions, not SDK features, and
+The reference app leaves these to the adopting app. They are product decisions, not SDK features, and
 the reference app does not build them:
 
 - **Authentication before reopening saved results.** On launch the hub opens the local holder's
@@ -447,13 +446,13 @@ the reference app does not build them:
   from the chip (`App.tsx`). Decide whether a name may appear before authentication, and on a shared
   device.
 - **The Privacy Act notice at SSN entry.** The reference SSN screen shows none (`SSNFlow.tsx`). The
-  SSA app supplies the notice and places it before the number is entered.
+  adopting app supplies the notice and places it before the number is entered.
 - **Localization.** Every string is US English, in `locales/en.jsonc`, with ICU placeholders and
   plurals; dates use that catalog's en-US format in the device time zone. The app picks the catalog
   for the device language and falls back to English, the only catalog. Translations, and the
-  permission strings `configure-host.rb` writes into `Info.plist`, are the SSA app's to supply.
+  permission strings `configure-host.rb` writes into `Info.plist`, are the adopting app's to supply.
 - **The holder model.** The AppDelegate keeps one local holder UUID from first launch and scopes every
-  store and Keychain name to it. There is no sign-in, holder picker or holder-switch screen. The SSA
+  store and Keychain name to it. There is no sign-in, holder picker or holder-switch screen. The adopting
   app resolves the local holder from its own authorization. On logout or a holder switch it releases
   every session and clears personal state before the next holder's configuration is mounted, and
   runs each capability's erase when the holder's records must be deleted, following the

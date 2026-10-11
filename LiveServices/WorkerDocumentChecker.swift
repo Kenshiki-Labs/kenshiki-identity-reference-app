@@ -13,8 +13,7 @@ public enum WorkerDocumentCheckerError: Error, Equatable, Sendable {
   case correctionNotRequested, correctionNotOffered
 }
 
-/// The Worker's /persona/regula route as an IdentityDocumentCheck service, ported from SSA
-/// Native's WorkerDocumentClient. The request is the existing gateway payload's canonical bytes;
+/// The Worker's /persona/regula route as an IdentityDocumentCheck service. The request is the existing gateway payload's canonical bytes;
 /// the reply is validated by the existing gateway reply type against exactly that request. The
 /// caller (the session) owns custody, so egress is caller-managed.
 public struct WorkerDocumentChecker: DocumentChecking {
@@ -45,7 +44,7 @@ public struct WorkerDocumentChecker: DocumentChecking {
         observationData: reading.encoded, sourceSHA256: reading.sourceSHA256))
   }
 
-  /// SSA Native's correction rule: only after a needs-correction reply whose every issue is
+  /// The correction rule: only after a needs-correction reply whose every issue is
   /// correctable, only fields that reply offered, as the next revision chained to this request.
   public func correctedRequest(
     _ previous: DocumentCheckRequest, after reply: DocumentCheckReply, corrections: [DocumentCheckCorrection]
@@ -99,7 +98,7 @@ public struct WorkerDocumentChecker: DocumentChecking {
     case .providerPending: outcome = .pending
     case .unavailable: outcome = .unavailable
     case .providerOutcome:
-      // As SSA Native's receipt read it: passed and failed are the record answer; a started
+      // Passed and failed are the record answer; a started
       // verification is not one; an outcome with no summary is no answer at all.
       switch response.licence?.status {
       case "passed": outcome = .recordMatched

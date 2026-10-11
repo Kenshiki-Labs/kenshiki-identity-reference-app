@@ -87,7 +87,7 @@ private final class ReferencePhoneProvider: NSObject, PhoneCheckProvider {
     network.urlCache = nil
     network.httpCookieStorage = nil
     service = try SensorPhoneService(baseURL: authorization.baseURL, maximumReplyBytes: 262_144,
-      messageBody: { "SSA sign-up code: \($0)" }, authorize: { domain, canonical, credentialID in
+      messageBody: { "Sign-up code: \($0)" }, authorize: { domain, canonical, credentialID in
         let proof = try await authorization.authorize(domain: domain, canonical: canonical, credentialID: credentialID)
         return .init(credentialID: proof.credentials.installationID, installationToken: proof.credentials.token,
           attestationKeyID: proof.assertion.keyID, assertion: proof.assertion)
