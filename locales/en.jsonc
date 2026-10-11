@@ -16,7 +16,7 @@
 {
   "prerequisite": {
     "title": "Complete the earlier checks",
-    "document": "Open Driver’s license and choose Check license record. A successful result unlocks Phone.",
+    "document": "Open License or state ID and choose Check record. A successful result unlocks Phone.",
     "phone": "Complete the phone check before checking your Social Security number.",
     "service": "This check is not connected yet.",
     "back": "Back to Identity"
@@ -224,15 +224,16 @@
   "hub": {
     "title": "Identity",
     "resultsTitle": "Your results",
-    "licenseTitle": "Your driver’s license",
+    "licenseTitle": "Your license or state ID",
     "liveServicesUnavailable": "Identity services could not be set up. Document, phone and Social Security number checks are unavailable in this build.",
     "configurationIssue": "Saved checks are unavailable because this app’s local holder record could not be read. New checks are not saved.",
     "license": {
-      "title": "Driver’s license",
-      // {name} is the name read from the license's barcode.
-      "viewResults": "{name} · View results",
+      "title": "License or state ID",
       "continueBack": "Front saved · Continue with the back",
-      "start": "Scan your license or open a saved scan"
+      "start": "Scan your license or state ID, or open a saved capture",
+      "captured": "Capture saved · Open to check the record",
+      "recordMatched": "Record matched · View capture and check",
+      "checkNeedsAttention": "Record check needs attention"
     },
     "passport": {
       "title": "Passport",
@@ -274,7 +275,7 @@
       "openSavedPassportChecks": "Open saved passport checks",
       "savedNotice": "Saved passport and face results stay on this phone until you erase them.",
       "eraseAll": "Erase all passport and face results",
-      "deleteLicenseScans": "Delete saved license scans",
+      "deleteLicenseScans": "Delete saved card captures",
       // Opens the simulator-only developer checks screen.
       "developerChecks": "Developer checks",
       "clearResults": "Clear results"
@@ -299,11 +300,11 @@
     },
     "clear": {
       "failedTitle": "Deletion could not finish",
-      "licenseTitle": "Delete all saved license scans?",
+      "licenseTitle": "Delete all saved card captures?",
       "passportTitle": "Erase all passport and face results?",
-      "licenseBody": "This deletes every saved driver’s license scan from this app, including its photos and read details.",
+      "licenseBody": "This deletes every saved license and state-ID capture from this app, including its photos and read details.",
       "passportBody": "This deletes all saved passport and face results from this app, including their photos.",
-      "deleteLicenseScans": "Delete all license scans",
+      "deleteLicenseScans": "Delete all card captures",
       "keep": "Keep results"
     },
     "clearError": {
@@ -584,21 +585,21 @@
     }
   },
 
-  // The driver's license capture flow.
+  // License and state-ID capture.
   "license": {
     "title": {
-      "front": "Front of your license",
-      "back": "Back of your license",
+      "front": "Front of your card",
+      "back": "Back of your card",
       "frontReview": "Front captured",
-      "result": "Your driver’s license",
-      "saved": "Saved license scans",
-      "default": "Driver’s license"
+      "result": "Your license or state ID",
+      "saved": "Saved card captures",
+      "default": "License or state ID"
     },
     // Shown in capitals above the camera title.
     "step": "STEP {step} OF {total}",
     "stepComplete": "STEP {step} OF {total} COMPLETE",
     "cameraHint": "Keep the whole card inside the guide. Hold it still and avoid glare.",
-    "retake": "Retake this license",
+    "retake": "Retake this card",
     "captureFront": "Capture front",
     "captureBack": "Capture back",
     "loading": "Opening saved scans…",
@@ -615,7 +616,7 @@
       "frontOnly": "Front photo · Back still needed",
       "view": "View scan",
       "continue": "Continue scan",
-      "scanAnother": "Scan another license"
+      "scanAnother": "Scan another card"
     },
     "frontReview": {
       "body": "Turn the card over. Capture the back, including the whole barcode.",
@@ -636,12 +637,12 @@
       "photos": "Your photos",
       "front": "Front",
       "back": "Back",
-      "frontImage": "Captured front of your license",
-      "backImage": "Captured back of your license",
+      "frontImage": "Captured front of your card",
+      "backImage": "Captured back of your card",
       "backNeeded": "The front is saved. The back still needs a photo.",
       "barcodeTitle": "Details from the barcode",
       "name": "Name",
-      "licenseNumber": "License number",
+      "licenseNumber": "Document number",
       "birthDate": "Date of birth, as read",
       "expiryDate": "Expiry date, as read",
       "address": "Address",
@@ -657,7 +658,7 @@
       "DCS": "Last name",
       "DAC": "First name",
       "DAD": "Middle name",
-      "DAQ": "License number",
+      "DAQ": "Document number",
       "DBB": "Date of birth",
       "DBA": "Expiry date",
       "DBD": "Issue date",
@@ -681,14 +682,14 @@
     // What happened when the barcode on the back was read. None of these is issuer validation.
     "barcode": {
       "notFound": "No barcode was found in the photo of the back. Retake the back with the whole barcode in view.",
-      "ambiguous": "More than one barcode was found in the photo of the back. Retake it with only this license in view.",
+      "ambiguous": "More than one barcode was found in the photo of the back. Retake it with only this card in view.",
       "failed": "The barcode could not be decoded. Retake the back, holding it still and avoiding glare.",
       "notRequested": "The barcode was not read from this photo.",
-      "readableMissing": "Read from the back of your license. Some required details were missing; review them against the card.",
-      "readable": "Read from the back of your license.",
-      "malformed": "The barcode was read, but its contents do not follow the license barcode standard. Review any details below against the card.",
-      "unsupported": "The barcode was read, but this license’s barcode version is not supported. Review any details below against the card.",
-      "unread": "The barcode was found, but its details could not be read. You can retake the license photos."
+      "readableMissing": "Read from the back of your card. Some required details were missing; review them against the card.",
+      "readable": "Read from the back of your card.",
+      "malformed": "The barcode was read, but its contents do not follow the AAMVA barcode standard. Review any details below against the card.",
+      "unsupported": "The barcode was read, but this card’s barcode version is not supported. Review any details below against the card.",
+      "unread": "The barcode was found, but its details could not be read. You can retake the card photos."
     },
     "sheet": {
       "allowCameraTitle": "Allow camera access",
@@ -697,9 +698,9 @@
       "restrictedBody": "Camera use is restricted on this iPhone, for example by Screen Time or a device management profile. Ask whoever manages this iPhone to allow it. You can return to your saved results.",
       "cameraUnavailableTitle": "Camera unavailable",
       "notAvailableTitle": "Capture is not available",
-      "notAvailableBody": "Driver’s license capture has not been set up for this app.",
-      "mismatchTitle": "This back belongs to a different license",
-      "mismatchBody": "The back you captured comes from a different license than the saved front. Capture the back of the same license, or retake the front.",
+      "notAvailableBody": "License or state ID capture has not been set up for this app.",
+      "mismatchTitle": "This back belongs to a different card",
+      "mismatchBody": "The back you captured comes from a different card than the saved front. Capture the back of the same card, or retake the front.",
       "savedTitle": "Saved scan could not be opened",
       "savedBody": "Your saved scan could not be read. Try again without clearing it.",
       "paused": "Your scan is paused. Continue when you are ready.",
@@ -726,9 +727,9 @@
     }
   },
 
-  // The license record check panel on driver's license results.
+  // Record checking for a captured license or state ID.
   "documentCheck": {
-    "title": "License record check",
+    "title": "Document record check",
     "notConfigured": "Record checking is not configured for this app. Your saved photos and barcode details remain available.",
     "busy": "Opening or checking the saved record…",
     "outcome": {
@@ -770,7 +771,8 @@
     // {value} is an identifier from the service.
     "verification": "Verification: {value}",
     "action": {
-      "check": "Check license record",
+      "check": "Check record",
+      "retake": "Retake document",
       "askAgain": "Ask for the existing check’s answer",
       "reviewCorrections": "Review requested corrections",
       "readAgain": "Try reading the saved photo again",
@@ -786,7 +788,7 @@
       "familyName": "Family name",
       "middleName": "Middle name",
       "birthDate": "Date of birth",
-      "documentNumber": "License number",
+      "documentNumber": "Document number",
       "expiryDate": "Expiry date",
       "issueDate": "Issue date",
       "addressLine1": "Street address",
@@ -803,21 +805,21 @@
       "other": "The checking service asked you to review this detail."
     },
     "failure": {
-      "missingPreparedDocument": "The saved photo has no prepared license image. Retake the license.",
+      "missingPreparedDocument": "The card image is not ready for checking. Try preparing the saved photo again; if it remains unavailable, retake the card.",
       "sourceIntegrityFailure": "The saved photo and its analysis could not be verified as belonging to the same capture.",
-      "analysisNotCompleted": "The reader did not finish analyzing the prepared license image.",
-      "fullPhotoAnalysisNotCompleted": "The reader read the prepared license image but did not finish analyzing the full photo.",
+      "analysisNotCompleted": "The reader did not finish analyzing the prepared card image.",
+      "fullPhotoAnalysisNotCompleted": "The reader read the prepared card image but did not finish analyzing the full photo.",
       "observationsRejected": "The reader’s extracted details did not meet the checking service’s required format.",
       "retentionFailed": "The reader’s analysis could not be saved securely on this phone.",
       "engineUnavailable": "The document reader could not start or finish its processing.",
-      "authenticityFailed": "The document reader did not accept the license’s authenticity.",
+      "authenticityFailed": "The document reader did not accept the card’s authenticity.",
       "documentNotLive": "The document reader did not confirm a live document capture.",
-      "notCameraCapture": "This check requires a license photo taken with this app’s camera.",
+      "notCameraCapture": "This check requires a card photo taken with this app’s camera.",
       "readerUnbound": "The document reader is not set up for this check. Your photos and barcode details remain available.",
       "requestRejected": "The checking service refused this request. Your photos and barcode details remain available.",
       "serviceUnavailable": "The checking service did not answer. You can ask for this check’s answer later; no new check is started.",
       "replyRejected": "The checking service answered, but the answer could not be verified and was not accepted.",
-      "requestConflict": "The checking service already holds a different request for this license. Reopen the saved status.",
+      "requestConflict": "The checking service already holds a different request for this card. Reopen the saved status.",
       "nothingToAskAgain": "There is no earlier request to ask about. Start the record check when you are ready.",
       "correctionNotRequested": "Only the details the checking service asked about can be corrected.",
       "busy": "The previous request is still finishing. Wait a moment, then try again.",
@@ -825,10 +827,10 @@
       "custodyUnavailable": "The saved check could not be opened on this phone. Reopen its saved status.",
       "consentRequired": "Agree to the record check before it is sent.",
       "documentCheckNotConfigured": "Record checking is not set up in this app. Your photos and barcode details remain available.",
-      "documentFrontRequired": "Capture the front of the license before checking its record.",
+      "documentFrontRequired": "Capture the front of the card before checking its record.",
       "invalidArgument": "Enter a value for each requested detail before submitting.",
-      "documentCustodyFailed": "The saved license photos could not be opened on this phone. Reopen the saved status.",
-      "sessionUnavailable": "This screen closed before the check finished. Open the license again to see its saved status.",
+      "documentCustodyFailed": "The saved card photos could not be opened on this phone. Reopen the saved status.",
+      "sessionUnavailable": "This screen closed before the check finished. Open the card again to see its saved status.",
       "other": "The check could not finish. Reopen the saved status before sending another request."
     }
   },

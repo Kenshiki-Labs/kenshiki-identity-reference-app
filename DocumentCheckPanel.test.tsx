@@ -32,9 +32,9 @@ const correction: DocumentCheckSnapshot = {
     replayed: false,
   },
 };
-async function setup() {
+async function setup(saved: DocumentCheckSnapshot = initial, onRetake?: () => void) {
   const native = {
-    documentCheckRestore: jest.fn(async () => initial),
+    documentCheckRestore: jest.fn(async () => saved),
     documentCheck: jest.fn(async () => correction),
     documentCheckCorrect: jest.fn(
       async (): Promise<DocumentCheckSnapshot> => ({
@@ -66,7 +66,9 @@ async function setup() {
   };
   let view!: ReactTestRenderer;
   await act(async () => {
-    view = create(<DocumentCheckPanel session={makeSession(native)} configured />);
+    view = create(
+      <DocumentCheckPanel session={makeSession(native)} configured {...(onRetake ? { onRetake } : {})} />,
+    );
   });
   const press = async (label: string) =>
     act(async () => {
@@ -79,7 +81,7 @@ async function setup() {
 test('reopening reads saved status without purchasing and corrections show the returned answer without raw provider keys', async () => {
   const f = await setup();
   expect(f.native.documentCheck).not.toHaveBeenCalled();
-  await f.press('Check license record');
+  await f.press('Check record');
   expect(f.native.documentCheck).toHaveBeenCalledWith(true);
   await f.press('Review requested corrections');
   expect(f.view.root.findByProps({ testID: 'document-check-bottom-sheet' })).toBeTruthy();
@@ -103,8 +105,10 @@ test('reopening reads saved status without purchasing and corrections show the r
 test('provider errors offer local restore and never automatically repeat a check', async () => {
   const f = await setup();
   f.native.documentCheck.mockRejectedValueOnce({ code: 'unavailable' });
-  await f.press('Check license record');
+  await f.press('Check record');
   expect(f.view.root.findByProps({ testID: 'document-check-bottom-sheet' })).toBeTruthy();
+  // A stale notStarted snapshot is not permission to submit after a rejected command.
+  expect(f.view.root.findAllByProps({ testID: 'check-document-record' })).toHaveLength(0);
   await f.press('Reopen saved status');
   expect(f.native.documentCheck).toHaveBeenCalledTimes(1);
   expect(f.native.documentCheckRestore).toHaveBeenCalledTimes(2);
@@ -114,11 +118,14 @@ test('provider errors offer local restore and never automatically repeat a check
 // A native reading failure must remain distinguishable from a service rejection.
 // Rendering it must not retry a potentially paid check.
 test.each([
-  ['missingPreparedDocument', 'The saved photo has no prepared license image. Retake the license.'],
-  ['analysisNotCompleted', 'The reader did not finish analyzing the prepared license image.'],
+  [
+    'missingPreparedDocument',
+    'The card image is not ready for checking. Try preparing the saved photo again; if it remains unavailable, retake the card.',
+  ],
+  ['analysisNotCompleted', 'The reader did not finish analyzing the prepared card image.'],
   [
     'fullPhotoAnalysisNotCompleted',
-    'The reader read the prepared license image but did not finish analyzing the full photo.',
+    'The reader read the prepared card image but did not finish analyzing the full photo.',
   ],
   [
     'observationsRejected',
@@ -129,11 +136,50 @@ test.each([
 ] as const)('shows the specific %s failure without dispatching another check', async (failure, message) => {
   const f = await setup();
   f.native.documentCheck.mockResolvedValueOnce({ ...initial, state: 'readerUnavailable', failure });
-  await f.press('Check license record');
+  await f.press('Check record');
   const rendered = JSON.stringify(f.view.toJSON());
   expect(rendered).toContain(message);
   expect(rendered).not.toContain('The document reader could not complete this check.');
   expect(f.native.documentCheck).toHaveBeenCalledTimes(1);
+  expect(f.native.documentCheckAskAgain).not.toHaveBeenCalled();
+  await act(async () => f.view.unmount());
+});
+
+test('a pre-dispatch request rejection offers local recovery without silently dispatching again', async () => {
+  const f = await setup({ ...initial, state: 'unavailable', failure: 'requestRejected' });
+  expect(f.view.root.findAllByProps({ testID: 'document-check-recover' })).not.toHaveLength(0);
+  expect(f.view.root.findAllByProps({ testID: 'check-document-record' })).toHaveLength(0);
+  await act(async () => {
+    await invoke(f.view.root.findByProps({ testID: 'document-check-recover' }), 'onPress');
+  });
+  expect(f.native.documentCheckRestore).toHaveBeenCalledTimes(2);
+  expect(f.native.documentCheck).not.toHaveBeenCalled();
+  await act(async () => f.view.unmount());
+});
+
+test('an uncertain dispatched request recovers its journal before offering only the saved request replay', async () => {
+  const f = await setup({ ...initial, state: 'unavailable', failure: 'serviceUnavailable' });
+  f.native.documentCheckRestore.mockResolvedValueOnce({ ...initial, state: 'unanswered' });
+  await act(async () => {
+    await invoke(f.view.root.findByProps({ testID: 'document-check-recover' }), 'onPress');
+  });
+  expect(f.view.root.findAllByProps({ testID: 'check-document-record' })).toHaveLength(0);
+  await act(async () => {
+    await invoke(f.view.root.findByProps({ testID: 'document-check-ask-again' }), 'onPress');
+  });
+  expect(f.native.documentCheckAskAgain).toHaveBeenCalledWith(true);
+  expect(f.native.documentCheck).not.toHaveBeenCalled();
+  await act(async () => f.view.unmount());
+});
+
+test('an unreadable photo exposes the capture owner callback without invoking a provider', async () => {
+  const retake = jest.fn();
+  const f = await setup({ ...initial, state: 'unreadable' }, retake);
+  await act(async () => {
+    await invoke(f.view.root.findByProps({ testID: 'document-check-retake' }), 'onPress');
+  });
+  expect(retake).toHaveBeenCalledTimes(1);
+  expect(f.native.documentCheck).not.toHaveBeenCalled();
   expect(f.native.documentCheckAskAgain).not.toHaveBeenCalled();
   await act(async () => f.view.unmount());
 });

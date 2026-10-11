@@ -21,13 +21,14 @@ export function LicenseResult({
   if (!document) return null;
   return (
     <Page title={t('hub.licenseTitle')}>
-      <DocumentResultDetails result={document} />
       <DocumentCheckPanel
         key={document.document.front?.captureID}
         session={document.session}
         onState={workspace.license.checkChanged}
+        onRetake={() => startDocument('front')}
         configured={!!configuration.document?.check}
       />
+      <DocumentResultDetails result={document} />
       <Action
         label={t('license.retake')}
         secondary

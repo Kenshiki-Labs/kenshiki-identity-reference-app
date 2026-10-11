@@ -1,7 +1,6 @@
 import type { Configuration } from '@kenshiki/identity-capture';
 import { Text } from 'react-native';
 import { isCompleteDocument } from './DocumentFlowController';
-import { documentName } from './DriverLicenseFlow';
 import { t } from './locales/i18n';
 import { phoneCheckStopped } from './PhonePolicy';
 import { ssnSummary } from './SSNFlow';
@@ -55,9 +54,15 @@ export function IdentityHome({
   }
   function licenseSummary() {
     if (!document) return t('hub.license.start');
-    return isCompleteDocument(document.document)
-      ? t('hub.license.viewResults', { name: documentName(document.document) })
-      : t('hub.license.continueBack');
+    if (!isCompleteDocument(document.document)) return t('hub.license.continueBack');
+    const check = workspace.license.checkSnapshot;
+    if (check?.failure) return t('hub.license.checkNeedsAttention');
+    if (workspace.license.recordAccepted) return t('hub.license.recordMatched');
+    if (check?.result?.outcome === 'recordMatched') return t('hub.license.checkNeedsAttention');
+    if (check?.result) return t(`documentCheck.outcome.${check.result.outcome}`);
+    if (check?.state === 'unanswered') return t('documentCheck.state.unanswered');
+    if (check && check.state !== 'notStarted') return t('hub.license.checkNeedsAttention');
+    return t('hub.license.captured');
   }
   function passportSummary() {
     if (result) {

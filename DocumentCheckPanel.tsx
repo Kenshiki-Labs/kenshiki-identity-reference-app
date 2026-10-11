@@ -6,6 +6,7 @@ import {
   type DocumentCheckPort,
   type DocumentCheckState,
 } from './DocumentCheckController';
+import { documentCheckAction } from './DocumentCheckRecovery';
 import { type ErrorText, errorCode, errorText, formatMoment } from './HolderText';
 import { t } from './locales/i18n';
 import { Action } from './ui/Action';
@@ -84,6 +85,7 @@ const correctionText: Record<string, string> = {
 type DocumentCheckProps = Readonly<{
   session: DocumentCheckPort;
   configured: boolean;
+  onRetake?: () => void;
   onState?: (session: DocumentCheckPort, state: DocumentCheckState) => void;
 }>;
 
@@ -95,7 +97,7 @@ export function DocumentCheckPanel(props: DocumentCheckProps) {
 const initialState: DocumentCheckState = { snapshot: undefined, busy: false, failure: undefined };
 
 /** Reopening restores local status. Only holder actions can dispatch a check. */
-function DocumentCheckView({ session, configured, onState }: DocumentCheckProps) {
+function DocumentCheckView({ session, configured, onState, onRetake }: DocumentCheckProps) {
   const [sheet, setSheet] = useState<'failure' | 'correction'>();
   const [error, setError] = useState('');
   const [edits, setEdits] = useState<Record<string, string>>({});
@@ -131,8 +133,7 @@ function DocumentCheckView({ session, configured, onState }: DocumentCheckProps)
   const { controller, state, failed } = useControllerState(initialState, connect);
   const { snapshot, busy } = state;
   const result = snapshot?.result;
-  const needsReply =
-    snapshot?.state === 'unanswered' || result?.outcome === 'pending' || result?.outcome === 'unavailable';
+  const nextAction = state.failure ? 'restore' : documentCheckAction(snapshot);
   const failure = snapshot?.failure ? (snapshotFailures[snapshot.failure] ?? '') : '';
   function statusText() {
     if (busy) return t('documentCheck.busy');
@@ -171,7 +172,7 @@ function DocumentCheckView({ session, configured, onState }: DocumentCheckProps)
           </Text>
         )}
         {renderReturnedCheck()}
-        {snapshot?.state === 'notStarted' && (
+        {nextAction === 'check' && (
           <Action
             label={t('documentCheck.action.check')}
             testID="check-document-record"
@@ -179,7 +180,7 @@ function DocumentCheckView({ session, configured, onState }: DocumentCheckProps)
             onPress={() => controller?.check()}
           />
         )}
-        {needsReply && (
+        {nextAction === 'askAgain' && (
           <Action
             label={t('documentCheck.action.askAgain')}
             disabled={busy}
@@ -187,7 +188,7 @@ function DocumentCheckView({ session, configured, onState }: DocumentCheckProps)
             onPress={() => controller?.askAgain()}
           />
         )}
-        {result?.outcome === 'needsCorrection' && (
+        {nextAction === 'correct' && (
           <Action
             label={t('documentCheck.action.reviewCorrections')}
             disabled={busy}
@@ -197,14 +198,23 @@ function DocumentCheckView({ session, configured, onState }: DocumentCheckProps)
             }}
           />
         )}
-        {snapshot?.state === 'readerUnavailable' && (
+        {nextAction === 'readAgain' && (
           <Action
             label={t('documentCheck.action.readAgain')}
             disabled={busy}
             onPress={() => controller?.check()}
           />
         )}
+        {nextAction === 'retake' && onRetake && (
+          <Action
+            label={t('documentCheck.action.retake')}
+            testID="document-check-retake"
+            disabled={busy}
+            onPress={onRetake}
+          />
+        )}
         <Action
+          testID={nextAction === 'restore' ? 'document-check-recover' : 'document-check-reopen'}
           label={t('documentCheck.action.reopenStatus')}
           secondary
           disabled={busy}

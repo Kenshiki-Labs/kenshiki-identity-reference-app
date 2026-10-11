@@ -197,12 +197,15 @@ export function DriverLicenseFlow({
         )}
         {state.phase === 'result' && state.completed && state.session && (
           <>
-            <DocumentResultDetails result={{ session: state.session, document: state.completed }} />
             <DocumentCheckPanel
               key={state.completed.front?.captureID}
               session={state.session}
+              onRetake={() => {
+                activeController.startFront().catch(activeController.fail);
+              }}
               configured={!!configuration.document?.check}
             />
+            <DocumentResultDetails result={{ session: state.session, document: state.completed }} />
             <Action
               label={t('common.done')}
               onPress={finish}
@@ -290,7 +293,7 @@ function documentHint(state: DocumentFlowState): string {
   return hints[state.issue ?? ''] ?? t('license.hint.other');
 }
 
-export function documentName(document: DocumentObservation): string {
+function documentName(document: DocumentObservation): string {
   const fields = document.back?.pdf417?.fields ?? {};
   return (
     fields.DAA || [fields.DAC, fields.DAD, fields.DCS].filter(Boolean).join(' ') || t('license.title.default')

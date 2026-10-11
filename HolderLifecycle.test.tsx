@@ -275,6 +275,6 @@ test('J5 a back from a different document is refused with its own message and th
   for (let i = 0; i < 12; ++i) await Promise.resolve();
   expect(c.state.completed).toBeUndefined();
   expect(c.state.draft?.front?.captureID).toBe('front-of-holder-A');
-  expect(c.state.sheet?.message).toContain('different license');
+  expect(c.state.sheet?.message).toContain('different card');
   await c.dispose();
 });

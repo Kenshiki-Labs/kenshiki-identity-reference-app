@@ -447,7 +447,7 @@ describe('4 typed error handling', () => {
         />,
       );
     });
-    await f.press('Check license record');
+    await f.press('Check record');
     expect(f.text()).toContain('Agree to the record check');
     await act(async () => {
       f.view.unmount();

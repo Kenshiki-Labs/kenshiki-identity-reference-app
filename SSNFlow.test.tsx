@@ -164,7 +164,7 @@ test('missing prerequisites disable SSN without opening a service session', asyn
   expect(view.root.findAllByProps({ testID: 'ssn-bottom-sheet' })).toHaveLength(0);
   expect(mockSession.ssnSnapshot).not.toHaveBeenCalled();
   const shown = JSON.stringify(view.toJSON());
-  expect(shown).toContain('Complete the document check');
+  expect(shown).toContain('Open License or state ID and choose Check record.');
   expect(shown.indexOf('open-phone')).toBeLessThan(shown.indexOf('open-ssn'));
   await act(async () => {
     view.unmount();

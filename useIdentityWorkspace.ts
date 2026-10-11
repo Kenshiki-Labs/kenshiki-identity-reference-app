@@ -86,11 +86,17 @@ export function useIdentityWorkspace(
       !state.busy && !state.failure && state.snapshot ? { owner, snapshot: state.snapshot } : undefined,
     );
   }, []);
-  const phoneBlocked = phonePrerequisite(
-    configuration,
-    document?.document,
-    checkedDocument?.owner === document ? checkedDocument?.snapshot : undefined,
-  );
+  const currentDocumentCheck =
+    checkedDocument?.owner === document &&
+    [document?.document.front, document?.document.back].some(
+      (side) =>
+        side &&
+        side.captureID === checkedDocument?.snapshot.captureID &&
+        side.sha256 === checkedDocument?.snapshot.sourceSHA256,
+    )
+      ? checkedDocument?.snapshot
+      : undefined;
+  const phoneBlocked = phonePrerequisite(configuration, document?.document, currentDocumentCheck);
   const checkedCaptureID = phoneBlocked ? undefined : checkedDocument?.snapshot.captureID;
   // The phone session owns its own lifecycle. It receives only the accepted capture's opaque
   // reference; native code resolves that reference against the retained document owner's custody.
@@ -438,6 +444,9 @@ export function useIdentityWorkspace(
     },
     license: {
       result: document,
+      // Share the exact-capture acceptance decision with navigation; photo completeness is not a check.
+      recordAccepted: phoneBlocked !== 'document',
+      checkSnapshot: currentDocumentCheck,
       checkChanged: documentCheckChanged,
       input: documentInput,
       start: startDocument,
