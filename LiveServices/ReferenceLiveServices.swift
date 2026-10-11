@@ -12,7 +12,8 @@ extension CaptureRuntime {
   /// involved; only fixed diagnostic codes are returned, never provider messages or licence data.
   @objc public static func probeReferenceReader(_ directory: URL) async -> String {
     do {
-      try await ReferenceDocumentReader(directory: directory).prepare()
+      let configuration = try referenceRegulaConfiguration(directory: directory)
+      try await RegulaDocumentRuntime(configuration: configuration, now: { Date() }).prepare()
       return "ready"
     } catch let failure as RegulaResourceFailure {
       return switch failure {
@@ -34,7 +35,7 @@ extension CaptureRuntime {
       app: .init(appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0",
         buildNumber: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0",
         locale: Locale.current.identifier), credentialService: credentialService)
-    let reader = ReferenceDocumentReader(directory: regulaDirectory)
+    let configuration = try referenceRegulaConfiguration(directory: regulaDirectory)
     let selections = NativeDocumentSelectionRegistry()
     nativeServicesFactories["reference-live"] = { document, domain, now in
       let checker = WorkerDocumentChecker(configuration: .init(baseURL: authorization.baseURL),
@@ -44,21 +45,8 @@ extension CaptureRuntime {
             credentialID: credentials.installationID)
           return .init(installationToken: proof.credentials.token, assertion: proof.assertion)
         })
-      // The primary portrait belongs to the same prepared-document report used
-      // for fields. Never substitute the full-photo report, a Vision crop or selfie.
-      document.portraitReader = { captureID, sourceHash, store in
-        do {
-          let retained = try await RegulaPortraitResolver.resolve(captureID: captureID,
-            sourceSHA256: sourceHash, recordDomain: domain, input: .preparedDocument,
-            store: store, limits: .init(maximumEncodedBytes: 32 * 1_024 * 1_024,
-              maximumDecodedPixels: 32 * 1_024 * 1_024))
-          return retained.data
-        } catch RegulaPortraitResolutionError.missingReport {
-          return nil
-        } catch RegulaPortraitResolutionError.missingPortrait {
-          return nil
-        }
-      }
+      let reader = RegulaDocumentRuntime(configuration: configuration, now: now)
+      document.portraitReader = configuration.portraitReader(domain: domain)
       let checks = try DocumentCheckRuntime(domain: domain, reader: reader, checker: checker, now: now)
       selections.register(document: document, checks: checks)
       let phone = try ReferencePhoneProvider(authorization: authorization) { reference in
@@ -74,50 +62,13 @@ extension CaptureRuntime {
   }
 }
 
-private actor ReferenceDocumentReader: DocumentReading {
-  private let directory: URL
-  private var reader: RegulaDocumentReader?
-  private var analyzer: RegulaDocumentAnalyzer?
-  init(directory: URL) { self.directory = directory }
-
-  func read(_ input: DocumentReadingInput,
-    retain: @escaping @Sendable (DocumentAnalysisRecord) async throws -> Void) async -> DocumentReadingOutcome {
-    do {
-      let configured = try await resolve()
-      return await configured.read(input, retain: retain)
-    } catch is CancellationError { return .unavailable(.cancelled) }
-    catch { return .unavailable(.engineUnavailable) }
-  }
-
-  func prepare() async throws {
-    _ = try await resolve()
-    guard let analyzer else { throw RegulaAnalysisError.resourcesNotConfigured }
-    try await analyzer.prepare()
-  }
-
-  private func resolve() async throws -> RegulaDocumentReader {
-    if let reader { return reader }
-    let resources = try RegulaResources.verified(
-      license: directory.appendingPathComponent("regula.license"),
-      database: directory.appendingPathComponent("db.dat"),
-      provenance: directory.appendingPathComponent("regula-provenance.json"))
-    try Task.checkCancellation()
-    let created = await MainActor.run {
-      var settings = RegulaAnalysisSettings()
-      settings.useLivenessCheck = true
-      settings.dateFormat = "yyyy-mm-dd"
-      settings.portraitLimits = .init(maximumEncodedBytes: 32 * 1_024 * 1_024,
-        maximumDecodedPixels: 32 * 1_024 * 1_024)
-      let analyzer = RegulaDocumentAnalyzer(resources: resources, settings: settings, now: { Date() })
-      return (analyzer, RegulaDocumentReader(analyzer: analyzer,
-        fieldTypes: PulsePersonaRegulaPayload.observationFieldTypes,
-        maximumObservationBytes: PulsePersonaRegulaPayload.maximumObservationBytes))
-    }
-    if let reader { return reader }
-    analyzer = created.0
-    reader = created.1
-    return created.1
-  }
+private func referenceRegulaConfiguration(directory: URL) throws -> RegulaDocumentConfiguration {
+  try RegulaDocumentConfiguration(licenseURL: directory.appendingPathComponent("regula.license"),
+    databaseURL: directory.appendingPathComponent("db.dat"),
+    provenanceURL: directory.appendingPathComponent("regula-provenance.json"),
+    fieldTypes: PulsePersonaRegulaPayload.observationFieldTypes.sorted(),
+    maximumObservationBytes: PulsePersonaRegulaPayload.maximumObservationBytes,
+    maximumPortraitEncodedBytes: 32 * 1_024 * 1_024, maximumPortraitDecodedPixels: 32 * 1_024 * 1_024)
 }
 
 @MainActor

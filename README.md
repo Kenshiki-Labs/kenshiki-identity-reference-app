@@ -2,8 +2,9 @@
 
 Start here to run an independent app against the delivered SDK. You need both
 `kenshiki-identity-capture-0.6.0.tgz` and `kenshiki-identity-capture-0.6.0-reference-ui.zip` from
-the same build; the [SSA distribution note](../../Distribution/SSA-DISTRIBUTION-NOTE.md) gives their
-SHA-256. The generator installs the binary tarball; it does not require an SDK source checkout.
+the same build. Their accompanying `SHA256SUMS` identifies the exact bytes; the
+[SSA distribution note](../../Distribution/SSA-DISTRIBUTION-NOTE.md) explains verification.
+The generator installs the binary tarball; it does not require an SDK source checkout.
 This is editable reference UI for the adopting team, not a finished SSA enrollment app. What it
 leaves to the SSA app is listed under [Decisions for the SSA app](#decisions-for-the-ssa-app).
 
@@ -31,8 +32,9 @@ xcrun simctl list devices available
 
 The development environment inspected for this guide has Node 22.22.2, npm 10.9.7, Ruby 2.6.10,
 CocoaPods 1.16.2, xcodeproj 1.27.0 and Xcode 26.6. That is an environment record, not a claim that
-all earlier or later versions work. The checks run on this build, with their tiers, are in the
-[SSA distribution note](../../Distribution/SSA-DISTRIBUTION-NOTE.md#checks-behind-this-package).
+all earlier or later versions work. Retain the release's executed test receipts with its artifact
+hashes; the [SSA distribution note](../../Distribution/SSA-DISTRIBUTION-NOTE.md#verification-and-acceptance)
+explains their scope and acceptance limits.
 
 React Native 0.87.1 declares Node `^22.13.0 || ^24.3.0 || >=26.0.0`. The generator enforces
 those release ranges before creating a host; a minimum-only check would incorrectly admit Node 23,
@@ -79,11 +81,13 @@ project as follows:
   error if the generated Podfile lacks the line it replaces.
 - `configure-host.rb` replaces `ios/IdentitySDKHost/AppDelegate.swift` with this example's; sets the
   camera and NFC usage descriptions and the passport application identifier in `Info.plist`, and
-  removes an empty location usage description (the app never requests location); merges NFC tag
+  supplies location usage descriptions for the sensor permission and location-fix flows; merges NFC tag
   reading (`TAG`) into the app's existing entitlements file; adds `ios/CaptureResources` to the app
   when it exists; sets the deployment target to 18.0 and `FORCE_BUNDLING` on Debug; adds the
   `ArtifactIntegrationTests` UI-test target; and makes the scheme's test action run that target in
-  Debug. It does not build, launch or publish an app. If generation fails after creating the
+  Debug. Its `configure-native-tests.rb` helper also adds a separate `ArtifactNative` scheme with
+  the `ArtifactNativeTests` unit bundle and a minimal UIKit host. That scheme links the installed
+  XCFrameworks directly and starts no React UI, sensors or providers. It does not build, launch or publish an app. If generation fails after creating the
 host, preserve the error output and use a new destination when retrying; it will not overwrite
 an existing project.
 
@@ -112,6 +116,25 @@ executed suite inventory with the reference-host tests in `integration-manifest.
 the `ui/` and `locales/` suites. SDK package tests run separately in the source checkout and are
 not shipped in the npm tarball. Keep the test results with the artifact hash; source-checkout
 success does not establish that an independently generated host works.
+
+For a recorded check of the exact installed files and suite inventory, use the generated harness:
+
+```sh
+python3 validate-installed-host.py "$PWD" --output /absolute/new/host-check \
+  --simulator YOUR_SIMULATOR_UUID
+```
+
+It runs TypeScript and Jest, verifies discovered and executed suite paths against the delivery
+manifest, checks every installed tarball file, and executes only the native `ArtifactNativeTests`
+unit bundle. Omit `--simulator` for the JavaScript-only lane. The receipt records exact commands,
+input hashes, counts and skips; it fails if installed inputs change during execution. The retained
+`vendor/reference-sources.json` allows it to verify the generator's import rewrites against the
+original manifest. Keep that file with the host's delivered tarball and manifest.
+
+The native unit lane covers the public document-registration API, configuration refusal, consent
+and missing-capture refusal. It uses no licence, identity document, supplier request, camera or UI
+automation. A pass establishes installed native API execution, not a React-to-native journey or
+successful vendor analysis. UI tests and physical acceptance remain separate lanes below.
 
 In Xcode select the `IdentitySDKHost` scheme and an **iPhone simulator**. In Edit Scheme → Run,
 set Build Configuration to **Release**, then Run. Release bundles JavaScript and needs no Metro
@@ -216,7 +239,7 @@ Native service adapters are separate from hardware capture:
 
 | Capability | What the adopting native team supplies |
 | --- | --- |
-| Document check | `DocumentCheckProvider`, registration via `IDCaptureRegisterDocumentCheckProvider`, and `configuration.document.check` |
+| Document check | An adopter-owned `DocumentCheckProvider`; either the packaged native reader registration below or `IDCaptureRegisterDocumentCheckProvider` for an adopter-owned reader; `configuration.document.check` selects it |
 | Bound SSN checks | `SSNVerificationProvider`, `IDCaptureRegisterSSNVerificationProvider`, a native context reference to the checked document/completed phone receipt, and dedicated custody |
 | Phone | `PhoneCheckProvider`, `IDCaptureRegisterPhoneCheckProvider`, approved service, checked-document reference and custody configuration |
 | Subscriber comparison | Optional separately qualified `SubscriberCheckProvider`, selected through `phone.subscriberProviderID` |
@@ -229,6 +252,62 @@ approved in-app text journey, and do not route it to the legacy backend as a sho
 detailed provider contracts in the [package integration guide](../../ReactNative/identity-capture/README.md),
 including [what leaves the phone](../../ReactNative/identity-capture/README.md#what-leaves-the-phone).
 Supplier non-retention requires independent qualification.
+
+### Configure the packaged document reader
+
+The runtime includes the pinned Regula reader adapter. Its licence, database and provenance are
+adopter-owned inputs, supplied together when generating a host:
+
+```sh
+python3 Examples/ReactNativeCaptureHost/create-host.py \
+  "$HOME/Developer/IdentitySDKDocumentHost" \
+  "$PWD/kenshiki-identity-capture-0.6.0.tgz" \
+  --regula-license /absolute/regula.license \
+  --regula-database /absolute/db.dat \
+  --regula-provenance /absolute/regula-provenance.json
+```
+
+The generator checks that all three files are nonempty and that provenance is a JSON object,
+then copies them to `ios/CaptureResources/Regula`. These checks do not validate a licence or
+qualify a database. Runtime resource verification checks the provenance schema, pinned analyzer
+identity and database SHA-256 on the first consented fresh read. The three inputs are not included
+in the SDK delivery. Merely copying them does not register a service, enable checking or dispatch
+a request.
+
+In the adopting native app, resolve that bundle directory and register its independently approved
+service adapter before creating capture sessions. For example, given `resources`, an adopter-owned
+`provider: any DocumentCheckProvider`, and the service's declared field allowlist and resource budgets:
+
+```swift
+import IdentityCapture
+import IdentityCaptureRuntime
+
+let reader = try RegulaDocumentConfiguration(
+  licenseURL: resources.appendingPathComponent("regula.license"),
+  databaseURL: resources.appendingPathComponent("db.dat"),
+  provenanceURL: resources.appendingPathComponent("regula-provenance.json"),
+  fieldTypes: allowedFieldTypes,
+  maximumObservationBytes: observationByteBudget,
+  maximumPortraitEncodedBytes: portraitByteBudget,
+  maximumPortraitDecodedPixels: portraitPixelBudget)
+try IDCaptureSharedRuntime().registerRegulaDocumentCheckProvider(
+  provider, identifier: "adopter-document", configuration: reader)
+document["check"] = ["providerID": "adopter-document", "recordDomain": "adopter-document-v1"]
+```
+
+Run registration on the main actor before mounting React. The immutable configuration accepts
+only distinct local resource file URLs, a nonempty unique list of nonnegative field IDs, and positive
+budgets. Registration does not hash the database or initialize the reader. The packaged reader
+produces and retains its prepared-document and original-photo reports before the independent
+service adapter may construct a request. In this registration mode `provider.readDocument` is not
+used; the provider still owns request construction, authentication, response binding and corrections.
+No endpoint, Worker adapter or service credentials are supplied by this example.
+
+Identifiers cannot be shared with another provider or native composition. Register before sessions
+open; existing sessions keep their own provider/configuration. Local restoration and retained
+portrait inspection do not start analysis or buy another service check. An absent prepared report
+or portrait remains unavailable; another image is not substituted. Regula findings do not establish
+supplier qualification, document authenticity, holder identity or an assurance level by themselves.
 
 ## UI source and result ownership
 
@@ -331,6 +410,8 @@ the native code on an iOS simulator, and **device** runs on a physical iPhone.
 - TypeScript (`npx tsc --noEmit`) checks source types. It runs no code.
 - Jest (mock tier) tests UI and controller behaviour against mocked SDK sessions. It cannot prove
   native capture, encryption or a live provider.
+- `ArtifactNativeTests` (simulator tier) executes the installed framework's public registration and
+  refusal paths in a separate native unit host; it does not execute JavaScript or vendor analysis.
 - The Xcode UI tests (simulator tier) exercise the installed binary through React Native and real
   simulator Keychain storage, including failure recovery.
 - The developer checks (simulator tier, Debug builds only) use separate test custody and do not
@@ -349,8 +430,9 @@ provider; scan/review/read a passport; exercise pull-away, cancel and background
 selfie; relaunch and inspect saved results; then erase and confirm they no longer reopen. Check unsupported
 TrueDepth hardware fails closed. Record artifact hashes and device/OS with non-PII observations. VoiceOver,
 large text, translations and actual SSA React Native integration require separate product acceptance.
-No device-tier result is recorded for this build. The current hashes, the checks behind this build and
-the open dependencies are in the [SSA distribution note](../../Distribution/SSA-DISTRIBUTION-NOTE.md).
+Device acceptance must be established separately for the exact artifact. Use `SHA256SUMS`, the
+embedded manifests and the release's executed test receipts; the
+[SSA distribution note](../../Distribution/SSA-DISTRIBUTION-NOTE.md) explains the remaining dependencies.
 
 ## Decisions for the SSA app
 

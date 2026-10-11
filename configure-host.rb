@@ -1,6 +1,7 @@
 require 'xcodeproj'
 require 'fileutils'
 require 'optparse'
+require_relative 'configure-native-tests'
 # Signing for a physical iPhone, all optional: --bundle-identifier, --development-team (automatic
 # signing) and --app-attest-environment. create-host.py passes whichever it was given.
 signing = {}
@@ -130,6 +131,7 @@ Dir.glob(File.join(brand, '*.{imageset,colorset}')).each do |asset|
   FileUtils.rm_rf(target)
   FileUtils.cp_r(asset, target)
 end
+configure_native_tests(project, host, app_id, signing)
 project.save
 scheme_path = File.join(host, 'ios/IdentitySDKHost.xcodeproj/xcshareddata/xcschemes/IdentitySDKHost.xcscheme')
 scheme = Xcodeproj::XCScheme.new(scheme_path)

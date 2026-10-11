@@ -20,6 +20,9 @@ parser.add_argument('artifact', type=Path)
 parser.add_argument('--trust-anchors', type=Path)
 parser.add_argument('--embedder', type=Path)
 parser.add_argument('--detector', type=Path)
+parser.add_argument('--regula-license', type=Path, help='adopter-owned document reader licence')
+parser.add_argument('--regula-database', type=Path, help='adopter-owned document reader database')
+parser.add_argument('--regula-provenance', type=Path, help='document reader resource provenance JSON')
 # Signing for a physical iPhone. Each is optional; without them the generated app keeps the template's
 # identifier and no team, which is what the simulator tests use.
 parser.add_argument('--bundle-identifier', help="the app's bundle identifier, a registered App ID")
@@ -102,11 +105,21 @@ if args.trust_anchors is not None:
             raise ValueError
     except ValueError:
         raise SystemExit('Trust anchors must be PEM certificates (BEGIN CERTIFICATE blocks): ' + str(args.trust_anchors))
+regula = [args.regula_license, args.regula_database, args.regula_provenance]
+if any(source is not None for source in regula):
+    if not all(source is not None and source.is_file() and source.stat().st_size > 0 for source in regula):
+        raise SystemExit('Supply all three nonempty --regula-license, --regula-database and --regula-provenance files.')
+    try:
+        if not isinstance(json.loads(args.regula_provenance.read_text()), dict):
+            raise ValueError('Expected a JSON object')
+    except (OSError, ValueError):
+        raise SystemExit('Regula provenance must be a readable JSON object. Runtime verification remains required.')
 # The manifest owns every TypeScript module, including nested UI and test helpers. Validate before
 # the CLI creates a host, then copy the same bytes so generation cannot mix source revisions.
 host_prefix = 'Examples/ReactNativeCaptureHost/'
 reference = Path(__file__).parent
 typescript_sources = {}
+native_support = {}
 for name, expected in sorted(delivery['fileSHA256'].items()):
     if not name.startswith(host_prefix):
         continue
@@ -115,7 +128,7 @@ for name, expected in sorted(delivery['fileSHA256'].items()):
     if (not relative.parts or relative.is_absolute() or '..' in relative.parts
             or '\\' in relative_name or str(relative) != relative_name):
         raise SystemExit('Invalid reference source path in integration manifest: ' + name)
-    if relative.suffix not in {'.ts', '.tsx'}:
+    if relative.suffix not in {'.ts', '.tsx', '.swift', '.rb', '.py'}:
         continue
     source = reference / relative
     linked = any((reference.joinpath(*relative.parts[:index])).is_symlink()
@@ -125,9 +138,18 @@ for name, expected in sorted(delivery['fileSHA256'].items()):
     data = source.read_bytes()
     if hashlib.sha256(data).hexdigest() != expected:
         raise SystemExit('Reference source differs from the integration manifest: ' + relative_name)
-    typescript_sources[relative_name] = data.decode('utf-8')
+    if relative.suffix in {'.ts', '.tsx'}:
+        typescript_sources[relative_name] = data.decode('utf-8')
+    else:
+        native_support[relative_name] = data
 if 'App.tsx' not in typescript_sources:
     raise SystemExit('The integration manifest has no reference app entry point')
+required_support = {'configure-host.rb', 'configure-native-tests.rb', 'ArtifactNativeTests.swift',
+                    'NativeArtifactTestHost.swift', 'validate-installed-host.py', 'AppDelegate.swift',
+                    'ArtifactIntegrationTests.swift', 'DeviceAcceptanceTests.swift'}
+if not required_support.issubset(native_support):
+    raise SystemExit('The integration manifest is missing native host support: ' +
+                     ', '.join(sorted(required_support - native_support.keys())))
 # The screens import typed modules compiled from ui/tokens.jsonc and locales/*.jsonc. Refuse to
 # copy modules that differ from their sources, before anything is created.
 generator = Path(__file__).with_name('generate-ui-resources.py')
@@ -183,11 +205,24 @@ for source, filename in [(args.trust_anchors, 'masterList.pem'), (args.embedder,
             shutil.copytree(source.resolve(), resources / filename)
         else:
             shutil.copyfile(source.resolve(), resources / filename)
+if all(source is not None for source in regula):
+    resources = host / 'ios/CaptureResources/Regula'
+    resources.mkdir(parents=True, exist_ok=True)
+    for source, filename in zip(regula, ['regula.license', 'db.dat', 'regula-provenance.json']):
+        shutil.copyfile(source.resolve(), resources / filename)
+# The validation harness is delivered with the host. It reads the installed artifact and manifest,
+# never a sibling SDK checkout. Optional resources alone do not register a document service.
+for filename in ['validate-installed-host.py']:
+    if filename in native_support:
+        (host / filename).write_bytes(native_support[filename])
 vendor = host / 'vendor'
 vendor.mkdir()
 shutil.copyfile(artifact, vendor / artifact_name)
 # Adopters retain the delivered binary provenance independently of their app's Git history.
 shutil.copyfile(args.integration_manifest, vendor / 'integration-manifest.json')
+# Preserve the original manifest-bound modules as JSON, not extra Jest-discoverable source files.
+# The installed-host validator can then independently repeat and check the import rewrite.
+(vendor / 'reference-sources.json').write_text(json.dumps(typescript_sources, sort_keys=True) + '\n')
 podfile = host / 'ios/Podfile'
 template_platform = 'platform :ios, min_ios_version_supported'
 if template_platform not in podfile.read_text():
