@@ -74,6 +74,7 @@ test('inspection switches side and projection using the original custody hash, w
     missing: t('inspection.missing'),
     failed: t('inspection.failed'),
     resourceLimited: t('inspection.resourceLimited'),
+    busy: t('inspection.busy'),
     imageLabel: t('inspection.image', {
       side: t('license.result.front'),
       representation: t('inspection.original'),
@@ -138,6 +139,8 @@ test('an absent back never offers a back image or silently substitutes front pix
 
 test('document portrait stays bound to the front when inspecting back features', async () => {
   const { view, session, select } = await mount();
+  const panes = view.root.findAll((node) => String(node.type) === 'MockDocumentInspection');
+  expect(panes.map((node) => property(node, 'representation'))).toEqual(['portrait', 'original']);
   await select('inspect-back');
   await select('inspect-spatial');
   const portrait = view.root.find(

@@ -35,6 +35,7 @@ function InspectionContent({ result }: Readonly<{ result: SavedDocumentCapture }
   });
   return (
     <>
+      {document.front && <DocumentPortrait result={result} />}
       <View style={styles.card} testID="document-result">
         <Text accessibilityRole="header" style={styles.sheetTitle}>
           {t('inspection.title')}
@@ -78,6 +79,7 @@ function InspectionContent({ result }: Readonly<{ result: SavedDocumentCapture }
               missing: t(representation === 'spatial' ? 'inspection.spatialMissing' : 'inspection.missing'),
               failed: t('inspection.failed'),
               resourceLimited: t('inspection.resourceLimited'),
+              busy: t('inspection.busy'),
               imageLabel,
             }}
             style={inspectionStyles.image}
@@ -89,7 +91,6 @@ function InspectionContent({ result }: Readonly<{ result: SavedDocumentCapture }
         <Text style={styles.label}>{t('inspection.zoom')}</Text>
         {!document.back && <Text style={styles.body}>{t('license.result.backNeeded')}</Text>}
       </View>
-      {document.front && <DocumentPortrait result={result} />}
     </>
   );
 }

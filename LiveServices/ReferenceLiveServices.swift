@@ -44,6 +44,21 @@ extension CaptureRuntime {
             credentialID: credentials.installationID)
           return .init(installationToken: proof.credentials.token, assertion: proof.assertion)
         })
+      // The primary portrait belongs to the same prepared-document report used
+      // for fields. Never substitute the full-photo report, a Vision crop or selfie.
+      document.portraitReader = { captureID, sourceHash, store in
+        do {
+          let retained = try await RegulaPortraitResolver.resolve(captureID: captureID,
+            sourceSHA256: sourceHash, recordDomain: domain, input: .preparedDocument,
+            store: store, limits: .init(maximumEncodedBytes: 32 * 1_024 * 1_024,
+              maximumDecodedPixels: 32 * 1_024 * 1_024))
+          return retained.data
+        } catch RegulaPortraitResolutionError.missingReport {
+          return nil
+        } catch RegulaPortraitResolutionError.missingPortrait {
+          return nil
+        }
+      }
       let checks = try DocumentCheckRuntime(domain: domain, reader: reader, checker: checker, now: now)
       selections.register(document: document, checks: checks)
       let phone = try ReferencePhoneProvider(authorization: authorization) { reference in

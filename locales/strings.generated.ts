@@ -431,6 +431,7 @@ export type MessageValues = {
   readonly "inspection.portrait": undefined;
   readonly "inspection.spatialExplanation": undefined;
   readonly "inspection.resourceLimited": undefined;
+  readonly "inspection.busy": undefined;
   readonly "inspection.spatialMissing": undefined;
   readonly "inspection.portraitMissing": undefined;
   readonly "inspection.portraitExplanation": undefined;
@@ -1425,7 +1426,8 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "inspection.spatial": "Features",
       "inspection.portrait": "Document portrait",
       "inspection.spatialExplanation": "Observed image features: pink inside the candidate card mask, blue outside. These colors do not establish authenticity or confirm the physical card edge.",
-      "inspection.resourceLimited": "Feature analysis is unavailable for this image size or while another analysis is finishing. The original image remains unchanged.",
+      "inspection.resourceLimited": "Feature analysis could not allocate the required resources. The original image remains unchanged.",
+      "inspection.busy": "The previous feature analysis is finishing. Open Features again in a moment.",
       "inspection.spatialMissing": "Feature inspection is unavailable for this capture.",
       "inspection.portraitMissing": "No extracted document portrait is saved for this capture.",
       "inspection.portraitExplanation": "The portrait extracted from this card. This is not a selfie or a face-match result.",
