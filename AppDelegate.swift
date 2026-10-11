@@ -63,7 +63,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         properties["configurationIssue"] = "holderScopeUnreadable"
       case .success(let localHolderID):
         // Every store and Keychain name is scoped to the local holder. This reference host has one
-        // retained holder and no sign-in; an SSA app authorizes the holder before this point.
+        // retained holder and no sign-in; the adopting app authorizes the holder before this point.
         let holder = ReferenceHolder(localHolderID: localHolderID, support: support, appID: identity)
         configuration["results"] = holder.store("Results", service: "results", account: "completed-results-v1")
         var document = holder.store("Documents", service: "documents", account: "capture-evidence-v1")
