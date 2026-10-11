@@ -11,7 +11,7 @@ import { DocumentFlowController, type SavedDocumentCapture } from './DocumentFlo
 import { type ErrorText, errorCode, errorText } from './HolderText';
 import { phonePrerequisite, ssnPrerequisite } from './IdentityPrerequisites';
 import { t } from './locales/i18n';
-import type { SavedPhoneCheck } from './PhoneFlowController';
+import { PhoneFlowController, type SavedPhoneCheck } from './PhoneFlowController';
 import type { SavedSSNCheck } from './SSNFlowController';
 import type { IdentityCustody } from './ui/ControllerCustody';
 
@@ -104,16 +104,13 @@ export function useIdentityWorkspace(
     if (!checkedCaptureID || !configuration.phone) return configuration;
     return { ...configuration, phone: { ...configuration.phone, checkedDocumentID: checkedCaptureID } };
   }, [configuration, checkedCaptureID]);
-  const documentRevision = JSON.stringify([
-    document?.document.front?.captureID,
-    document?.document.front?.sha256,
-    document?.document.back?.captureID,
-    document?.document.back?.sha256,
-    checkedDocument?.owner === document ? checkedDocument?.snapshot.result?.operationID : undefined,
-  ]);
+  const documentRevision = documentEvidenceRevision(document, currentDocumentCheck);
   // Read only: restoring acceptance never starts a provider check. Late answers from an
   // old capture cannot enable the replacement document or survive unmount.
   useEffect(() => {
+    // Startup restores the document and its dependent phone receipt as one owned sequence.
+    // Do not race a second document command against that sequence.
+    if (opening.current) return;
     let current = true;
     const epoch = ++documentCheckEpoch.current;
     if (document && configuration.document?.check) {
@@ -183,6 +180,28 @@ export function useIdentityWorkspace(
       configuration,
       () => {},
     );
+    let phoneController: PhoneFlowController | undefined;
+    async function restorePhone(restored: SavedDocumentCapture, checked: DocumentCheckSnapshot) {
+      if (phonePrerequisite(configuration, restored.document, checked) || !configuration.phone) return;
+      phoneController = new PhoneFlowController(
+        IdentityCaptureSession.create,
+        { ...configuration, phone: { ...configuration.phone, checkedDocumentID: checked.captureID } },
+        () => {},
+      );
+      // Read the encrypted receipt through its native owner. Opening and handing off never
+      // sends a text or reconciles an unresolved provider request.
+      await phoneController.open();
+      if (!isActive() || phoneController.state.sheet || !phoneController.state.snapshot) return;
+      const saved = await phoneController.handoff();
+      if (!saved) return;
+      if (!isActive()) {
+        await saved.session.release();
+        return;
+      }
+      ownedPhone.current = saved;
+      setPhone(saved);
+      setPhoneDocument(documentEvidenceRevision(restored, checked));
+    }
     async function restoreDocument() {
       await documentController.restoreSelected();
       if (!isActive()) return;
@@ -198,8 +217,17 @@ export function useIdentityWorkspace(
         await restored.session.release();
         return;
       }
+      await restoreDocumentEvidence(restored);
+    }
+    async function restoreDocumentEvidence(restored: SavedDocumentCapture) {
       ownedDocument.current = restored;
       setDocument(restored);
+      if (configuration.document?.check) {
+        const checked = await restored.session.documentCheckRestore();
+        if (!isActive()) return;
+        setCheckedDocument({ owner: restored, snapshot: checked });
+        await restorePhone(restored, checked);
+      }
     }
     const reportRestoreFailure = (error: unknown) => {
       if (isActive())
@@ -229,7 +257,7 @@ export function useIdentityWorkspace(
       if (isActive()) setRestoreFailure(undefined);
     }
     async function finishRestore() {
-      await Promise.all([controller.dispose(), documentController.dispose()]);
+      await Promise.all([controller.dispose(), documentController.dispose(), phoneController?.dispose()]);
       if (!isActive()) return;
       opening.current = false;
       setOpeningResults(false);
@@ -252,6 +280,7 @@ export function useIdentityWorkspace(
         custody.releasing,
         controller.dispose(),
         documentController.dispose(),
+        phoneController?.dispose(),
       ]);
       custody.releasing.catch((error: unknown) => {
         reportRestoreFailure(error);
@@ -558,3 +587,17 @@ export function useIdentityWorkspace(
 }
 
 export type IdentityWorkspace = ReturnType<typeof useIdentityWorkspace>;
+
+/** The restored receipt and later handoffs use the same exact-document revision. */
+function documentEvidenceRevision(
+  saved: SavedDocumentCapture | undefined,
+  checked: DocumentCheckSnapshot | undefined,
+): string {
+  return JSON.stringify([
+    saved?.document.front?.captureID,
+    saved?.document.front?.sha256,
+    saved?.document.back?.captureID,
+    saved?.document.back?.sha256,
+    checked?.result?.operationID,
+  ]);
+}

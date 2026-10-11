@@ -4,6 +4,7 @@ import {
   type DocumentCheckSnapshot,
   type DocumentObservation,
   IdentityCaptureSession,
+  type PhoneCheckSnapshot,
 } from '@kenshiki/identity-capture';
 import renderer, { act } from 'react-test-renderer';
 import { completedPhone, phoneConfiguration } from './__tests__/phoneFixture';
@@ -320,4 +321,91 @@ test('relaunch restores the SDK selection and its exact accepted check without o
     view.unmount();
   });
   expect(session.release).toHaveBeenCalledTimes(1);
+});
+
+async function restoredPhoneFixture(read: () => Promise<PhoneCheckSnapshot>) {
+  const documentSession = mockSession({
+    subscribe: jest.fn(() => () => {}),
+    restoreDocumentSelection: jest.fn(async () => document),
+    documentResult: jest.fn(async () => document),
+    documentCheckRestore: jest.fn(async () => checked),
+    cancel: jest.fn(async () => {}),
+    release: jest.fn(async () => {}),
+  });
+  const phoneSession = mockSession({
+    subscribe: jest.fn(() => () => {}),
+    phoneSnapshot: jest.fn(read),
+    phoneCancel: jest.fn(async () => completedPhone),
+    release: jest.fn(async () => {}),
+  });
+  const createSession: (configuration: Configuration) => Promise<CaptureSession> =
+    IdentityCaptureSession.create;
+  jest.mocked(createSession).mockResolvedValueOnce(documentSession).mockResolvedValueOnce(phoneSession);
+  const custody = createControllerCustody();
+  const navigate = jest.fn();
+  let workspace: IdentityWorkspace | undefined;
+  function Harness() {
+    workspace = useIdentityWorkspace(configuration, () => {}, navigate, custody);
+    return null;
+  }
+  let view!: renderer.ReactTestRenderer;
+  await act(async () => {
+    view = renderer.create(<Harness />);
+  });
+  return { view, phoneSession, documentSession, navigate, workspace: () => required(workspace) };
+}
+
+test('cold launch restores the completed phone receipt and enables SSN without visiting Phone', async () => {
+  const { view, phoneSession, documentSession, navigate, workspace } = await restoredPhoneFixture(
+    async () => completedPhone,
+  );
+  expect(workspace().phone.result?.snapshot.receipt).toEqual(completedPhone.receipt);
+  expect(workspace().ssn.blocked).toBeUndefined();
+  expect(workspace().passport.openingResults).toBe(false);
+  expect(phoneSession.phoneSend).not.toHaveBeenCalled();
+  expect(phoneSession.phoneResume).not.toHaveBeenCalled();
+  expect(documentSession.documentCheck).not.toHaveBeenCalled();
+  await act(async () => {
+    workspace().ssn.start();
+  });
+  expect(navigate).toHaveBeenCalledWith('ssn');
+  await act(async () => {
+    view.unmount();
+  });
+  expect(phoneSession.release).toHaveBeenCalledTimes(1);
+  expect(documentSession.release).toHaveBeenCalledTimes(1);
+});
+
+test('a retained receipt with a pending attempt does not unlock SSN or resume a provider call', async () => {
+  const pending = { ...completedPhone, pending: true, stage: 'waiting' as const };
+  const { view, workspace, phoneSession, navigate } = await restoredPhoneFixture(async () => pending);
+  expect(workspace().ssn.blocked).toBe('phone');
+  await act(async () => {
+    workspace().ssn.start();
+  });
+  expect(navigate).not.toHaveBeenCalled();
+  expect(phoneSession.phoneSend).not.toHaveBeenCalled();
+  expect(phoneSession.phoneResume).not.toHaveBeenCalled();
+  await act(async () => {
+    view.unmount();
+  });
+});
+
+test('a delayed phone restore keeps startup gated and releases its session when the holder leaves', async () => {
+  let resolve!: (snapshot: PhoneCheckSnapshot) => void;
+  const delayed = new Promise<PhoneCheckSnapshot>((done) => {
+    resolve = done;
+  });
+  const { view, workspace, phoneSession, navigate } = await restoredPhoneFixture(() => delayed);
+  expect(workspace().passport.openingResults).toBe(true);
+  await act(async () => {
+    workspace().ssn.start();
+  });
+  expect(navigate).not.toHaveBeenCalled();
+  await act(async () => {
+    view.unmount();
+    resolve(completedPhone);
+  });
+  expect(phoneSession.release).toHaveBeenCalledTimes(1);
+  expect(phoneSession.phoneSend).not.toHaveBeenCalled();
 });

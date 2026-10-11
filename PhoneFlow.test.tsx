@@ -207,14 +207,15 @@ test('inactive message-composer transitions do not cancel; actual backgrounding 
   });
   const { view, tap } = await renderApp();
   await tap('open-phone');
+  const cancelledBeforeInactive = mockSession.phoneCancel.mock.calls.length;
   await act(async () => {
     change?.('inactive');
   });
-  expect(mockSession.phoneCancel).not.toHaveBeenCalled();
+  expect(mockSession.phoneCancel).toHaveBeenCalledTimes(cancelledBeforeInactive);
   await act(async () => {
     change?.('background');
   });
-  expect(mockSession.phoneCancel).toHaveBeenCalledTimes(1);
+  expect(mockSession.phoneCancel).toHaveBeenCalledTimes(cancelledBeforeInactive + 1);
   await act(async () => {
     view.unmount();
   });
