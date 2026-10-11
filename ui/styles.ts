@@ -45,6 +45,7 @@ export const styles = StyleSheet.create({
   plainText: { ...text.plainAction, color: color.tint, textAlign: 'center' },
   destructiveText: { color: color.destructive },
   disabled: { opacity: opacity.disabled },
+  pressed: { opacity: opacity.pressed },
   sheetTitle: { ...text.sectionTitle, color: color.text },
   entry: { ...text.entry, color: color.text },
   list: { gap: spacing.md },

@@ -254,3 +254,18 @@ export function without<T extends object, K extends keyof T>(value: T, key: K): 
   void omitted;
   return rest;
 }
+
+/** Exercise the native stack's actual back callback, including removal guards. */
+export function nativeBack(view: { root: ReactTestInstance }) {
+  const screen = required(
+    view.root
+      .findAll(
+        (node) =>
+          typeof node.props.onHeaderBackButtonClicked === 'function' &&
+          node.props.focused === true &&
+          node.props.index > 0,
+      )
+      .at(-1),
+  );
+  return invoke(screen, 'onHeaderBackButtonClicked');
+}

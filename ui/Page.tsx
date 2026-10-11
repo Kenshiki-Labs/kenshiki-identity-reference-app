@@ -1,17 +1,21 @@
 import { NavigationContext, NavigationRouteContext } from '@react-navigation/native';
-import { type ReactNode, useContext } from 'react';
+import { createContext, type ReactNode, useContext } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { t } from '../locales/i18n';
 import { Action } from './Action';
+import { NativeFlowBack } from './NativeFlowBack';
 import { color, size, spacing, text } from './tokens.generated';
 import { Wordmark } from './Wordmark';
 
+/** A navigator declares header ownership once for its screens. Modal sheets own their chrome. */
+export const PageHeaderContext = createContext<'custom' | 'native'>('custom');
+
 type PageProps = {
+  /** Native-stack routes own their header. Legacy routes keep the shared custom header. */
+  header?: 'custom' | 'native';
   title?: string | undefined;
   children?: ReactNode;
-  /** Short content leaves actions at the bottom; long content and actions scroll together. */
-  actions?: ReactNode;
   /** Camera content fills the remaining viewport. Sheets use the same chrome and scroll layout. */
   mode?: 'scroll' | 'camera' | 'sheet';
   /** A flow supplies its own release/handoff action; ordinary detail pages use native Back. */
@@ -22,14 +26,14 @@ type PageProps = {
   overlay?: ReactNode;
 };
 
-/** The only page container. Navigation stacks supply transitions; this component owns every
- * screen's brand, navigation controls, heading, surface, insets and scrolling. Feature views
- * supply content and session-aware close actions, never another page shell. */
+/** Shared screen layout. Native-header routes leave the title and navigation controls to their
+ * stack; other routes retain the common branded header. Features supply content and actions.
+ * AppContainer (or NativeSheet at a modal boundary) owns safe-area context; Page consumes it. */
 export function Page({
   title,
   children,
-  actions,
   mode = 'scroll',
+  header,
   onClose,
   testID,
   covered = false,
@@ -38,50 +42,49 @@ export function Page({
   const navigation = useContext(NavigationContext);
   const route = useContext(NavigationRouteContext);
   const stack = navigation?.getState();
-  const back =
-    mode !== 'sheet' &&
-    stack?.type === 'stack' &&
-    stack.index > 0 &&
-    stack.routes[stack.index]?.key === route?.key
-      ? () => navigation?.goBack()
-      : undefined;
+  const back = pageBack(navigation, stack, route?.key, mode);
   const close = onClose ?? back;
-  const hasActions = actions !== undefined && actions !== null;
   const closeLabel = t(
     mode === 'sheet' ? 'common.done' : mode === 'camera' ? 'common.cancel' : 'common.back',
   );
-  const heading = title ? (
-    <Text testID="page-title" accessibilityRole="header" style={pageStyles.title}>
-      {title}
-    </Text>
-  ) : null;
+  const inheritedHeader = useContext(PageHeaderContext);
+  const nativeHeader = (header ?? inheritedHeader) === 'native';
+  const heading =
+    title && !nativeHeader ? (
+      <Text testID="page-title" accessibilityRole="header" style={pageStyles.title}>
+        {title}
+      </Text>
+    ) : null;
   return (
-    <SafeAreaProvider>
+    <>
+      {nativeHeader && navigation && onClose && <NativeFlowBack close={onClose} />}
       <SafeAreaView
-        edges={['top', 'left', 'right']}
+        edges={nativeHeader ? ['left', 'right', 'bottom'] : ['top', 'left', 'right']}
         style={pageStyles.root}
         testID={testID}
         accessibilityViewIsModal={mode === 'sheet'}
         accessibilityElementsHidden={covered}
         importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}
       >
-        <View style={pageStyles.bar}>
-          <View style={pageStyles.navigation}>
-            {close && (
-              <Action
-                label={closeLabel}
-                back={mode === 'scroll'}
-                onPress={close}
-                secondary
-                testID={onClose ? 'modal-cancel' : 'page-back'}
-              />
-            )}
+        {!nativeHeader && (
+          <View style={pageStyles.bar}>
+            <View style={pageStyles.navigation}>
+              {close && (
+                <Action
+                  label={closeLabel}
+                  back={mode === 'scroll'}
+                  onPress={close}
+                  secondary
+                  testID={onClose ? 'modal-cancel' : 'page-back'}
+                />
+              )}
+            </View>
+            <View style={pageStyles.brand}>
+              <Wordmark />
+            </View>
+            <View style={pageStyles.navigation} />
           </View>
-          <View style={pageStyles.brand}>
-            <Wordmark />
-          </View>
-          <View style={pageStyles.navigation} />
-        </View>
+        )}
         {mode === 'camera' ? (
           <>
             <View style={pageStyles.cameraHeading}>{heading}</View>
@@ -91,31 +94,33 @@ export function Page({
           </>
         ) : (
           <ScrollView
-            contentInsetAdjustmentBehavior="automatic"
+            contentInsetAdjustmentBehavior={nativeHeader ? 'never' : 'automatic'}
             automaticallyAdjustKeyboardInsets
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={[pageStyles.content, hasActions && pageStyles.flowContent]}
+            contentContainerStyle={[pageStyles.content, nativeHeader && pageStyles.nativeContent]}
           >
-            {hasActions ? (
-              <>
-                <View style={pageStyles.flowBody}>
-                  {heading}
-                  {children}
-                </View>
-                <View style={pageStyles.flowActions}>{actions}</View>
-              </>
-            ) : (
-              <>
-                {heading}
-                {children}
-              </>
-            )}
+            {heading}
+            {children}
           </ScrollView>
         )}
       </SafeAreaView>
       {overlay}
-    </SafeAreaProvider>
+    </>
   );
+}
+
+function pageBack(
+  navigation: React.ContextType<typeof NavigationContext>,
+  stack: ReturnType<NonNullable<React.ContextType<typeof NavigationContext>>['getState']> | undefined,
+  routeKey: string | undefined,
+  mode: PageProps['mode'],
+) {
+  return mode !== 'sheet' &&
+    stack?.type === 'stack' &&
+    stack.index > 0 &&
+    stack.routes[stack.index]?.key === routeKey
+    ? () => navigation?.goBack()
+    : undefined;
 }
 
 const pageStyles = StyleSheet.create({
@@ -135,9 +140,7 @@ const pageStyles = StyleSheet.create({
     paddingBottom: spacing.xxxxl,
     gap: spacing.lg,
   },
-  flowContent: { flexGrow: 1 },
-  flowBody: { gap: spacing.lg },
-  flowActions: { marginTop: 'auto', paddingTop: spacing.lg, gap: spacing.sm },
+  nativeContent: { paddingBottom: spacing.lg },
   cameraHeading: { paddingHorizontal: spacing.md, paddingVertical: spacing.lg },
   camera: { flex: 1, backgroundColor: color.cameraBackground },
 });

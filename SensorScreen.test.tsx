@@ -169,6 +169,7 @@ test('permission-prompt inactive state does not pause; background does', async (
   const listener = jest.spyOn(AppState, 'addEventListener');
   const view = await render();
   const callback = required(listener.mock.calls[0])[1];
+  mockSetActive.mockClear();
   await act(async () => callback('inactive'));
   expect(mockSetActive).not.toHaveBeenCalled();
   await act(async () => callback('background'));

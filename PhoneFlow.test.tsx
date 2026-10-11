@@ -14,6 +14,7 @@ import {
   actionSheets,
   invoke,
   mockSession as makeSession,
+  nativeBack,
   required,
   settle,
   without,
@@ -129,6 +130,10 @@ async function renderApp() {
   });
   async function tap(id: string) {
     await act(async () => {
+      if (id === 'native-back') {
+        await nativeBack(view);
+        return;
+      }
       const button = required(
         view.root
           .findAllByProps({ testID: id })
@@ -140,7 +145,7 @@ async function renderApp() {
   }
   return { view, tap };
 }
-test('Phone opens from Identity, sending waits for receipt, Done and reopen keep all findings', async () => {
+test('Phone opens from Identity, sending waits for receipt, native Back and reopen keep all findings', async () => {
   const { view, tap } = await renderApp();
   await tap('open-phone');
   expect(jest.mocked(IdentityCaptureSession.create).mock.calls.at(-1)?.[0]?.phone?.checkedDocumentID).toBe(
@@ -171,7 +176,7 @@ test('Phone opens from Identity, sending waits for receipt, Done and reopen keep
   expect(shown).not.toContain('synthetic-source');
   expect(view.root.findAllByProps({ testID: 'phone-receipt-details' })).toHaveLength(0);
   expect(JSON.stringify(view.toJSON())).toContain('a'.repeat(64));
-  await tap('phone-done');
+  await tap('native-back');
   await tap('open-phone');
   shown = JSON.stringify(view.toJSON());
   expect(shown).toContain('Synthetic carrier');
@@ -322,7 +327,7 @@ test('subscriber findings appear on the same result screen without another conse
   expect(shown).not.toContain('Required details agree');
   expect(shown).not.toContain('Synthetic provider');
   expect(view.root.findAllByProps({ testID: 'phone-bottom-sheet' })).toHaveLength(0);
-  await tap('phone-done');
+  await tap('native-back');
   await tap('open-phone');
   expect(JSON.stringify(view.toJSON())).toContain('Comparison incomplete');
   expect(mockSession.phoneSend).toHaveBeenCalledTimes(1);
@@ -477,7 +482,7 @@ test('handoff keeps the receipt mounted without inserting progress above it', as
   const result = view.root.findByProps({ testID: 'phone-result' });
   let closing: Promise<unknown> | undefined;
   await act(async () => {
-    closing = Promise.resolve(invoke(view.root.findByProps({ testID: 'phone-done' }), 'onPress'));
+    closing = Promise.resolve(invoke(view.root.findByProps({ testID: 'modal-cancel' }), 'onPress'));
     await settle();
   });
   expect(view.root.findByProps({ testID: 'phone-result' })).toBe(result);

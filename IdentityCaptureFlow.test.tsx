@@ -1,6 +1,6 @@
 import type { CaptureEvent, Configuration, PassportObservation } from '@kenshiki/identity-capture';
 import renderer, { act } from 'react-test-renderer';
-import { actionSheets, invoke, required, settle } from './__tests__/support';
+import { actionSheets, invoke, nativeBack, required, settle } from './__tests__/support';
 import App from './App';
 
 let mockEvent: (event: CaptureEvent) => void;
@@ -79,17 +79,22 @@ jest.mock('@kenshiki/identity-capture', () => ({
 
 beforeEach(() => jest.clearAllMocks());
 
-test('passport completion returns to cards and results reopen without repeating capture or deleting evidence', async () => {
+test('passport completion returns to its detail route and results reopen without repeating capture or deleting evidence', async () => {
   let view!: renderer.ReactTestRenderer;
   await act(async () => {
     view = renderer.create(<App configuration={{ trustAnchorsURL: 'file:///anchors.pem' }} />);
   });
   async function tap(id: string) {
     await act(async () => {
+      if (id === 'native-back') {
+        await nativeBack(view);
+        return;
+      }
       await invoke(view.root.findByProps({ testID: id }), 'onPress');
     });
   }
   await tap('open-capture-flow');
+  await tap('start-passport-capture');
   await tap('start-passport-scan');
   await act(async () => {
     mockEvent({ type: 'mrzObservation', observation: mockMRZ });
@@ -98,14 +103,26 @@ test('passport completion returns to cards and results reopen without repeating 
   await tap('read-passport');
   expect(JSON.stringify(view.toJSON())).toContain('SYNTHETIC SPECIMEN');
   expect(JSON.stringify(view.toJSON())).toContain('PRINTED DETAILS AND CHIP');
-  await tap('finish-capture');
+  expect(view.root.findAllByProps({ testID: 'finish-capture' })).toHaveLength(0);
+  await tap('native-back');
   expect(view.root.findByProps({ testID: 'face-match-card' })).toBeDefined();
   expect(mockSession.release).not.toHaveBeenCalled();
   await tap('open-capture-flow');
   expect(view.root.findByProps({ testID: 'passport-result' })).toBeDefined();
   expect(mockSession.startMRZ).toHaveBeenCalledTimes(1);
   expect(mockSession.readPassport).toHaveBeenCalledTimes(1);
-  await tap('page-back');
+  await act(async () => {
+    const resultScreen = required(
+      view.root
+        .findAll(
+          (node) =>
+            typeof node.props.onHeaderBackButtonClicked === 'function' &&
+            node.findAllByProps({ testID: 'passport-result' }).length > 0,
+        )
+        .at(-1),
+    );
+    invoke(resultScreen, 'onHeaderBackButtonClicked');
+  });
   expect(view.root.findByProps({ testID: 'identity-hub' })).toBeDefined();
   expect(mockSession.release).not.toHaveBeenCalled();
   await act(async () => {
@@ -121,6 +138,9 @@ test('shared Page Cancel releases an unfinished capture before returning to Iden
   });
   await act(async () => {
     await invoke(view.root.findByProps({ testID: 'open-capture-flow' }), 'onPress');
+  });
+  await act(async () => {
+    await invoke(view.root.findByProps({ testID: 'start-passport-capture' }), 'onPress');
   });
   await act(async () => {
     await invoke(view.root.findByProps({ testID: 'start-passport-scan' }), 'onPress');

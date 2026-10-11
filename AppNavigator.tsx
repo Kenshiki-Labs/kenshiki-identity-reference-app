@@ -1,20 +1,27 @@
 import type { Configuration } from '@kenshiki/identity-capture';
 import { createNativeBottomTabNavigator } from '@react-navigation/bottom-tabs/unstable';
 import {
-  DarkTheme,
-  DefaultTheme,
-  NavigationContainer,
+  type NavigationContainerRef,
   type NavigationState,
   StackActions,
-  useNavigationContainerRef,
+  useNavigation,
 } from '@react-navigation/native';
 import {
   createNativeStackNavigator,
   type NativeStackNavigationOptions,
   type NativeStackNavigationProp,
 } from '@react-navigation/native-stack';
-import { type ComponentProps, useCallback, useLayoutEffect, useRef, useState } from 'react';
-import { useColorScheme } from 'react-native';
+import {
+  type ComponentProps,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AirCheckScreen } from './AirCheckScreen';
 import { ContinuityScreen } from './ContinuityScreen';
 import { DriverLicenseFlow } from './DriverLicenseFlow';
@@ -32,23 +39,16 @@ import { PhoneFlow } from './PhoneFlow';
 import { copy, type SensorPage, title } from './SensorPresentation';
 import { SensorBoardScreen, SensorDetailScreen, SensorSession } from './SensorScreen';
 import { SSNFlow } from './SSNFlow';
-import {
-  ControllerCustodyContext,
-  createControllerCustody,
-  type IdentityCustody,
-} from './ui/ControllerCustody';
-import { appearanceColor, symbol } from './ui/tokens.generated';
+import { ControllerCustodyContext } from './ui/ControllerCustody';
+import { PageHeaderContext } from './ui/Page';
+import { symbol } from './ui/tokens.generated';
 import { type IdentityFlow, useIdentityWorkspace } from './useIdentityWorkspace';
 
-/** The root: the tabs, and the checks presented over them as full-screen modals. A journey that
- * must run before the tabs, such as enrollment, becomes this stack's first route and replaces
- * itself with Tabs when it finishes. */
+/** The main application's tabs and full-screen checks. AppContainer owns the navigation root. */
 type RootRoutes = {
   Tabs: undefined;
   PassportCapture: undefined;
   LicenseCapture: undefined;
-  SSNCheck: undefined;
-  PhoneCheck: undefined;
 };
 /** Four tabs in a native UITabBar, each its own native stack. */
 type TabRoutes = {
@@ -59,8 +59,11 @@ type TabRoutes = {
 };
 type IdentityRoutes = {
   IdentityHome: undefined;
-  PassportResult: { focus: 'passport' | 'face' };
-  LicenseResult: undefined;
+  PassportDetail: undefined;
+  FaceDetail: undefined;
+  LicenseDetail: undefined;
+  PhoneDetail: undefined;
+  SSNDetail: undefined;
 };
 type SensorRoutes = { SensorBoard: undefined; SensorDetail: { page: SensorPage } };
 type SettingsRoutes = { SettingsHome: undefined; DeveloperChecks: undefined };
@@ -72,8 +75,8 @@ const IdentityStack = createNativeStackNavigator<IdentityRoutes>();
 const SensorStack = createNativeStackNavigator<SensorRoutes>();
 const SettingsStack = createNativeStackNavigator<SettingsRoutes>();
 type IdentityNavigation = NativeStackNavigationProp<IdentityRoutes>;
-/** Native stacks own transitions. Page owns the visible header and every screen's layout. */
-const pushed: NativeStackNavigationOptions = { headerShown: false };
+/** Native stacks own titles and Back; Page owns the content below their nontransparent headers. */
+const pushed: NativeStackNavigationOptions = { headerShown: true, headerTransparent: false };
 /** Only visible sensor surfaces own collection; identity modals and developer checks do not. */
 function sensorTabFocused(state: NavigationState | undefined): boolean {
   const root = state?.routes[state.index];
@@ -81,24 +84,24 @@ function sensorTabFocused(state: NavigationState | undefined): boolean {
   const tabs = root.state;
   if (!tabs || typeof tabs.index !== 'number') return false;
   const focused = tabs.routes[tabs.index];
-  if (focused?.name === 'FusionTab' || focused?.name === 'SensorsTab') return true;
+  if (focused?.name === 'SensorsTab') return true;
+  if (focused?.name === 'FusionTab') {
+    const fusion = focused.state;
+    return fusion?.routes[fusion.index ?? 0]?.name !== 'Glossary';
+  }
   if (focused?.name !== 'SettingsTab') return false;
   const settings = focused.state;
   return !settings || settings.routes[settings.index ?? 0]?.name === 'SettingsHome';
 }
 
-/** React Navigation's theme in the brand's tint: the selected tab, the back button and bar buttons. */
-function navigationTheme(appearance: 'light' | 'dark') {
-  const base = appearance === 'dark' ? DarkTheme : DefaultTheme;
-  return { ...base, colors: { ...base.colors, primary: appearanceColor.tint[appearance] } };
-}
-
 const modal: NativeStackNavigationOptions = { presentation: 'fullScreenModal', gestureEnabled: false };
+/** A presented native surface measures its own insets, independent of the tab's header. */
+function modalLayout({ children }: { children: ReactNode }) {
+  return <SafeAreaProvider>{children}</SafeAreaProvider>;
+}
 const flowRoutes = {
   passport: 'PassportCapture',
   license: 'LicenseCapture',
-  ssn: 'SSNCheck',
-  phone: 'PhoneCheck',
 } as const;
 
 type AppNavigatorProps = {
@@ -107,37 +110,52 @@ type AppNavigatorProps = {
   configurationIssue?: 'holderScopeUnreadable' | 'liveServicesUnavailable' | undefined;
 };
 
-/** A configuration owns one mounted workspace. Replacing it removes the old screens and their
- * state together; the shared custody barrier waits for their native controllers to close. */
-export function AppNavigator(props: Readonly<AppNavigatorProps>) {
-  const [holder, setHolder] = useState({ configuration: props.configuration, revision: 0 });
-  const [custody] = useState(createControllerCustody);
-  if (holder.configuration !== props.configuration) {
-    setHolder({ configuration: props.configuration, revision: holder.revision + 1 });
-  }
-  return (
-    <ControllerCustodyContext.Provider value={custody}>
-      <HolderNavigator key={holder.revision} {...props} custody={custody} />
-    </ControllerCustodyContext.Provider>
-  );
-}
-
-function HolderNavigator({
+/** AppContainer owns configuration resets and retains custody while this workspace remounts. */
+export function AppNavigator({
   configuration,
   developerChecks,
   configurationIssue,
-  custody,
-}: AppNavigatorProps & { custody: IdentityCustody }) {
-  const navigation = useNavigationContainerRef<RootRoutes>();
+}: Readonly<AppNavigatorProps>) {
+  const custody = useContext(ControllerCustodyContext);
+  if (!custody) throw new Error('AppNavigator must be rendered inside AppContainer.');
+  const navigation = useNavigation<NavigationContainerRef<RootRoutes>>();
   const identityNavigation = useRef<IdentityNavigation | undefined>(undefined);
-  const scheme = useColorScheme();
   const [sensorsOpen, setSensorsOpen] = useState(false);
+  useEffect(() => {
+    const update = () => setSensorsOpen(sensorTabFocused(navigation.getRootState()));
+    const offState = navigation.addListener('state', update);
+    const offReady = navigation.addListener('ready', update);
+    update();
+    return () => {
+      offState();
+      offReady();
+    };
+  }, [navigation]);
   const home = useCallback(() => {
-    if (navigation.isReady() && navigation.canGoBack()) navigation.dispatch(StackActions.popToTop());
+    if (
+      navigation.isReady() &&
+      navigation.getCurrentRoute()?.name !== 'Tabs' &&
+      (navigation.getRootState()?.routes.length ?? 0) > 1
+    ) {
+      navigation.dispatch(StackActions.popToTop());
+      return;
+    }
     const identity = identityNavigation.current;
     if (identity && identity.getState().routes.length > 1) identity.popToTop();
   }, [navigation]);
-  const openFlow = useCallback((flow: IdentityFlow) => navigation.navigate(flowRoutes[flow]), [navigation]);
+  const openFlow = useCallback(
+    (flow: IdentityFlow) => {
+      if (flow === 'phone' || flow === 'ssn') {
+        identityNavigation.current?.navigate(flow === 'phone' ? 'PhoneDetail' : 'SSNDetail');
+      } else {
+        if (identityNavigation.current?.getState().index === 0) {
+          identityNavigation.current.navigate(flow === 'license' ? 'LicenseDetail' : 'PassportDetail');
+        }
+        navigation.navigate(flowRoutes[flow]);
+      }
+    },
+    [navigation],
+  );
   const workspace = useIdentityWorkspace(configuration, home, openFlow, custody);
   const registerIdentityNavigation = useCallback((value: IdentityNavigation | undefined) => {
     identityNavigation.current = value;
@@ -156,13 +174,40 @@ function HolderNavigator({
             />
           )}
         </IdentityStack.Screen>
-        <IdentityStack.Screen name="PassportResult" options={{ title: t('hub.resultsTitle') }}>
-          {({ route }) => (
-            <PassportResult configuration={configuration} workspace={workspace} focus={route.params.focus} />
+        <IdentityStack.Screen name="PassportDetail" options={{ title: t('hub.passport.title') }}>
+          {() => <PassportResult configuration={configuration} workspace={workspace} focus="passport" />}
+        </IdentityStack.Screen>
+        <IdentityStack.Screen name="FaceDetail" options={{ title: t('hub.face.title') }}>
+          {() => <PassportResult configuration={configuration} workspace={workspace} focus="face" />}
+        </IdentityStack.Screen>
+        <IdentityStack.Screen name="LicenseDetail" options={{ title: t('hub.licenseTitle') }}>
+          {() => <LicenseResult configuration={configuration} workspace={workspace} />}
+        </IdentityStack.Screen>
+        <IdentityStack.Screen name="SSNDetail" options={{ title: t('common.socialSecurityNumber') }}>
+          {() => (
+            <IdentityPrerequisiteGate reason={workspace.ssn.blocked} onExit={workspace.ssn.exit}>
+              <SSNFlow
+                configuration={workspace.phone.configuration}
+                saved={workspace.ssn.input}
+                onComplete={workspace.ssn.accept}
+                onClaim={workspace.ssn.claim}
+                onExit={workspace.ssn.exit}
+              />
+            </IdentityPrerequisiteGate>
           )}
         </IdentityStack.Screen>
-        <IdentityStack.Screen name="LicenseResult" options={{ title: t('hub.licenseTitle') }}>
-          {() => <LicenseResult configuration={configuration} workspace={workspace} />}
+        <IdentityStack.Screen name="PhoneDetail" options={{ title: t('hub.phone.title') }}>
+          {() => (
+            <IdentityPrerequisiteGate reason={workspace.phone.blocked} onExit={workspace.phone.exit}>
+              <PhoneFlow
+                configuration={workspace.phone.configuration}
+                saved={workspace.phone.input}
+                onComplete={workspace.phone.accept}
+                onClaim={workspace.phone.claim}
+                onExit={workspace.phone.exit}
+              />
+            </IdentityPrerequisiteGate>
+          )}
         </IdentityStack.Screen>
       </IdentityStack.Navigator>
     );
@@ -202,7 +247,7 @@ function HolderNavigator({
           )}
         </SettingsStack.Screen>
         {developerChecks && __DEV__ && (
-          <SettingsStack.Screen name="DeveloperChecks" options={{ title: t('hub.action.developerChecks') }}>
+          <SettingsStack.Screen name="DeveloperChecks" options={{ title: t('developer.title') }}>
             {() => <IntegrationChecks configuration={configuration} />}
           </SettingsStack.Screen>
         )}
@@ -247,51 +292,48 @@ function HolderNavigator({
   }
   function renderTabs() {
     return (
-      <Tabs.Navigator screenOptions={{ headerShown: false }}>
-        <Tabs.Screen
-          name="FusionTab"
-          options={{ title: copy('fusion.tab'), tabBarIcon: { type: 'sfSymbol', name: symbol.fusionTab } }}
-        >
-          {renderFusionTab}
-        </Tabs.Screen>
-        <Tabs.Screen
-          name="SensorsTab"
-          options={{
-            title: copy('tab.sensors.title'),
-            tabBarIcon: { type: 'sfSymbol', name: symbol.sensorsTab },
-          }}
-        >
-          {renderSensorsTab}
-        </Tabs.Screen>
-        <Tabs.Screen
-          name="IdentityTab"
-          options={{ title: t('hub.title'), tabBarIcon: { type: 'sfSymbol', name: symbol.identityTab } }}
-        >
-          {renderIdentityTab}
-        </Tabs.Screen>
-        <Tabs.Screen
-          name="SettingsTab"
-          options={{
-            title: copy('tab.settings.title'),
-            tabBarIcon: { type: 'sfSymbol', name: symbol.settingsTab },
-          }}
-        >
-          {renderSettingsTab}
-        </Tabs.Screen>
-      </Tabs.Navigator>
+      <PageHeaderContext.Provider value="native">
+        <Tabs.Navigator screenOptions={{ headerShown: false }}>
+          <Tabs.Screen
+            name="FusionTab"
+            options={{ title: copy('fusion.tab'), tabBarIcon: { type: 'sfSymbol', name: symbol.fusionTab } }}
+          >
+            {renderFusionTab}
+          </Tabs.Screen>
+          <Tabs.Screen
+            name="SensorsTab"
+            options={{
+              title: copy('tab.sensors.title'),
+              tabBarIcon: { type: 'sfSymbol', name: symbol.sensorsTab },
+            }}
+          >
+            {renderSensorsTab}
+          </Tabs.Screen>
+          <Tabs.Screen
+            name="IdentityTab"
+            options={{ title: t('hub.title'), tabBarIcon: { type: 'sfSymbol', name: symbol.identityTab } }}
+          >
+            {renderIdentityTab}
+          </Tabs.Screen>
+          <Tabs.Screen
+            name="SettingsTab"
+            options={{
+              title: copy('tab.settings.title'),
+              tabBarIcon: { type: 'sfSymbol', name: symbol.settingsTab },
+            }}
+          >
+            {renderSettingsTab}
+          </Tabs.Screen>
+        </Tabs.Navigator>
+      </PageHeaderContext.Provider>
     );
   }
   return (
     <SensorSession configuration={configuration} open={sensorsOpen}>
-      <NavigationContainer
-        ref={navigation}
-        theme={navigationTheme(scheme === 'dark' ? 'dark' : 'light')}
-        onReady={() => setSensorsOpen(sensorTabFocused(navigation.getRootState()))}
-        onStateChange={(state) => setSensorsOpen(sensorTabFocused(state))}
-      >
-        <Root.Navigator screenOptions={{ headerShown: false }}>
-          <Root.Screen name="Tabs">{renderTabs}</Root.Screen>
-          <Root.Screen name="PassportCapture" options={modal}>
+      <Root.Navigator screenOptions={{ headerShown: false }}>
+        <Root.Screen name="Tabs">{renderTabs}</Root.Screen>
+        <Root.Group screenOptions={modal} screenLayout={modalLayout}>
+          <Root.Screen name="PassportCapture">
             {() => (
               <IdentityCaptureFlow
                 configuration={configuration}
@@ -302,7 +344,7 @@ function HolderNavigator({
               />
             )}
           </Root.Screen>
-          <Root.Screen name="LicenseCapture" options={modal}>
+          <Root.Screen name="LicenseCapture">
             {() => (
               <DriverLicenseFlow
                 configuration={configuration}
@@ -313,34 +355,8 @@ function HolderNavigator({
               />
             )}
           </Root.Screen>
-          <Root.Screen name="SSNCheck" options={modal}>
-            {() => (
-              <IdentityPrerequisiteGate reason={workspace.ssn.blocked} onExit={workspace.ssn.exit}>
-                <SSNFlow
-                  configuration={workspace.phone.configuration}
-                  saved={workspace.ssn.input}
-                  onComplete={workspace.ssn.accept}
-                  onClaim={workspace.ssn.claim}
-                  onExit={workspace.ssn.exit}
-                />
-              </IdentityPrerequisiteGate>
-            )}
-          </Root.Screen>
-          <Root.Screen name="PhoneCheck" options={modal}>
-            {() => (
-              <IdentityPrerequisiteGate reason={workspace.phone.blocked} onExit={workspace.phone.exit}>
-                <PhoneFlow
-                  configuration={workspace.phone.configuration}
-                  saved={workspace.phone.input}
-                  onComplete={workspace.phone.accept}
-                  onClaim={workspace.phone.claim}
-                  onExit={workspace.phone.exit}
-                />
-              </IdentityPrerequisiteGate>
-            )}
-          </Root.Screen>
-        </Root.Navigator>
-      </NavigationContainer>
+        </Root.Group>
+      </Root.Navigator>
       <IdentityRecovery configuration={configuration} workspace={workspace} />
     </SensorSession>
   );
@@ -362,8 +378,8 @@ function IdentityHomeRoute({
   return (
     <IdentityHome
       {...props}
-      onLicenseResult={() => navigation.navigate('LicenseResult')}
-      onPassportResult={(focus) => navigation.navigate('PassportResult', { focus })}
+      onLicenseResult={() => navigation.navigate('LicenseDetail')}
+      onPassportResult={(focus) => navigation.navigate(focus === 'face' ? 'FaceDetail' : 'PassportDetail')}
     />
   );
 }

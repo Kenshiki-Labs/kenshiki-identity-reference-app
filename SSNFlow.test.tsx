@@ -3,7 +3,7 @@ import renderer, { act } from 'react-test-renderer';
 import { documentConfiguration, documentSessionMethods } from './__tests__/documentFixture';
 import { completedPhone, phoneConfiguration } from './__tests__/phoneFixture';
 import { ssnBinding, ssnOperationID, ssnReceipt } from './__tests__/ssnFixture';
-import { invoke, required } from './__tests__/support';
+import { invoke, nativeBack, required } from './__tests__/support';
 import App from './App';
 import { SSNResultDetails } from './SSNResultDetails';
 
@@ -97,6 +97,10 @@ async function renderApp(config = configuration) {
   });
   async function tap(id: string) {
     await act(async () => {
+      if (id === 'native-back') {
+        await nativeBack(view);
+        return;
+      }
       const button = required(
         view.root
           .findAllByProps({ testID: id })
@@ -113,7 +117,7 @@ async function renderApp(config = configuration) {
   }
   if (config.phone) {
     await tap('open-phone');
-    await tap('phone-done');
+    await tap('native-back');
   }
   return { view, tap, enter };
 }
@@ -137,7 +141,7 @@ test('SSN opens entry directly, confirms once inline, and shows the result witho
   expect(view.root.findAllByProps({ testID: 'ssn-confirmation' })).toHaveLength(0);
   expect(JSON.stringify(view.toJSON())).not.toContain('Your checked ID and confirmed phone');
   expect(mockSession.ssnRequestConfirmation).toHaveBeenCalledTimes(1);
-  await tap('finish-ssn');
+  await tap('native-back');
   await tap('open-ssn');
   expect(view.root.findByProps({ testID: 'ssn-result' })).toBeDefined();
   expect(mockSession.ssnConfirm).toHaveBeenCalledTimes(1);
@@ -153,7 +157,7 @@ test('leaving the exact-number review clears the input before the Identity card 
   await tap('open-ssn');
   await enter();
   await tap('ssn-review-number');
-  await tap('modal-cancel');
+  await tap('native-back');
   expect(JSON.stringify(view.toJSON())).not.toContain('000-00-1234');
   await tap('open-ssn');
   expect(view.root.findByProps({ testID: 'ssn-entry' }).props.defaultValue).toBe('');

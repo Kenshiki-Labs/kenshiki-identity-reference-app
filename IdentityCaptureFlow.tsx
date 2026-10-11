@@ -16,6 +16,7 @@ import { NativeSheet, useConfirmation } from './ui/NativeSheet';
 import { Page } from './ui/Page';
 import { styles } from './ui/styles';
 import { size } from './ui/tokens.generated';
+import { useCaptureHandoff } from './ui/useCaptureHandoff';
 import { useControllerState } from './ui/useControllerState';
 
 const initialState: FlowState = { phase: 'intro', busy: false, ready: false, preview: 0 };
@@ -70,6 +71,12 @@ export function IdentityCaptureFlow({
       controller.fail(error);
     }
   };
+  useCaptureHandoff(
+    state.comparison ?? state.passport,
+    (state.phase === 'passport' || state.phase === 'result') && !state.busy && !state.sheet,
+    finish,
+    (error) => controller?.fail(error),
+  );
   /** Completed evidence is handed off; anything earlier is released. */
   const leave = async () => {
     if (state.passport) await finish();
@@ -118,15 +125,6 @@ export function IdentityCaptureFlow({
       secondary={secondary}
     />
   );
-  const result =
-    state.session && state.passport
-      ? {
-          session: state.session,
-          mrz: state.mrz,
-          passport: state.passport,
-          comparison: state.comparison,
-        }
-      : undefined;
   function renderCaptureStage() {
     if (camera) {
       return renderCamera();
@@ -179,31 +177,6 @@ export function IdentityCaptureFlow({
           <Text style={styles.body} accessibilityLiveRegion="polite">
             {state.progress}
           </Text>
-        )}
-        {(phase === 'passport' || phase === 'result') && result && (
-          <>
-            <CaptureResultDetails result={result} focus={phase === 'result' ? 'face' : 'passport'} />
-            <Action
-              label={t('common.done')}
-              onPress={finish}
-              disabled={state.busy || finishing}
-              testID="finish-capture"
-            />
-            {action(
-              state.comparison ? t('passport.action.retakeSelfie') : t('passport.action.compareSelfie'),
-              activeController.selfie,
-              !state.passport?.portraitAvailable || !configuration.embedderURL || !configuration.detectorURL,
-              'retake-selfie',
-              true,
-            )}
-            {action(
-              t('passport.action.readChipAgain'),
-              activeController.read,
-              false,
-              'reread-passport',
-              true,
-            )}
-          </>
         )}
         {(phase === 'captured' || phase === 'comparing') && (
           <Text style={styles.body} accessibilityLiveRegion="polite">

@@ -1,5 +1,6 @@
 import type { Configuration } from '@kenshiki/identity-capture';
 import { Text } from 'react-native';
+import { isCompleteDocument } from './DocumentFlowController';
 import { DocumentResult } from './DocumentResult';
 import { CaptureResultDetails } from './IdentityCaptureFlow';
 import { t } from './locales/i18n';
@@ -17,7 +18,16 @@ export function LicenseResult({
 }>) {
   const { result: document, start: startDocument } = workspace.license;
   const { requestClear } = workspace.recovery;
-  if (!document) return null;
+  if (!document || !isCompleteDocument(document.document))
+    return (
+      <Page title={t('hub.licenseTitle')}>
+        <Action
+          label={t('hub.license.start')}
+          onPress={() => startDocument(document ? 'back' : undefined)}
+          testID="start-license-capture"
+        />
+      </Page>
+    );
   return (
     <Page title={t('hub.licenseTitle')}>
       <DocumentResult
@@ -55,7 +65,12 @@ export function PassportResult({
   const { requestClear } = workspace.recovery;
   const faceReady = !!configuration.embedderURL && !!configuration.detectorURL;
   const passportReady = !!configuration.trustAnchorsURL;
-  if (!result) return null;
+  if (!result)
+    return (
+      <Page title={t('hub.passport.title')}>
+        <Action label={t('hub.passport.start')} onPress={() => start()} testID="start-passport-capture" />
+      </Page>
+    );
   return (
     <Page title={t('hub.resultsTitle')}>
       <CaptureResultDetails result={result} focus={focus} />

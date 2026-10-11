@@ -12,26 +12,6 @@ export type MessageValues = {
   readonly "prerequisite.phone": undefined;
   readonly "prerequisite.service": undefined;
   readonly "prerequisite.back": undefined;
-  readonly "firstRun.location.title": undefined;
-  readonly "firstRun.location.body": undefined;
-  readonly "firstRun.motion.title": undefined;
-  readonly "firstRun.motion.body": undefined;
-  readonly "firstRun.bluetooth.title": undefined;
-  readonly "firstRun.bluetooth.body": undefined;
-  readonly "firstRun.step": {readonly number: string | number; readonly total: string | number};
-  readonly "firstRun.request": undefined;
-  readonly "firstRun.next": undefined;
-  readonly "firstRun.open": undefined;
-  readonly "firstRun.notNow": undefined;
-  readonly "firstRun.settings": undefined;
-  readonly "firstRun.allowed": undefined;
-  readonly "firstRun.locationReady": undefined;
-  readonly "firstRun.unavailable": undefined;
-  readonly "firstRun.denied": undefined;
-  readonly "firstRun.whileUsing": undefined;
-  readonly "firstRun.preciseBody": undefined;
-  readonly "firstRun.camera": undefined;
-  readonly "firstRun.failure": undefined;
   readonly "fusionUI.refreshAir": undefined;
   readonly "fusionUI.retryAir": undefined;
   readonly "fusionUI.passCountValue": {readonly count: string | number};
@@ -1043,26 +1023,6 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "prerequisite.phone": "Complete the phone check before checking your Social Security number.",
       "prerequisite.service": "This check is not connected yet.",
       "prerequisite.back": "Back to Identity",
-      "firstRun.location.title": "Allow location",
-      "firstRun.location.body": "Choose Always so location is available for continuity checks. Keep Precise Location on. iOS may ask in two stages.",
-      "firstRun.motion.title": "Allow Motion & Fitness",
-      "firstRun.motion.body": "Use the phone’s barometer to compare air pressure with local weather.",
-      "firstRun.bluetooth.title": "Allow Bluetooth",
-      "firstRun.bluetooth.body": "Read Bluetooth status and your connected audio route.",
-      "firstRun.step": ["Step ", ["arg", "number"], " of ", ["arg", "total"]],
-      "firstRun.request": "Continue",
-      "firstRun.next": "Next",
-      "firstRun.open": "Open Kenshiki SDK",
-      "firstRun.notNow": "Not now",
-      "firstRun.settings": "Open Settings",
-      "firstRun.allowed": "Access is enabled.",
-      "firstRun.locationReady": "Always and Precise Location are enabled.",
-      "firstRun.unavailable": "This permission is not available on this device. You can continue.",
-      "firstRun.denied": "Access is off or restricted. You can review it in Settings or continue without it.",
-      "firstRun.whileUsing": "iOS currently allows access only while using the app. Always access is still needed.",
-      "firstRun.preciseBody": "iOS is sharing an approximate position. Enable Precise Location in Settings.",
-      "firstRun.camera": "We’ll ask for camera access when you start a scan or face capture.",
-      "firstRun.failure": "This step could not finish. Try again or choose Not now.",
       "fusionUI.refreshAir": "Refresh air check",
       "fusionUI.retryAir": "Retry air check",
       "fusionUI.passCountValue": ["Readings so far: ", ["arg", "count"]],

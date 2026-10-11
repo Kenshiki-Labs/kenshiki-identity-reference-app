@@ -11,7 +11,6 @@ import {
   type DocumentFlowState,
   type SavedDocumentCapture,
 } from './DocumentFlowController';
-import { DocumentResult } from './DocumentResult';
 import { t } from './locales/i18n';
 import { Action } from './ui/Action';
 import { ControllerStartup } from './ui/ControllerStartup';
@@ -19,6 +18,7 @@ import { connectBackground } from './ui/connectBackground';
 import { NativeSheet } from './ui/NativeSheet';
 import { Page } from './ui/Page';
 import { styles } from './ui/styles';
+import { useCaptureHandoff } from './ui/useCaptureHandoff';
 import { useControllerState } from './ui/useControllerState';
 
 const initialState: DocumentFlowState = {
@@ -74,6 +74,12 @@ export function DriverLicenseFlow({
       if (!controller.state.sheet) controller.fail(error);
     }
   };
+  useCaptureHandoff(
+    state.completed,
+    state.phase === 'result' && !state.busy && !state.sheet,
+    finish,
+    (error) => controller?.fail(error),
+  );
   const exit = async () => {
     if (!controller || finishingRef.current) return;
     if (state.completed || state.draft?.front) {
@@ -194,24 +200,6 @@ export function DriverLicenseFlow({
               true,
             )}
           </>
-        )}
-        {state.phase === 'result' && state.completed && state.session && (
-          <DocumentResult
-            key={state.completed.front?.captureID}
-            result={{ session: state.session, document: state.completed }}
-            onRetake={() => {
-              activeController.startFront().catch(activeController.fail);
-            }}
-            configured={!!configuration.document?.check}
-          >
-            <Action
-              label={t('common.done')}
-              onPress={finish}
-              disabled={state.busy || finishing}
-              testID="finish-document"
-            />
-            {action(t('license.retake'), activeController.startFront, 'start-document-front', true)}
-          </DocumentResult>
         )}
         {state.busy && state.phase !== 'loading' && (
           <Text style={styles.body} accessibilityLiveRegion="polite">

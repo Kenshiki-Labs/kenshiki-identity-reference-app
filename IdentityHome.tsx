@@ -28,8 +28,8 @@ export function IdentityHome({
   onLicenseResult: () => void;
   onPassportResult: (focus: 'passport' | 'face') => void;
 }>) {
-  const { result, start, openingResults, savedCount } = workspace.passport;
-  const { result: document, start: startDocument } = workspace.license;
+  const { result, openingResults, savedCount } = workspace.passport;
+  const { result: document } = workspace.license;
   const { result: ssn, start: openSSN } = workspace.ssn;
   const { result: phone, start: openPhone } = workspace.phone;
   const { restoreFailure, clearFailure } = workspace.recovery;
@@ -112,9 +112,7 @@ export function IdentityHome({
           label={t('hub.license.title')}
           status={licenseSummary()}
           icon={{ name: symbol.license, background: color.swiftBlue }}
-          onPress={() =>
-            document && isCompleteDocument(document.document) ? onLicenseResult() : startDocument()
-          }
+          onPress={onLicenseResult}
         />
         <ListRow
           rowID="open-capture-flow"
@@ -122,10 +120,7 @@ export function IdentityHome({
           status={passportDisabled && !blocked ? t('hub.notAvailable') : passportSummary()}
           icon={{ name: symbol.passport, background: color.swiftIndigo }}
           disabled={passportDisabled}
-          onPress={() => {
-            if (result) onPassportResult('passport');
-            else start();
-          }}
+          onPress={() => onPassportResult('passport')}
         />
         <ListRow
           rowID="face-match-card"
@@ -133,10 +128,7 @@ export function IdentityHome({
           status={faceDisabled && !blocked ? t('hub.notAvailable') : faceSummary()}
           icon={{ name: symbol.face, background: color.swiftGreen }}
           disabled={faceDisabled}
-          onPress={() => {
-            if (result?.comparison) onPassportResult('face');
-            else start(result ? 'selfie' : undefined);
-          }}
+          onPress={() => onPassportResult('face')}
         />
         <ListRow
           rowID="open-phone"

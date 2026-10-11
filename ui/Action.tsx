@@ -42,9 +42,10 @@ export function Action({
         disabled={disabled}
         testID={testID}
         onPress={press}
-        style={[
+        style={({ pressed }) => [
           secondary || destructive ? styles.plain : styles.action,
           back && { flexDirection: 'row', alignItems: 'center' },
+          pressed && styles.pressed,
           disabled && styles.disabled,
         ]}
       >

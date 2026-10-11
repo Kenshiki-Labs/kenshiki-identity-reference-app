@@ -244,7 +244,8 @@
   // Opacities.
   "opacity": {
     // A disabled row or button. Replaces .45.
-    "disabled": 0.45
+    "disabled": 0.45,
+    "pressed": 0.7
   },
 
   // SF Symbols, by role. The tab bar types each name against the SF Symbols iOS ships.

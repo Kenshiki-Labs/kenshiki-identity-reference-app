@@ -21,34 +21,6 @@
     "service": "This check is not connected yet.",
     "back": "Back to Identity"
   },
-  "firstRun": {
-    "location": {
-      "title": "Allow location",
-      "body": "Choose Always so location is available for continuity checks. Keep Precise Location on. iOS may ask in two stages."
-    },
-    "motion": {
-      "title": "Allow Motion & Fitness",
-      "body": "Use the phone’s barometer to compare air pressure with local weather."
-    },
-    "bluetooth": {
-      "title": "Allow Bluetooth",
-      "body": "Read Bluetooth status and your connected audio route."
-    },
-    "step": "Step {number} of {total}",
-    "request": "Continue",
-    "next": "Next",
-    "open": "Open Kenshiki SDK",
-    "notNow": "Not now",
-    "settings": "Open Settings",
-    "allowed": "Access is enabled.",
-    "locationReady": "Always and Precise Location are enabled.",
-    "unavailable": "This permission is not available on this device. You can continue.",
-    "denied": "Access is off or restricted. You can review it in Settings or continue without it.",
-    "whileUsing": "iOS currently allows access only while using the app. Always access is still needed.",
-    "preciseBody": "iOS is sharing an approximate position. Enable Precise Location in Settings.",
-    "camera": "We’ll ask for camera access when you start a scan or face capture.",
-    "failure": "This step could not finish. Try again or choose Not now."
-  },
   "fusionUI": {
     "refreshAir": "Refresh air check",
     "retryAir": "Retry air check",
