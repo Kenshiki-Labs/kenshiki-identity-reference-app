@@ -560,7 +560,7 @@ describe('4 typed error handling', () => {
 });
 
 describe('5 what the holder sees', () => {
-  test('document check results show no raw provider keys, check names or correction codes', async () => {
+  test('document check results preserve unknown provider evidence and translate correction prompts', async () => {
     const checked: DocumentCheckSnapshot = {
       captureID: 'c',
       sourceSHA256: 's',
@@ -590,15 +590,10 @@ describe('5 what the holder sees', () => {
     });
     const f = await render(<DocumentCheckPanel session={session} configured />);
     await f.press('Review requested corrections');
-    for (const raw of [
-      'raw_check_name',
-      'raw_status',
-      'raw-meta-key',
-      'raw-provider-status',
-      'raw_correction_code',
-      '"givenName"',
-      '2026-10-08T12:00:00Z',
-    ]) {
+    for (const evidence of ['raw_check_name', 'raw_status', 'raw_reason', 'raw-meta-key']) {
+      expect(f.text()).toContain(evidence);
+    }
+    for (const raw of ['raw-provider-status', 'raw_correction_code', '"givenName"', '2026-10-08T12:00:00Z']) {
       expect(f.text()).not.toContain(raw);
     }
     expect(f.text()).toContain('Given name');

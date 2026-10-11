@@ -575,6 +575,18 @@ export type MessageValues = {
   readonly "documentCheck.state.notStarted": undefined;
   readonly "documentCheck.checkedAt": {readonly moment: string | number};
   readonly "documentCheck.providerChecks": {readonly count: number};
+  readonly "documentCheck.checksHeading": undefined;
+  readonly "documentCheck.checksNote": undefined;
+  readonly "documentCheck.checkStatus.passed": undefined;
+  readonly "documentCheck.checkStatus.failed": undefined;
+  readonly "documentCheck.checkStatus.pending": undefined;
+  readonly "documentCheck.checkStatus.notApplicable": undefined;
+  readonly "documentCheck.comparisonResult": undefined;
+  readonly "documentCheck.metadata": undefined;
+  readonly "documentCheck.comparison.full": undefined;
+  readonly "documentCheck.comparison.partial": undefined;
+  readonly "documentCheck.comparison.none": undefined;
+  readonly "documentCheck.comparison.missing": undefined;
   readonly "documentCheck.noProviderChecks": undefined;
   readonly "documentCheck.submittedHeading": undefined;
   readonly "documentCheck.noSubmitted": undefined;
@@ -1487,7 +1499,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "license.result.frontImage": "Captured front of your card",
       "license.result.backImage": "Captured back of your card",
       "license.result.backNeeded": "The front is saved. The back still needs a photo.",
-      "license.result.barcodeTitle": "Details from the barcode",
+      "license.result.barcodeTitle": "Read from license",
       "license.result.name": "Name",
       "license.result.licenseNumber": "Document number",
       "license.result.birthDate": "Date of birth, as read",
@@ -1574,6 +1586,18 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "documentCheck.state.notStarted": "No record check has been made.",
       "documentCheck.checkedAt": ["Checked ", ["arg", "moment"]],
       "documentCheck.providerChecks": ["The checking service returned ", ["plural", "count", {"one": [["#"], " individual check"], "other": [["#"], " individual checks"]}], "."],
+      "documentCheck.checksHeading": "Issuing-state check results",
+      "documentCheck.checksNote": "Each result below is reported by the checking service. A passed check does not imply that every submitted detail matched.",
+      "documentCheck.checkStatus.passed": "Passed",
+      "documentCheck.checkStatus.failed": "Failed",
+      "documentCheck.checkStatus.pending": "Pending",
+      "documentCheck.checkStatus.notApplicable": "No DOL result returned",
+      "documentCheck.comparisonResult": "Comparison result",
+      "documentCheck.metadata": "Provider metadata",
+      "documentCheck.comparison.full": "Full match",
+      "documentCheck.comparison.partial": "Partial match",
+      "documentCheck.comparison.none": "No match",
+      "documentCheck.comparison.missing": "No DOL comparison returned",
       "documentCheck.noProviderChecks": "Individual checks were not returned.",
       "documentCheck.submittedHeading": "DETAILS SENT FOR THE CHECK",
       "documentCheck.noSubmitted": "The details sent for the check were not returned.",
@@ -1859,7 +1883,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "subscriber.label.combinedAddressLines": "Address lines together",
       "subscriber.label.wholeAddress": "Whole address",
       "subscriber.label.unqualified": "Not established",
-      "subscriber.label.notApplicable": "Not applicable",
+      "subscriber.label.notApplicable": "No DOL result returned",
       "subscriber.label.reportedGrade": "The carrier source reported this grade",
       "subscriber.label.unsupportedField": "Field unsupported",
       "subscriber.label.unsupportedNetwork": "Network unsupported",

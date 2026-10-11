@@ -92,14 +92,15 @@ test('reopening reads saved status without purchasing and corrections show the r
   expect(f.native.documentCheckCorrect).toHaveBeenCalledWith({ givenName: 'SYNTHETIC' }, true);
   const rendered = JSON.stringify(f.view.toJSON());
   expect(rendered).toContain('Issuing record matched');
-  expect(rendered).toContain('The checking service returned 1 individual check.');
+  expect(rendered).toContain('Issuing-state check results');
+  expect(rendered).toContain('name and date agreed');
+  expect(rendered).toContain('Full match');
   expect(rendered).toContain('test-contract-v1');
   expect(rendered).toContain('request-digest');
   expect(rendered).toContain('observation-digest');
   expect(rendered).toContain('Given name');
   expect(rendered).toContain('SYNTHETIC');
-  for (const raw of ['name and date agreed', 'name-first-match', 'issuer', '"answered"'])
-    expect(rendered).not.toContain(raw);
+  expect(rendered).toContain('issuer');
   await act(async () => f.view.unmount());
 });
 test('provider errors offer local restore and never automatically repeat a check', async () => {

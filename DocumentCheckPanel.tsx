@@ -3,6 +3,7 @@ import { AppState, Text, TextInput, View } from 'react-native';
 import type { DocumentCheckState } from './DocumentCheckController';
 import { documentCheckAction } from './DocumentCheckRecovery';
 import { correctionText, failures, fieldLabel, labels, snapshotFailures } from './DocumentCheckText';
+import { DocumentProviderChecks } from './DocumentProviderChecks';
 import { errorCode, errorText, formatMoment } from './HolderText';
 import { t } from './locales/i18n';
 import { Action } from './ui/Action';
@@ -200,11 +201,7 @@ export function DocumentCheckContent({
     if (!result) return null;
     return (
       <>
-        <Text style={styles.body}>
-          {result.providerChecks.length
-            ? t('documentCheck.providerChecks', { count: result.providerChecks.length })
-            : t('documentCheck.noProviderChecks')}
-        </Text>
+        <DocumentProviderChecks checks={result.providerChecks} />
         {result.submittedFields ? (
           <>
             <Text accessibilityRole="header" style={styles.label}>

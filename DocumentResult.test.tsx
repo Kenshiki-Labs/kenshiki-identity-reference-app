@@ -111,3 +111,50 @@ test('replacement capture rejects a late restore from the previously selected do
   expect(view.root.findByProps({ testID: 'document-result' })).toBeDefined();
   expect(required(next.session.documentCheckRestore.mock.calls)).toHaveLength(1);
 });
+
+test('no DOL result preserves the separate details read from the license', async () => {
+  const f = fixture();
+  const result = {
+    ...f.result,
+    document: {
+      ...f.result.document,
+      back: {
+        ...f.result.document.front,
+        side: 'back' as const,
+        captureID: 'back',
+        pdf417Status: 'readable' as const,
+        pdf417: {
+          status: 'readable' as const,
+          fields: { DBB: '01021990', DAK: '97001' },
+          version: 10,
+          issuerIIN: '636000',
+          jurisdictionVersion: 0,
+          missingRequiredElements: [],
+        },
+      },
+    },
+  };
+  await act(async () => {
+    view = create(<DocumentResult result={result} configured />);
+  });
+  await act(async () =>
+    f.pending.resolve({
+      ...snapshot,
+      state: 'checked',
+      result: {
+        outcome: 'unavailable',
+        operationID: 'synthetic',
+        correctable: [],
+        replayed: false,
+        providerChecks: [
+          { name: 'aamva_birthdate_comparison', status: 'not_applicable', reasons: [], metadataJSON: null },
+        ],
+      },
+    }),
+  );
+  const text = JSON.stringify(view.toJSON());
+  for (const value of ['No DOL result returned', 'Read from license', '01021990', '97001'])
+    expect(text).toContain(value);
+  expect(text).not.toContain('Full match');
+  expect(f.session.documentCheck).not.toHaveBeenCalled();
+});
