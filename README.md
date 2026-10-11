@@ -14,7 +14,7 @@ project may contain Android files; this SDK delivery and these instructions are 
 ## 1. Prepare a Mac
 
 Install the full Xcode application, select it with `xcode-select`, finish its first-launch setup,
-and install an iPhone simulator runtime in Xcode Settings. Install Python 3, Node 22.11+ with npm,
+and install an iPhone simulator runtime in Xcode Settings. Install Python 3, Node 22.22.2 with npm,
 Ruby, CocoaPods and the Ruby `xcodeproj` gem. Internet access is needed for npm and CocoaPods.
 Run these in your terminal before generating the host:
 
@@ -33,6 +33,11 @@ The development environment inspected for this guide has Node 22.22.2, npm 10.9.
 CocoaPods 1.16.2, xcodeproj 1.27.0 and Xcode 26.6. That is an environment record, not a claim that
 all earlier or later versions work. The checks run on this build, with their tiers, are in the
 [SSA distribution note](../../Distribution/SSA-DISTRIBUTION-NOTE.md#checks-behind-this-package).
+
+React Native 0.87.1 declares Node `^22.13.0 || ^24.3.0 || >=26.0.0`. The generator enforces
+those release ranges before creating a host; a minimum-only check would incorrectly admit Node 23,
+25 and early 24 releases. Use the recorded 22.22.2 toolchain for reproducible validation. Acceptance
+by the version check is not evidence that another Node release has passed this app's tests.
 
 The generator invokes **`ruby` and `pod` directly from PATH**. Its Ruby must be able to load
 `xcodeproj`; having the gem installed under a different Ruby is insufficient. If needed, install
@@ -58,6 +63,11 @@ tests, copies the tarball into the new host's `vendor` directory, installs npm d
 configures the native targets and runs `pod install`. It refuses a tarball whose SHA-256 or SDK
 commit differs from the archive's `integration-manifest.json`. Wait for `Independent host ready:`
 before continuing.
+
+Every delivered TypeScript module, including nested UI modules and test helpers, comes from the
+integration manifest. The generator rejects missing, changed or linked modules before invoking the
+CLI and copies the bytes it checked. Source-checkout SDK imports are rewritten to installed package
+subpaths, including Jest mocks. Unlisted local TypeScript files are not copied.
 
 Before creating anything, `create-host.py` also refuses a compiled model directory that contains no
 files and a trust-anchor file without a PEM certificate block. These checks catch an empty or wrong
@@ -90,10 +100,18 @@ From the generated host root:
 
 ```sh
 cd "$HOME/Developer/IdentitySDKHost"
-npx tsc --noEmit
-npx jest --runInBand
+npx --no-install tsc --noEmit
+npx --no-install jest --runInBand
 open ios/IdentitySDKHost.xcworkspace
 ```
+
+Run these checks on the generated files without adding a mapper to the SDK checkout or editing
+`node_modules`. The generated Jest configuration transforms the installed SDK's TypeScript and
+the navigation dependencies; only `*.test.ts` and `*.test.tsx` files are suites. Compare Jest's
+executed suite inventory with the reference-host tests in `integration-manifest.json`, including
+the `ui/` and `locales/` suites. SDK package tests run separately in the source checkout and are
+not shipped in the npm tarball. Keep the test results with the artifact hash; source-checkout
+success does not establish that an independently generated host works.
 
 In Xcode select the `IdentitySDKHost` scheme and an **iPhone simulator**. In Edit Scheme → Run,
 set Build Configuration to **Release**, then Run. Release bundles JavaScript and needs no Metro

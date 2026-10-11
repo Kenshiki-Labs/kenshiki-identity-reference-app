@@ -2,7 +2,7 @@
 """Create a separate iOS React Native host that installs a built npm tarball.
 Usage: python3 create-host.py /absolute/new/host /absolute/package.tgz
 """
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import argparse
 import hashlib
 import importlib.util
@@ -52,8 +52,15 @@ try:
 except subprocess.CalledProcessError:
     raise SystemExit('Select the full Xcode installation and complete its first-launch setup before generating the host.')
 node_version = subprocess.check_output(['node', '--version'], text=True).strip().lstrip('v')
-if tuple(map(int, node_version.split('.')[:3])) < (22, 11, 0):
-    raise SystemExit('React Native 0.87.1 requires Node 22.11.0 or later')
+node_match = re.fullmatch(r'(\d+)\.(\d+)\.(\d+)', node_version)
+node_release = tuple(map(int, node_match.groups())) if node_match else None
+# Pinned react-native 0.87.1 package.json: ^22.13.0 || ^24.3.0 || >=26.0.0.
+if node_release is None or not (
+        node_release[0] == 22 and node_release >= (22, 13, 0)
+        or node_release[0] == 24 and node_release >= (24, 3, 0)
+        or node_release[0] >= 26):
+    raise SystemExit('React Native 0.87.1 requires Node 22.x >=22.13.0, 24.x >=24.3.0, '
+                     'or >=26.0.0. The tested reference toolchain uses Node 22.22.2.')
 try:
     with tarfile.open(artifact, 'r:gz') as package:
         metadata = json.load(package.extractfile('package/package.json'))
@@ -95,20 +102,32 @@ if args.trust_anchors is not None:
             raise ValueError
     except ValueError:
         raise SystemExit('Trust anchors must be PEM certificates (BEGIN CERTIFICATE blocks): ' + str(args.trust_anchors))
-# Do not maintain a second copy list: every delivered root TypeScript module belongs to the host.
+# The manifest owns every TypeScript module, including nested UI and test helpers. Validate before
+# the CLI creates a host, then copy the same bytes so generation cannot mix source revisions.
 host_prefix = 'Examples/ReactNativeCaptureHost/'
-typescript_sources = sorted(
-    Path(name).name for name in delivery['fileSHA256']
-    if name.startswith(host_prefix) and len(Path(name).parts) == 3
-    and Path(name).suffix in {'.ts', '.tsx'}
-)
+reference = Path(__file__).parent
+typescript_sources = {}
+for name, expected in sorted(delivery['fileSHA256'].items()):
+    if not name.startswith(host_prefix):
+        continue
+    relative_name = name[len(host_prefix):]
+    relative = PurePosixPath(relative_name)
+    if (not relative.parts or relative.is_absolute() or '..' in relative.parts
+            or '\\' in relative_name or str(relative) != relative_name):
+        raise SystemExit('Invalid reference source path in integration manifest: ' + name)
+    if relative.suffix not in {'.ts', '.tsx'}:
+        continue
+    source = reference / relative
+    linked = any((reference.joinpath(*relative.parts[:index])).is_symlink()
+                 for index in range(1, len(relative.parts) + 1))
+    if linked or not source.is_file():
+        raise SystemExit('Reference source is missing or is a symbolic link: ' + relative_name)
+    data = source.read_bytes()
+    if hashlib.sha256(data).hexdigest() != expected:
+        raise SystemExit('Reference source differs from the integration manifest: ' + relative_name)
+    typescript_sources[relative_name] = data.decode('utf-8')
 if 'App.tsx' not in typescript_sources:
     raise SystemExit('The integration manifest has no reference app entry point')
-for filename in typescript_sources:
-    source = Path(__file__).with_name(filename)
-    expected = delivery['fileSHA256'][host_prefix + filename]
-    if not source.is_file() or hashlib.sha256(source.read_bytes()).hexdigest() != expected:
-        raise SystemExit('Reference source differs from the integration manifest: ' + filename)
 # The screens import typed modules compiled from ui/tokens.jsonc and locales/*.jsonc. Refuse to
 # copy modules that differ from their sources, before anything is created.
 generator = Path(__file__).with_name('generate-ui-resources.py')
@@ -133,15 +152,6 @@ subprocess.run(['npx', '--yes', '@react-native-community/cli@20.2.0', 'init', 'I
                 '--skip-install', '--skip-git-init'], check=True)
 with (host / '.gitignore').open('a') as ignored:
     ignored.write('\n# Local Fastlane output and signing credentials\n/fastlane/report.xml\n/fastlane/README.md.generated\n/fastlane/Preview.html\n*.p8\n*.p12\n*.mobileprovision\n.env\n.env.*\n')
-# The delivery manifest owns the root TypeScript inventory, including extracted controllers.
-# Validate every source before creating the host, then copy that exact inventory below.
-for filename in typescript_sources:
-    contents = Path(__file__).with_name(filename).read_text()
-    contents = contents.replace('../../ReactNative/identity-capture/src/codes', '@kenshiki/identity-capture/src/codes')
-    (host / filename).write_text(contents)
-shutil.copyfile(Path(__file__).parent / '__tests__/support.ts', host / '__tests__/support.ts')
-shutil.copyfile(Path(__file__).parent / '__tests__/SensorBoardFixtures.ts', host / '__tests__/SensorBoardFixtures.ts')
-shutil.copyfile(Path(__file__).parent / '__tests__/FusionFixtures.ts', host / '__tests__/FusionFixtures.ts')
 # The sensor screens read SensorHost's own words, configuration and documentation pages, generated
 # from Hosts/SensorHost by sensor-presentation/generate.py. Only the generated files travel: the
 # generator reads the Swift host's sources, which a delivery does not carry.
@@ -152,12 +162,18 @@ for name in ['config.json', 'copy.json', 'pages.json']:
 # test, and the generator, so the new host can change its look and words and regenerate.
 for folder in ['ui', 'locales', 'fastlane']:
     shutil.copytree(Path(__file__).with_name(folder), host / folder,
-                    ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
+                    ignore=shutil.ignore_patterns('__pycache__', '*.pyc', '*.ts', '*.tsx'))
 # The brand's icon, launch screen and launch assets. configure-host.rb installs them in the iOS app.
 shutil.copytree(brand, host / 'brand')
 shutil.copyfile(generator, host / generator.name)
-# Replace the CLI's starter-screen test with this example's actual controller tests.
+# Remove the CLI starter before copying, so a delivered test with that name remains intact.
 (host / '__tests__/App.test.tsx').unlink(missing_ok=True)
+for filename, contents in typescript_sources.items():
+    contents = re.sub(r'(?:\.\./)+ReactNative/identity-capture/src(?=/|[\'\"])',
+                      '@kenshiki/identity-capture/src', contents)
+    destination = host / filename
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(contents)
 for source, filename in [(args.trust_anchors, 'masterList.pem'), (args.embedder, 'embedder.mlmodelc'),
                          (args.detector, 'detector.mlmodelc')]:
     if source is not None:
@@ -187,18 +203,19 @@ navigation = ['@react-navigation/native@7.5.0', '@react-navigation/native-stack@
               'react-native-safe-area-context@5.10.1']
 subprocess.run(['npm', 'install', '--save-exact'] + navigation, cwd=host, check=True)
 # Only *.test files are suites; __tests__ also contains shared support and fixtures.
-# The copied suites render the navigator, whose packages ship ES modules.
+# Navigation ships ES modules; the installed SDK's declared entry points ship TypeScript.
 jest_config = host / 'jest.config.js'
 preset = re.fullmatch(r"module\.exports = \{\s*preset: '([^']+)',?\s*\};?\s*", jest_config.read_text())
 if preset is None:
     raise SystemExit('The generated jest.config.js is not the one-line preset this script extends; add '
-                     '@react-navigation, react-native-screens and react-native-safe-area-context to its '
+                     '@kenshiki/identity-capture, @react-navigation, react-native-screens and '
+                     'react-native-safe-area-context to its '
                      'transformIgnorePatterns by hand: ' + str(jest_config))
 jest_config.write_text(
     "module.exports = {\n  preset: '" + preset.group(1) + "',\n"
     "  testMatch: ['<rootDir>/**/*.test.ts?(x)'],\n  transformIgnorePatterns: [\n"
     "    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-navigation"
-    "|react-native-screens|react-native-safe-area-context)/)',\n  ],\n};\n")
+    "|react-native-screens|react-native-safe-area-context|@kenshiki/identity-capture)/)',\n  ],\n};\n")
 signing = []
 for flag, value in [('--bundle-identifier', args.bundle_identifier), ('--development-team', args.development_team),
                     ('--app-attest-environment', args.app_attest_environment)]:
