@@ -26,7 +26,7 @@ export function NativeSheet({
       onRequestClose={onDismiss}
     >
       <SafeAreaProvider>
-        <Page title={title} mode="sheet" testID={testID} onClose={onDismiss}>
+        <Page header="custom" title={title} mode="sheet" testID={testID} onClose={onDismiss}>
           {children}
         </Page>
       </SafeAreaProvider>

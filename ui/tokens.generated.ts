@@ -94,6 +94,7 @@ export const border = {
 
 export const opacity = {
   disabled: 0.45,
+  pressed: 0.7,
 } as const;
 
 export const size = {

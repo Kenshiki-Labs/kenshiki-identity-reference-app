@@ -8,7 +8,7 @@ import type {
 import { Text } from 'react-native';
 import renderer, { act } from 'react-test-renderer';
 import { documentConfiguration } from './__tests__/documentFixture';
-import { invoke, property, required } from './__tests__/support';
+import { invoke, nativeBack, property, required } from './__tests__/support';
 import App from './App';
 import { t } from './locales/i18n';
 
@@ -99,6 +99,10 @@ async function renderApp(configuration?: Configuration) {
   });
   async function tap(id: string) {
     await act(async () => {
+      if (id === 'native-back') {
+        await nativeBack(view);
+        return;
+      }
       const button = required(
         view.root
           .findAllByProps({ testID: id })
@@ -117,9 +121,10 @@ async function renderApp(configuration?: Configuration) {
   return { view, tap, capture };
 }
 
-test('license capture returns to Identity and both exact photos and read details reopen without another camera run', async () => {
+test('license capture returns to its detail route and both exact photos and read details reopen without another camera run', async () => {
   const { view, tap, capture } = await renderApp();
   await tap('open-driver-license');
+  await tap('start-license-capture');
   await tap('start-document-front');
   await capture(mockFront);
   expect(JSON.stringify(view.toJSON())).toContain('Turn the card over');
@@ -137,7 +142,8 @@ test('license capture returns to Identity and both exact photos and read details
     JSON.stringify(view.toJSON()).indexOf('document-result'),
   );
   expect(JSON.stringify(view.toJSON())).not.toContain('Verified');
-  await tap('finish-document');
+  expect(view.root.findAllByProps({ testID: 'finish-document' })).toHaveLength(0);
+  await tap('native-back');
   expect(view.root.findByProps({ testID: 'face-match-card' })).toBeDefined();
   expect(mockSession.release).not.toHaveBeenCalled();
   await tap('open-driver-license');
@@ -172,6 +178,7 @@ test('permanent camera failure uses an app bottom sheet and returns to the same 
   mockSession.startDocument.mockRejectedValueOnce({ code: 'backCameraUnavailable' });
   const { view, tap } = await renderApp();
   await tap('open-driver-license');
+  await tap('start-license-capture');
   await tap('start-document-front');
   expect(view.root.findByProps({ testID: 'document-bottom-sheet' })).toBeDefined();
   expect(JSON.stringify(view.toJSON())).toContain('Camera unavailable');
@@ -191,6 +198,7 @@ test('multiple saved workflows show an explicit selector before recovering one',
   ]);
   const { view, tap } = await renderApp();
   await tap('open-driver-license');
+  await tap('start-license-capture');
   expect(view.root.findByProps({ testID: 'saved-documents-list' })).toBeDefined();
   expect(mockSession.recoverDocument).not.toHaveBeenCalled();
   await tap('saved-document-0');
@@ -250,11 +258,13 @@ test.each(homeStatuses)('home reflects $key only for the selected capture', asyn
   mockSession.documentCheckRestore.mockResolvedValueOnce(snapshot).mockResolvedValueOnce(snapshot);
   const { view, tap, capture } = await renderApp({ document: documentConfiguration });
   await tap('open-driver-license');
+  await tap('start-license-capture');
   await tap('start-document-front');
   await capture(mockFront);
   await tap('start-document-back');
   await capture(mockComplete);
-  await tap('finish-document');
+  expect(view.root.findAllByProps({ testID: 'finish-document' })).toHaveLength(0);
+  await tap('native-back');
   const home = view.root.findByProps({ testID: 'open-driver-license' });
   expect(home.findAll((node) => node.props.children === t(key)).length).toBeGreaterThan(0);
   expect(mockSession.documentCheckRestore).toHaveBeenCalled();

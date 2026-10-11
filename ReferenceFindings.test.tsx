@@ -20,6 +20,7 @@ import {
   actionSheets,
   invoke,
   mockSession as makeSession,
+  nativeBack,
   required,
   settle,
   without,
@@ -342,7 +343,9 @@ describe('2 contradicted carrier verdict stops', () => {
       },
     };
     const f = await openDocumentBoundPhone();
-    await f.tap('modal-cancel');
+    await act(async () => {
+      await nativeBack(f.view);
+    });
     expect(f.text()).toContain('Check stopped');
     expect(f.text()).not.toContain('Result available');
     await act(async () => {
@@ -667,6 +670,7 @@ describe('5 what the holder sees', () => {
       />,
     );
     await list.tap('open-capture-flow');
+    await list.tap('start-passport-capture');
     expect(list.text()).not.toContain('2026-10-08T12:00:00Z');
     expect(list.text()).toContain('Oct 8, 2026');
     await act(async () => {

@@ -1,5 +1,13 @@
 import type { Configuration, SensorBoardState } from '@kenshiki/identity-capture';
-import { createContext, type ReactElement, type ReactNode, useCallback, useContext, useState } from 'react';
+import {
+  createContext,
+  type ReactElement,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+} from 'react';
 import { AppState } from 'react-native';
 import { t } from './locales/i18n';
 import { SensorBoardController, type SensorBoardPresentation } from './SensorBoardController';
@@ -51,29 +59,38 @@ export function SensorSession({
   open: boolean;
   children: ReactNode;
 }>) {
+  const currentController = useRef<SensorBoardController | undefined>(undefined);
   const [reportedFailure, setReportedFailure] = useState<{
-    controller: SensorBoardController | undefined;
+    controller: SensorBoardController;
     message: string;
   }>();
   const connect = useCallback(
     (publish: (state: SensorBoardPresentation) => void) => {
       if (!open) return;
-      let live = true;
       const active = new SensorBoardController(configuration, publish);
-      active.open().catch(() => {
-        if (live) setReportedFailure({ controller: active, message: t('sensors.failure.open') });
-      });
+      currentController.current = active;
+      const setActive = (running: boolean) => {
+        active.setActive(running).catch(() => {
+          if (currentController.current === active)
+            setReportedFailure({ controller: active, message: t('sensors.failure.activity') });
+        });
+      };
       const subscription = AppState.addEventListener('change', (next) => {
         if (next === 'inactive') return;
-        active.setActive(next === 'active').catch(() => {
-          if (live) setReportedFailure({ controller: active, message: t('sensors.failure.activity') });
-        });
+        setActive(next === 'active');
+      });
+      // Custody can delay this connection past a background transition. Seed activity at
+      // acquisition time, before open can resume collection; later inactive prompts keep it.
+      setActive(AppState.currentState === 'active');
+      active.open().catch(() => {
+        if (currentController.current === active)
+          setReportedFailure({ controller: active, message: t('sensors.failure.open') });
       });
       return {
         controller: active,
         initialState: closed,
         dispose: () => {
-          live = false;
+          currentController.current = undefined;
           subscription.remove();
           return active.dispose();
         },
@@ -84,14 +101,18 @@ export function SensorSession({
   const { controller, state, failed } = useControllerState(closed, connect);
   const failure = failed
     ? t('common.sessionRecovery')
-    : reportedFailure?.controller === controller
-      ? (reportedFailure?.message ?? null)
+    : reportedFailure && reportedFailure.controller === controller
+      ? reportedFailure.message
       : null;
-  const setFailure = (message: string | null) =>
+  // An old screen or request may complete after its session has been replaced.
+  const setFailure = (message: string | null) => {
+    if (!controller || currentController.current !== controller) return;
     setReportedFailure(message ? { controller, message } : undefined);
+  };
   const perform: BoardActions['perform'] = (request) => {
+    if (!controller || currentController.current !== controller) return;
     setFailure(null);
-    controller?.perform(request).catch(() => setFailure(t('sensors.failure.request')));
+    controller.perform(request).catch(() => setFailure(t('sensors.failure.request')));
   };
   return (
     <SensorSessionContext.Provider value={{ state, failure, setFailure, perform }}>

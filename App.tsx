@@ -1,7 +1,6 @@
 import type { Configuration } from '@kenshiki/identity-capture';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppNavigator } from './AppNavigator';
-import { FirstRunPermissions } from './FirstRunPermissions';
+import { AppContainer } from './ui/AppContainer';
 
 const emptyConfiguration: Configuration = {};
 
@@ -12,22 +11,18 @@ export default function App({
   configuration = emptyConfiguration,
   developerChecks = false,
   configurationIssue,
-  firstRunPermissions = false,
 }: Readonly<{
   configuration?: Configuration | undefined;
   developerChecks?: boolean | undefined;
   configurationIssue?: 'holderScopeUnreadable' | 'liveServicesUnavailable' | undefined;
-  firstRunPermissions?: boolean | undefined;
 }>) {
   return (
-    <SafeAreaProvider>
-      <FirstRunPermissions configuration={configuration} enabled={firstRunPermissions}>
-        <AppNavigator
-          configuration={configuration}
-          developerChecks={developerChecks}
-          configurationIssue={configurationIssue}
-        />
-      </FirstRunPermissions>
-    </SafeAreaProvider>
+    <AppContainer configuration={configuration}>
+      <AppNavigator
+        configuration={configuration}
+        developerChecks={developerChecks}
+        configurationIssue={configurationIssue}
+      />
+    </AppContainer>
   );
 }

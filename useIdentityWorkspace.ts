@@ -145,7 +145,7 @@ export function useIdentityWorkspace(
   const [restoreFailure, setRestoreFailure] = useState<string>();
   const [restoreAttempt, setRestoreAttempt] = useState(0);
   const latestRestoreAttempt = useRef(0);
-  // The navigator mounts a fresh owner for every configuration. Invalidate callbacks before
+  // AppContainer mounts a fresh owner for every configuration. Invalidate callbacks before
   // passive cleanup, and make the next owner's startup wait for retained-session release.
   useLayoutEffect(() => {
     active.current = true;
@@ -191,7 +191,10 @@ export function useIdentityWorkspace(
       // Read the encrypted receipt through its native owner. Opening and handing off never
       // sends a text or reconciles an unresolved provider request.
       await phoneController.open();
-      if (!isActive() || phoneController.state.sheet || !phoneController.state.snapshot) return;
+      if (!isActive()) return;
+      const sheet = phoneController.state.sheet;
+      if (sheet?.kind === 'error') setRestoreFailure(sheet.message);
+      if (sheet || !phoneController.state.snapshot) return;
       const saved = await phoneController.handoff();
       if (!saved) return;
       if (!isActive()) {
@@ -202,14 +205,13 @@ export function useIdentityWorkspace(
       setPhone(saved);
       setPhoneDocument(documentEvidenceRevision(restored, checked));
     }
-    async function restoreDocument() {
+    async function restoreDocumentSelection() {
       await documentController.restoreSelected();
       if (!isActive()) return;
       if (documentController.state.sheet) {
         setRestoreFailure(documentController.state.sheet.message);
         return;
       }
-      if (!configuration.results) setRestoreFailure(undefined);
       if (!documentController.state.completed && !documentController.state.draft) return;
       const restored = await documentController.handoff();
       if (!restored) return;
@@ -217,23 +219,30 @@ export function useIdentityWorkspace(
         await restored.session.release();
         return;
       }
-      await restoreDocumentEvidence(restored);
-    }
-    async function restoreDocumentEvidence(restored: SavedDocumentCapture) {
       ownedDocument.current = restored;
       setDocument(restored);
-      if (configuration.document?.check) {
-        const checked = await restored.session.documentCheckRestore();
-        if (!isActive()) return;
-        setCheckedDocument({ owner: restored, snapshot: checked });
-        await restorePhone(restored, checked);
-      }
+      return restored;
+    }
+    async function restoreDocument() {
+      const restored = ownedDocument.current ?? (await restoreDocumentSelection());
+      if (!isActive() || !restored || !configuration.document?.check) return;
+      const checked = await restored.session.documentCheckRestore();
+      if (!isActive()) return;
+      setCheckedDocument({ owner: restored, snapshot: checked });
+      if (!ownedPhone.current) await restorePhone(restored, checked);
     }
     const reportRestoreFailure = (error: unknown) => {
       if (isActive())
         setRestoreFailure(errorText(errorCode(error), restoreErrors, t('hub.restoreError.other')));
     };
-    async function adoptRestoredResult() {
+    async function restoreSavedResult() {
+      await controller.open();
+      if (!isActive()) return;
+      if (controller.state.sheet) {
+        setRestoreFailure(controller.state.sheet.message);
+        return;
+      }
+      setSavedCount(controller.state.saved?.length ?? (controller.state.passport ? 1 : 0));
       if (controller.state.passport) {
         const restored = await controller.handoff();
         if (!isActive()) {
@@ -244,66 +253,53 @@ export function useIdentityWorkspace(
         setResult(restored);
       }
     }
-    async function restoreSavedResult() {
-      await controller.open();
-      if (!isActive()) return;
-      const sheet = controller.state.sheet;
-      if (sheet) {
-        setRestoreFailure(sheet.message);
-        return;
-      }
-      setSavedCount(controller.state.saved?.length ?? (controller.state.passport ? 1 : 0));
-      await adoptRestoredResult();
-      if (isActive()) setRestoreFailure(undefined);
-    }
-    async function finishRestore() {
-      await Promise.all([controller.dispose(), documentController.dispose(), phoneController?.dispose()]);
-      if (!isActive()) return;
-      opening.current = false;
-      setOpeningResults(false);
-    }
+    const disposeRestoreControllers = () =>
+      Promise.all([controller.dispose(), documentController.dispose(), phoneController?.dispose()]);
     const restore = async () => {
       try {
         await custody.releasing;
-        if (isActive() && configuration.results) await restoreSavedResult();
-        if (isActive() && configuration.document && !ownedDocument.current) await restoreDocument();
+        if (!isActive()) return;
+        setRestoreFailure(undefined);
+        if (configuration.results && !owned.current) await restoreSavedResult();
+        if (isActive() && configuration.document) await restoreDocument();
       } catch (error) {
         reportRestoreFailure(error);
       } finally {
-        await finishRestore();
+        await disposeRestoreControllers();
+        if (isActive()) {
+          opening.current = false;
+          setOpeningResults(false);
+        }
       }
     };
     restore().catch(reportRestoreFailure);
     return () => {
       restoring = false;
-      custody.releasing = Promise.all([
-        custody.releasing,
-        controller.dispose(),
-        documentController.dispose(),
-        phoneController?.dispose(),
-      ]);
-      custody.releasing.catch((error: unknown) => {
-        reportRestoreFailure(error);
-        custody.reportFailure(error);
-      });
+      custody.releasing = Promise.all([custody.releasing, disposeRestoreControllers()]);
+      custody.releasing.catch(custody.reportFailure);
     };
   }, [configuration, custody, restoreAttempt]);
-  function receive(session: CaptureSession) {
-    if (active.current) return true;
+  function canStart() {
+    return active.current && !clearPending.current && !opening.current;
+  }
+  function receive(flow: IdentityFlow, session: CaptureSession) {
+    if (active.current) {
+      delete pending.current[flow];
+      return true;
+    }
     custody.releasing = Promise.all([custody.releasing, session.release()]);
     custody.releasing.catch(custody.reportFailure);
     return false;
   }
   function accept(completed: CompletedCapture) {
-    if (!receive(completed.session)) return;
-    delete pending.current.passport;
+    if (!receive('passport', completed.session)) return;
     owned.current = completed;
     setResult(completed);
     setInput({});
     onHome();
   }
   function start(resume?: 'read' | 'selfie') {
-    if (!active.current || clearPending.current || opening.current) return;
+    if (!canStart()) return;
     const completed = result;
     if (completed) pending.current.passport = completed.session;
     owned.current = undefined;
@@ -312,7 +308,7 @@ export function useIdentityWorkspace(
     openFlow('passport');
   }
   async function openSavedResults() {
-    if (!active.current || opening.current || clearPending.current) return;
+    if (!canStart()) return;
     opening.current = true;
     setOpeningResults(true);
     const session = owned.current?.session;
@@ -331,15 +327,14 @@ export function useIdentityWorkspace(
     }
   }
   function acceptDocument(saved: SavedDocumentCapture) {
-    if (!receive(saved.session)) return;
-    delete pending.current.license;
+    if (!receive('license', saved.session)) return;
     ownedDocument.current = saved;
     setDocument(saved);
     setDocumentInput({});
     onHome();
   }
   function startDocument(resume?: 'front' | 'back') {
-    if (!active.current || clearPending.current || opening.current) return;
+    if (!canStart()) return;
     const saved = document;
     if (saved) pending.current.license = saved.session;
     ownedDocument.current = undefined;
@@ -349,7 +344,7 @@ export function useIdentityWorkspace(
   }
   function openSSN() {
     if (ssnBlocked) return;
-    if (!active.current || clearPending.current || opening.current) return;
+    if (!canStart()) return;
     if (ssn) pending.current.ssn = ssn.session;
     ownedSSN.current = undefined;
     setSSNInput(ssn);
@@ -357,8 +352,7 @@ export function useIdentityWorkspace(
     openFlow('ssn');
   }
   function acceptSSN(value: SavedSSNCheck) {
-    if (!receive(value.session)) return;
-    delete pending.current.ssn;
+    if (!receive('ssn', value.session)) return;
     ownedSSN.current = value;
     setSSN(value);
     setSSNInput(undefined);
@@ -366,7 +360,7 @@ export function useIdentityWorkspace(
   }
   function openPhone() {
     if (phoneBlocked) return;
-    if (!active.current || clearPending.current || opening.current) return;
+    if (!canStart()) return;
     if (phone) pending.current.phone = phone.session;
     ownedPhone.current = undefined;
     setPhoneInput(phone);
@@ -374,8 +368,7 @@ export function useIdentityWorkspace(
     openFlow('phone');
   }
   function acceptPhone(value: SavedPhoneCheck) {
-    if (!receive(value.session)) return;
-    delete pending.current.phone;
+    if (!receive('phone', value.session)) return;
     setPhoneDocument(documentRevision);
     ownedPhone.current = value;
     setPhone(value);
@@ -565,7 +558,7 @@ export function useIdentityWorkspace(
       requestClear,
       clear: (target: ClearTarget) => clear({ target, session: clearSession(target) }),
       retryRestore: () => {
-        if (!active.current || opening.current || clearPending.current) return;
+        if (!canStart()) return;
         opening.current = true;
         setOpeningResults(true);
         latestRestoreAttempt.current += 1;

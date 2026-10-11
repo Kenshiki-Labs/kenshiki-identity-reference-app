@@ -4,6 +4,7 @@ import {
   type DocumentCheckSnapshot,
   type DocumentObservation,
   IdentityCaptureSession,
+  type PassportObservation,
   type PhoneCheckSnapshot,
 } from '@kenshiki/identity-capture';
 import renderer, { act } from 'react-test-renderer';
@@ -408,4 +409,198 @@ test('a delayed phone restore keeps startup gated and releases its session when 
   });
   expect(phoneSession.release).toHaveBeenCalledTimes(1);
   expect(phoneSession.phoneSend).not.toHaveBeenCalled();
+});
+
+const savedPassport: PassportObservation = {
+  protocolVerdicts: { source: 'recorded', recordedAt: '2026-10-11T12:00:00Z' },
+  documentNumber: 'SYNTHETIC',
+  birthDateYYMMDD: '850615',
+  expiryDateYYMMDD: '320101',
+  surname: 'SPECIMEN',
+  givenNames: 'SYNTHETIC',
+  nationality: 'UTO',
+  issuingState: 'UTO',
+  sex: 'F',
+  portraitAvailable: false,
+  portraitSHA256: '',
+  personalNumber: null,
+  dateOfIssue: null,
+  issuingAuthority: null,
+  placeOfBirth: null,
+  correspondence: { documentNumber: 'matches' },
+  protocols: {
+    basicAccessControl: 'succeeded',
+    pace: 'notPerformed',
+    activeAuthentication: 'notPerformed',
+    chipAuthentication: 'notPerformed',
+    countrySigningChain: 'succeeded',
+    documentSignature: 'succeeded',
+    dataGroupHashes: 'succeeded',
+  },
+};
+function retrySession() {
+  return mockSession({
+    subscribe: jest.fn(() => () => {}),
+    listResults: jest.fn(async () => [
+      {
+        id: 'saved-passport',
+        revision: 1,
+        recordedAt: '2026-10-11T12:00:00Z',
+        kind: 'passport-read-v1' as const,
+        workflowID: 'saved-passport',
+        artifacts: [],
+      },
+    ]),
+    recoverPassport: jest.fn(async () => savedPassport),
+    restoreDocumentSelection: jest.fn(async () => document),
+    documentResult: jest.fn(async () => document),
+    documentCheckRestore: jest.fn(async () => checked),
+    phoneSnapshot: jest.fn(async () => completedPhone),
+    phoneCancel: jest.fn(async () => completedPhone),
+    cancel: jest.fn(async () => {}),
+    release: jest.fn(async () => {}),
+  });
+}
+function expectReadOnly(sessions: ReturnType<typeof retrySession>[]) {
+  for (const session of sessions) {
+    expect(session.documentCheck).not.toHaveBeenCalled();
+    expect(session.phoneSend).not.toHaveBeenCalled();
+    expect(session.phoneResume).not.toHaveBeenCalled();
+    expect(session.readPassport).not.toHaveBeenCalled();
+  }
+}
+
+test('partial restore retry retains the existing passport and releases every distinct owner once', async () => {
+  const sessions: ReturnType<typeof retrySession>[] = [];
+  const create: (configuration: Configuration) => Promise<CaptureSession> = IdentityCaptureSession.create;
+  const createSession = jest.mocked(create);
+  createSession.mockImplementation(async () => {
+    const session = retrySession();
+    sessions.push(session);
+    if (sessions.length === 2)
+      session.restoreDocumentSelection.mockRejectedValueOnce({ code: 'storageUnavailable' });
+    return session;
+  });
+  const config: Configuration = {
+    document: required(configuration.document),
+    results: { directoryURL: 'file:///results', keychainService: 'results', keychainAccount: 'results' },
+  };
+  const custody = createControllerCustody();
+  let workspace: IdentityWorkspace | undefined;
+  function Harness() {
+    workspace = useIdentityWorkspace(
+      config,
+      () => {},
+      () => {},
+      custody,
+    );
+    return null;
+  }
+  let view!: renderer.ReactTestRenderer;
+  try {
+    await act(async () => {
+      view = renderer.create(<Harness />);
+    });
+    expect(required(workspace).passport.result?.session).toBe(sessions[0]);
+    expect(required(workspace).recovery.restoreFailure).toBeDefined();
+    await act(async () => required(workspace).recovery.retryRestore());
+    expect(required(workspace).recovery.restoreFailure).toBeUndefined();
+    expect(required(workspace).passport.result?.session).toBe(sessions[0]);
+    expect(sessions).toHaveLength(3);
+    expect(required(workspace).license.result?.session).toBe(sessions[2]);
+    expectReadOnly(sessions);
+  } finally {
+    await act(async () => view.unmount());
+    createSession.mockReset();
+  }
+  for (const session of sessions) expect(session.release).toHaveBeenCalledTimes(1);
+});
+
+test('partial restore retry resumes the retained document check and restores phone without provider work', async () => {
+  const documentSession = retrySession();
+  documentSession.documentCheckRestore.mockRejectedValue({ code: 'storageUnavailable' });
+  const phoneSession = retrySession();
+  const create: (configuration: Configuration) => Promise<CaptureSession> = IdentityCaptureSession.create;
+  const createSession = jest.mocked(create);
+  createSession.mockResolvedValueOnce(documentSession).mockResolvedValueOnce(phoneSession);
+  const custody = createControllerCustody();
+  let workspace: IdentityWorkspace | undefined;
+  function Harness() {
+    workspace = useIdentityWorkspace(
+      configuration,
+      () => {},
+      () => {},
+      custody,
+    );
+    return null;
+  }
+  let view!: renderer.ReactTestRenderer;
+  try {
+    await act(async () => {
+      view = renderer.create(<Harness />);
+    });
+    expect(required(workspace).license.result?.session).toBe(documentSession);
+    expect(required(workspace).recovery.restoreFailure).toBeDefined();
+    expect(required(workspace).ssn.blocked).toBe('document');
+    const previousReads = documentSession.documentCheckRestore.mock.calls.length;
+    documentSession.documentCheckRestore.mockResolvedValue(checked);
+    await act(async () => required(workspace).recovery.retryRestore());
+    expect(documentSession.documentCheckRestore).toHaveBeenCalledTimes(previousReads + 1);
+    expect(documentSession.restoreDocumentSelection).toHaveBeenCalledTimes(1);
+    expect(required(workspace).license.result?.session).toBe(documentSession);
+    expect(required(workspace).phone.result?.session).toBe(phoneSession);
+    expect(required(workspace).ssn.blocked).toBeUndefined();
+    expect(required(workspace).recovery.restoreFailure).toBeUndefined();
+    expectReadOnly([documentSession, phoneSession]);
+  } finally {
+    await act(async () => view.unmount());
+    createSession.mockReset();
+  }
+  expect(documentSession.release).toHaveBeenCalledTimes(1);
+  expect(phoneSession.release).toHaveBeenCalledTimes(1);
+});
+
+test('unreadable phone receipt remains a restore error and retry reuses the document without provider work', async () => {
+  const { view, workspace, documentSession, phoneSession } = await restoredPhoneFixture(async () => {
+    throw { code: 'storageUnavailable' };
+  });
+  const replacementPhone = retrySession();
+  const create: (configuration: Configuration) => Promise<CaptureSession> = IdentityCaptureSession.create;
+  const createSession = jest.mocked(create);
+  createSession.mockResolvedValueOnce(replacementPhone);
+  try {
+    expect(workspace().passport.openingResults).toBe(false);
+    expect(workspace().recovery.restoreFailure).toBeDefined();
+    expect(workspace().ssn.blocked).toBe('phone');
+    expect(phoneSession.release).toHaveBeenCalledTimes(1);
+    const failure = workspace().recovery.restoreFailure;
+    await act(async () => {
+      workspace().license.checkChanged(documentSession, {
+        busy: false,
+        loaded: true,
+        failure: undefined,
+        snapshot: checked,
+      });
+    });
+    expect(workspace().recovery.restoreFailure).toBe(failure);
+    const previousReads = documentSession.documentCheckRestore.mock.calls.length;
+    await act(async () => workspace().recovery.retryRestore());
+    expect(documentSession.documentCheckRestore).toHaveBeenCalledTimes(previousReads + 1);
+    expect(documentSession.restoreDocumentSelection).toHaveBeenCalledTimes(1);
+    expect(workspace().license.result?.session).toBe(documentSession);
+    expect(workspace().phone.result?.session).toBe(replacementPhone);
+    expect(workspace().ssn.blocked).toBeUndefined();
+    expect(workspace().recovery.restoreFailure).toBeUndefined();
+    for (const session of [documentSession, phoneSession, replacementPhone]) {
+      expect(session.documentCheck).not.toHaveBeenCalled();
+      expect(session.phoneSend).not.toHaveBeenCalled();
+      expect(session.phoneResume).not.toHaveBeenCalled();
+    }
+  } finally {
+    await act(async () => view.unmount());
+    createSession.mockReset();
+  }
+  expect(documentSession.release).toHaveBeenCalledTimes(1);
+  expect(phoneSession.release).toHaveBeenCalledTimes(1);
+  expect(replacementPhone.release).toHaveBeenCalledTimes(1);
 });

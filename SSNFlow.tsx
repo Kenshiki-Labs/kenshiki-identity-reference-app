@@ -33,9 +33,13 @@ export function SSNFlow({
   // what the controller kept (see the entry below).
   const [entryGeneration, setEntryGeneration] = useState(0);
   const finishingRef = useRef(false);
+  // The route adopts its input once. Publishing a completed handoff clears the workspace's
+  // pending input before native Back removes this route; that must not open a replacement owner.
+  const [entry] = useState({ configuration, saved });
+  const source = entry.configuration === configuration ? entry.saved : saved;
   const connect = useCallback(
     (publish: (state: SSNFlowState) => void) => {
-      const active = new SSNFlowController(IdentityCaptureSession.create, configuration, publish, saved);
+      const active = new SSNFlowController(IdentityCaptureSession.create, configuration, publish, source);
       onClaim?.();
       active.open().catch(active.fail);
       const subscription = AppState.addEventListener('change', (next) => {
@@ -53,11 +57,11 @@ export function SSNFlow({
         },
       };
     },
-    [configuration, saved, onClaim],
+    [configuration, source, onClaim],
   );
   const { controller, state, failed, cancelStartup } = useControllerState(initialState, connect);
   const finish = async () => {
-    if (!controller || finishingRef.current) return;
+    if (!controller || finishingRef.current) return false;
     Keyboard.dismiss();
     finishingRef.current = true;
     setFinishing(true);
@@ -65,14 +69,20 @@ export function SSNFlow({
       const result = await controller.handoff();
       if (result) onComplete(result);
       else onExit();
+      return true;
     } catch (error) {
       // Ownership stays here; the failure is shown in this screen's sheet.
       finishingRef.current = false;
       setFinishing(false);
       if (!controller.state.sheet) controller.fail(error);
+      return false;
     }
   };
-  const dismiss = () => finish().catch((error: unknown) => controller?.fail(error));
+  const dismiss = () =>
+    finish().catch((error: unknown) => {
+      controller?.fail(error);
+      return false;
+    });
   useConfirmation(
     controller && state.sheet?.kind === 'erase'
       ? {
@@ -244,16 +254,13 @@ export function SSNFlow({
           {needsRecovery && <Text style={styles.eyebrow}>{t('common.previousCheck')}</Text>}
           <SSNResultDetails receipt={receipt} />
           {!needsRecovery && !state.editing && (
-            <>
-              <Action label={t('common.done')} testID="finish-ssn" onPress={finish} disabled={busy} />
-              <Action
-                label={t('common.runNewCheck')}
-                secondary
-                testID="ssn-check-again"
-                onPress={activeController.edit}
-                disabled={busy}
-              />
-            </>
+            <Action
+              label={t('common.runNewCheck')}
+              secondary
+              testID="ssn-check-again"
+              onPress={activeController.edit}
+              disabled={busy}
+            />
           )}
         </>
       )}

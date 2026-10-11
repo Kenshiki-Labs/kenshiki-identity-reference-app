@@ -5,10 +5,40 @@ import { ScrollView, Text } from 'react-native';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { invoke, required } from '../__tests__/support';
 import { NativeSheet } from './NativeSheet';
-import { Page } from './Page';
+import { Page, PageHeaderContext } from './Page';
 import { Wordmark } from './Wordmark';
 
 jest.mock('@kenshiki/identity-capture', () => ({ IdentitySymbol: 'MockSymbol' }));
+
+test('native navigation owns page chrome while an enclosed sheet retains its title and Done action', async () => {
+  const dismiss = jest.fn();
+  let view!: ReactTestRenderer;
+  await act(async () => {
+    view = create(
+      <PageHeaderContext.Provider value="native">
+        <Page title="Detail" testID="native-detail">
+          <NativeSheet title="Explanation" onDismiss={dismiss}>
+            <Text>Sheet content</Text>
+          </NativeSheet>
+        </Page>
+      </PageHeaderContext.Provider>,
+    );
+  });
+  const pages = view.root.findAllByType(Page);
+  const detail = required(pages.find((node) => node.props.testID === 'native-detail'));
+  const sheet = required(pages.find((node) => node.props.mode === 'sheet'));
+  // Only the sheet has branded chrome and a drawn title; it must not inherit the tab header.
+  expect(detail.findAllByType(Wordmark)).toHaveLength(1);
+  expect(sheet.findByProps({ testID: 'page-title' }).props.children).toBe('Explanation');
+  expect(detail.findAllByProps({ testID: 'page-back' })).toHaveLength(0);
+  const scrolls = detail.findAllByType(ScrollView);
+  expect(required(scrolls[0]).props.contentInsetAdjustmentBehavior).toBe('never');
+  await act(async () => {
+    await invoke(sheet.findByProps({ testID: 'modal-cancel' }), 'onPress');
+  });
+  expect(dismiss).toHaveBeenCalledTimes(1);
+  await act(async () => view.unmount());
+});
 
 test.each(['scroll', 'camera', 'sheet'] as const)(
   '%s uses one brand and hides all underlying controls when covered',
@@ -93,3 +123,43 @@ test.each(['scroll', 'camera', 'sheet'] as const)(
     });
   },
 );
+
+test('native Back waits for successful handoff, blocks duplicate taps, and retains failed ownership', async () => {
+  type Routes = { Home: undefined; Detail: undefined };
+  const Stack = createNativeStackNavigator<Routes>();
+  const navigation = createNavigationContainerRef<Routes>();
+  let settleClose!: (success: boolean) => void;
+  const close = jest.fn(
+    () =>
+      new Promise<boolean>((resolve) => {
+        settleClose = resolve;
+      }),
+  );
+  let view!: ReactTestRenderer;
+  await act(async () => {
+    view = create(
+      <NavigationContainer ref={navigation}>
+        <PageHeaderContext.Provider value="native">
+          <Stack.Navigator>
+            <Stack.Screen name="Home">{() => <Page title="Home" />}</Stack.Screen>
+            <Stack.Screen name="Detail">{() => <Page title="Detail" onClose={close} />}</Stack.Screen>
+          </Stack.Navigator>
+        </PageHeaderContext.Provider>
+      </NavigationContainer>,
+    );
+  });
+  // Navigation becomes ready only after mounting.
+  await act(async () => navigation.navigate('Detail'));
+  await act(async () => navigation.goBack());
+  expect(navigation.getCurrentRoute()?.name).toBe('Detail');
+  expect(close).toHaveBeenCalledTimes(1);
+  await act(async () => navigation.goBack());
+  expect(close).toHaveBeenCalledTimes(1);
+  await act(async () => settleClose(false));
+  expect(navigation.getCurrentRoute()?.name).toBe('Detail');
+  await act(async () => navigation.goBack());
+  expect(close).toHaveBeenCalledTimes(2);
+  await act(async () => settleClose(true));
+  expect(navigation.getCurrentRoute()?.name).toBe('Home');
+  await act(async () => view.unmount());
+});

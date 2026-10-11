@@ -8,9 +8,17 @@ import { AppState } from 'react-native';
 import renderer, { act } from 'react-test-renderer';
 import { documentConfiguration, documentSessionMethods } from './__tests__/documentFixture';
 import { completedPhone, phoneConfiguration } from './__tests__/phoneFixture';
-import { actionSheets, invoke, mockSession as makeSession, required, settle } from './__tests__/support';
+import {
+  actionSheets,
+  invoke,
+  mockSession as makeSession,
+  nativeBack,
+  required,
+  settle,
+} from './__tests__/support';
 import App from './App';
 import { DocumentFlowController } from './DocumentFlowController';
+import { PhoneFlow } from './PhoneFlow';
 
 // Lifecycle review repros J1, J3, J4 and J5 (rn-qa-4), ported as Fix B tests. Mock tier.
 // J2 (holder-scoped native stores) is native configuration; it is covered in ArtifactIntegrationTests.
@@ -150,6 +158,10 @@ afterEach(() => jest.restoreAllMocks());
 const text = (view: renderer.ReactTestRenderer) => JSON.stringify(view.toJSON());
 const press = (view: renderer.ReactTestRenderer, id: string) =>
   act(async () => {
+    if (id === 'native-back') {
+      await nativeBack(view);
+      return;
+    }
     await invoke(
       required(
         view.root
@@ -167,9 +179,9 @@ test('J1 a holder switch clears the previous holder from the screen and releases
     view = renderer.create(<App configuration={holderConfig('A')} />);
   });
   await press(view, 'open-phone');
-  await press(view, 'phone-done');
+  await press(view, 'native-back');
   await press(view, 'open-ssn');
-  await press(view, 'finish-ssn');
+  await press(view, 'native-back');
   expect(text(view)).toContain('ANNA ALPHA');
   await act(async () => {
     view.update(<App configuration={holderConfig('B')} />);
@@ -184,6 +196,56 @@ test('J1 a holder switch clears the previous holder from the screen and releases
   await act(async () => {
     view.unmount();
   });
+});
+
+test('a configuration replacement dismisses the old holder modal before showing the new workspace', async () => {
+  let view!: renderer.ReactTestRenderer;
+  await act(async () => {
+    view = renderer.create(<App configuration={holderConfig('A')} />);
+  });
+  await press(view, 'open-phone');
+  expect(view.root.findAllByType(PhoneFlow)).toHaveLength(1);
+  await act(async () => {
+    view.update(<App configuration={holderConfig('B')} />);
+  });
+  expect(view.root.findAllByType(PhoneFlow).length).toBe(0);
+  expect(text(view)).not.toContain('ANNA ALPHA');
+  expect(mockSessions.A.release).toHaveBeenCalled();
+  expect(required(mockSessions.A.release.mock.invocationCallOrder[0])).toBeLessThan(
+    required(mockSessions.B.listResults.mock.invocationCallOrder[0]),
+  );
+  await act(async () => view.unmount());
+});
+
+test.each([false, true])('container reset retains the cleanup barrier (release fails: %s)', async (fails) => {
+  let view!: renderer.ReactTestRenderer;
+  await act(async () => {
+    view = renderer.create(<App configuration={holderConfig('A')} />);
+  });
+  let finish!: () => void;
+  const released = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  mockSessions.A.release.mockImplementation(async () => {
+    await released;
+    if (fails) throw new Error('synthetic release failure');
+  });
+  await act(async () => {
+    view.update(<App configuration={holderConfig('B')} />);
+  });
+  expect(mockSessions.B.listResults).not.toHaveBeenCalled();
+  expect(text(view)).not.toContain('ANNA ALPHA');
+  // A second configuration change must inherit the same pending (or later failed) barrier.
+  await act(async () => {
+    view.update(<App configuration={holderConfig('B')} />);
+  });
+  expect(mockSessions.B.listResults).not.toHaveBeenCalled();
+  await act(async () => {
+    finish();
+  });
+  if (fails) expect(mockSessions.B.listResults).not.toHaveBeenCalled();
+  else expect(mockSessions.B.listResults).toHaveBeenCalledTimes(1);
+  await act(async () => view.unmount());
 });
 
 test('J3 an unreadable saved store offers erase as well as reopen, behind a confirmation', async () => {
@@ -215,7 +277,7 @@ test('J4 the SSN screen offers erase through ssnErase after a confirmation', asy
   });
   const sheets = actionSheets();
   await press(view, 'open-phone');
-  await press(view, 'phone-done');
+  await press(view, 'native-back');
   await press(view, 'open-ssn');
   await press(view, 'ssn-erase');
   expect(sheets.last().options[0]).toBe('Erase checks');
