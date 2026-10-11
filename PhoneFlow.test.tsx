@@ -99,6 +99,7 @@ jest.mock('@kenshiki/identity-capture', () => ({
   },
   IdentityCapturePreview: 'MockCapturePreview',
   IdentityCaptureImage: 'MockCaptureImage',
+  IdentityDocumentInspection: 'MockDocumentInspection',
   IdentitySymbol: 'MockSymbol',
 }));
 beforeEach(() => {

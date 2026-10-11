@@ -208,6 +208,7 @@
     "documentPreviewHeight": 220,
     // Each side of a saved license on its results card. Replaces 200.
     "documentImageHeight": 200,
+    "documentInspectionHeight": 340,
     // The native preview on the developer checks screen. Replaces 180.
     "developerPreviewHeight": 180,
     // Passport portrait, width over height. Replaces 3 / 4.

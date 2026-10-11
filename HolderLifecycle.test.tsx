@@ -114,6 +114,7 @@ jest.mock('@kenshiki/identity-capture', () => ({
   },
   IdentityCapturePreview: 'MockCapturePreview',
   IdentityCaptureImage: 'MockCaptureImage',
+  IdentityDocumentInspection: 'MockDocumentInspection',
   IdentitySymbol: 'MockSymbol',
 }));
 const holderConfig = (holder: Holder): Configuration => {

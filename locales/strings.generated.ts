@@ -424,6 +424,19 @@ export type MessageValues = {
   readonly "face.technical.comparisonTime": undefined;
   readonly "face.technical.referenceDigest": undefined;
   readonly "face.technical.selfieDigest": undefined;
+  readonly "inspection.title": undefined;
+  readonly "inspection.original": undefined;
+  readonly "inspection.normalized": undefined;
+  readonly "inspection.image": {readonly representation: string | number; readonly side: string | number};
+  readonly "inspection.originalExplanation": undefined;
+  readonly "inspection.normalizedExplanation": undefined;
+  readonly "inspection.zoom": undefined;
+  readonly "inspection.noCapture": undefined;
+  readonly "inspection.loading": undefined;
+  readonly "inspection.inactive": undefined;
+  readonly "inspection.deselected": undefined;
+  readonly "inspection.missing": undefined;
+  readonly "inspection.failed": undefined;
   readonly "license.title.front": undefined;
   readonly "license.title.back": undefined;
   readonly "license.title.frontReview": undefined;
@@ -1399,6 +1412,19 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "face.technical.comparisonTime": "Comparison time (seconds)",
       "face.technical.referenceDigest": "Reference SHA-256",
       "face.technical.selfieDigest": "Selfie SHA-256",
+      "inspection.title": "Inspect your card",
+      "inspection.original": "Original photo",
+      "inspection.normalized": "Lifted card",
+      "inspection.image": [["arg", "side"], " · ", ["arg", "representation"]],
+      "inspection.originalExplanation": "The original photo retained by the SDK, including the area around your card.",
+      "inspection.normalizedExplanation": "The card extracted and straightened from this photo. This view does not establish authenticity or a record match.",
+      "inspection.zoom": "Pinch to zoom. Drag to inspect details. Double-tap to zoom in or reset.",
+      "inspection.noCapture": "No saved card image is available.",
+      "inspection.loading": "Loading saved image…",
+      "inspection.inactive": "Saved image hidden while the app is inactive.",
+      "inspection.deselected": "This saved image is no longer selected.",
+      "inspection.missing": "No lifted image is saved for this capture.",
+      "inspection.failed": "The saved image could not be verified. Return to the document and try again.",
       "license.title.front": "Front of your card",
       "license.title.back": "Back of your card",
       "license.title.frontReview": "Front captured",

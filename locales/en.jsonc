@@ -586,6 +586,22 @@
   },
 
   // License and state-ID capture.
+  "inspection": {
+    "title": "Inspect your card",
+    "original": "Original photo",
+    "normalized": "Lifted card",
+    "image": "{side} · {representation}",
+    "originalExplanation": "The original photo retained by the SDK, including the area around your card.",
+    "normalizedExplanation": "The card extracted and straightened from this photo. This view does not establish authenticity or a record match.",
+    "zoom": "Pinch to zoom. Drag to inspect details. Double-tap to zoom in or reset.",
+    "noCapture": "No saved card image is available.",
+    "loading": "Loading saved image…",
+    "inactive": "Saved image hidden while the app is inactive.",
+    "deselected": "This saved image is no longer selected.",
+    "missing": "No lifted image is saved for this capture.",
+    "failed": "The saved image could not be verified. Return to the document and try again."
+  },
+
   "license": {
     "title": {
       "front": "Front of your card",

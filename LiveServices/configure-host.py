@@ -47,4 +47,7 @@ for directory in ('ios', 'src'):
     shutil.copytree(source.parents[1] / 'ReactNative/identity-capture' / directory,
                     package / directory, dirs_exist_ok=True)
 shutil.copyfile(source / 'AppDelegate.swift', host / 'ios/IdentitySDKHost/AppDelegate.swift')
+# CocoaPods refreshes autolinking before generating Fabric headers from the copied specs.
+# A direct codegen call can reuse another disposable host's cached dependency roots.
+subprocess.run(['pod', 'install', '--deployment'], cwd=host / 'ios', check=True)
 subprocess.run(['ruby', str(Path(__file__).with_name('configure-host.rb')), str(host), str(products)], check=True)

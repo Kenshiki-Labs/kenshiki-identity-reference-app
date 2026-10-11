@@ -69,6 +69,7 @@ jest.mock('@kenshiki/identity-capture', () => ({
   IdentityCaptureSession: { create: jest.fn(async () => mockSession) },
   IdentityCapturePreview: 'MockCapturePreview',
   IdentityCaptureImage: 'MockCaptureImage',
+  IdentityDocumentInspection: 'MockDocumentInspection',
   IdentitySymbol: 'MockSymbol',
 }));
 beforeEach(() => {

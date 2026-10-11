@@ -103,6 +103,7 @@ export const size = {
   navigationActionWidth: 72,
   documentPreviewHeight: 220,
   documentImageHeight: 200,
+  documentInspectionHeight: 340,
   developerPreviewHeight: 180,
   portraitAspectRatio: 0.75,
   selfieGuideWidth: 0.68,

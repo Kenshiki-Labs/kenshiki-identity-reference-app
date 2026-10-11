@@ -12,6 +12,7 @@ import {
   type DocumentFlowState,
   type SavedDocumentCapture,
 } from './DocumentFlowController';
+import { DocumentInspection } from './DocumentInspection';
 import { t } from './locales/i18n';
 import { Action } from './ui/Action';
 import { ControllerStartup } from './ui/ControllerStartup';
@@ -300,46 +301,14 @@ function documentName(document: DocumentObservation): string {
   );
 }
 export function DocumentResultDetails({ result }: Readonly<{ result: SavedDocumentCapture }>) {
-  const { document, session } = result;
+  const { document } = result;
   const [details, setDetails] = useState(false);
   const barcode = document.back?.pdf417;
   const fields = barcode?.fields ?? {};
   const address = [fields.DAG, fields.DAH, fields.DAI, fields.DAJ, fields.DAK].filter(Boolean).join('\n');
   return (
     <>
-      <View style={styles.card} testID="document-result">
-        <Text accessibilityRole="header" style={styles.sheetTitle}>
-          {t('license.result.photos')}
-        </Text>
-        {document.front && (
-          <>
-            <Text style={styles.label}>{t('license.result.front')}</Text>
-            <IdentityCaptureImage
-              key={document.front.sha256}
-              session={session}
-              image="documentFront"
-              sha256={document.front.sha256}
-              accessibilityLabel={t('license.result.frontImage')}
-              style={styles.documentImage}
-            />
-          </>
-        )}
-        {document.back ? (
-          <>
-            <Text style={styles.label}>{t('license.result.back')}</Text>
-            <IdentityCaptureImage
-              key={document.back.sha256}
-              session={session}
-              image="documentBack"
-              sha256={document.back.sha256}
-              accessibilityLabel={t('license.result.backImage')}
-              style={styles.documentImage}
-            />
-          </>
-        ) : (
-          <Text style={styles.body}>{t('license.result.backNeeded')}</Text>
-        )}
-      </View>
+      <DocumentInspection result={result} />
       {document.back && (
         <View style={styles.card} testID="document-barcode-details">
           <Text accessibilityRole="header" style={styles.sheetTitle}>

@@ -81,6 +81,7 @@ jest.mock('@kenshiki/identity-capture', () => ({
   IdentityCaptureSession: { create: jest.fn(async () => mockSession) },
   IdentityCapturePreview: 'MockCapturePreview',
   IdentityCaptureImage: 'MockCaptureImage',
+  IdentityDocumentInspection: 'MockDocumentInspection',
   IdentitySymbol: 'MockSymbol',
 }));
 beforeEach(() => {
@@ -134,10 +135,18 @@ test('license capture returns to Identity and both exact photos and read details
   expect(JSON.stringify(view.toJSON()).indexOf('document-check-panel')).toBeLessThan(
     JSON.stringify(view.toJSON()).indexOf('document-result'),
   );
-  const images = view.root.findAll((node) => String(node.type) === 'MockCaptureImage');
-  expect(images.map((image) => [property(image, 'image'), property(image, 'sha256')])).toEqual([
-    ['documentFront', 'front-digest'],
-    ['documentBack', 'back-digest'],
+  const front = view.root.find((node) => String(node.type) === 'MockDocumentInspection');
+  expect([property(front, 'side'), property(front, 'representation'), property(front, 'sha256')]).toEqual([
+    'front',
+    'original',
+    'front-digest',
+  ]);
+  await tap('inspect-back');
+  const back = view.root.find((node) => String(node.type) === 'MockDocumentInspection');
+  expect([property(back, 'side'), property(back, 'representation'), property(back, 'sha256')]).toEqual([
+    'back',
+    'original',
+    'back-digest',
   ]);
   expect(mockSession.startDocument).toHaveBeenCalledTimes(2);
   await act(async () => {

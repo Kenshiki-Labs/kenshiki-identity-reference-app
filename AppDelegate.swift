@@ -14,7 +14,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   private var privacyCover: UIView?
   private var readerProbe: Task<Void, Never>?
 
-  func application(_ _: UIApplication,
+  func application(_ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
     #if DEBUG
     // The UI tests run Debug with its embedded bundle and no Metro server. React Native's own switch
@@ -24,6 +24,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       RCTBundleURLProviderAllowPackagerServerAccess(false)
     }
     #endif
+    // The host owns application lifecycle; native inspectors start closed until it is active.
+    IDCaptureSharedRuntime().setDocumentInspectionActive(application.applicationState == .active)
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
@@ -134,6 +136,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     factory.startReactNative(withModuleName: "IdentitySDKHost", in: window,
       initialProperties: properties, launchOptions: launchOptions)
     return true
+  }
+
+  func applicationWillResignActive(_ _: UIApplication) {
+    IDCaptureSharedRuntime().setDocumentInspectionActive(false)
+  }
+
+  func applicationDidBecomeActive(_ _: UIApplication) {
+    IDCaptureSharedRuntime().setDocumentInspectionActive(true)
   }
 
   // iOS captures the app-switcher snapshot after this returns. Cover personal data first.
