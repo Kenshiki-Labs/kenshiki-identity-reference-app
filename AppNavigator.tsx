@@ -117,7 +117,7 @@ export function AppNavigator({
   configurationIssue,
 }: Readonly<AppNavigatorProps>) {
   const custody = useContext(ControllerCustodyContext);
-  if (!custody) throw new Error('AppNavigator must be rendered inside AppContainer.');
+  if (!custody) throw new Error(t('developer.navigatorOutsideContainer'));
   const navigation = useNavigation<NavigationContainerRef<RootRoutes>>();
   const identityNavigation = useRef<IdentityNavigation | undefined>(undefined);
   const [sensorsOpen, setSensorsOpen] = useState(false);

@@ -983,6 +983,7 @@ export type MessageValues = {
   readonly "developer.status.failed": {readonly message: string | number};
   readonly "developer.status.releaseFailed": undefined;
   readonly "developer.noCode": undefined;
+  readonly "developer.navigatorOutsideContainer": undefined;
   readonly "developer.nativeCommandFailed": undefined;
   readonly "developer.expected": {readonly code: string | number};
   readonly "developer.missingCameraFailure": undefined;
@@ -1994,6 +1995,7 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "developer.status.failed": ["FAILED: ", ["arg", "message"]],
       "developer.status.releaseFailed": "Session release failed",
       "developer.noCode": "no code returned",
+      "developer.navigatorOutsideContainer": "AppNavigator must be rendered inside AppContainer.",
       "developer.nativeCommandFailed": "Native command failed",
       "developer.expected": ["Expected ", ["arg", "code"]],
       "developer.missingCameraFailure": "Missing camera failure event",

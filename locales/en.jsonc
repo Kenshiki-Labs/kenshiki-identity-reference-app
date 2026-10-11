@@ -1296,6 +1296,8 @@
       "releaseFailed": "Session release failed"
     },
     "noCode": "no code returned",
+    // Developer-facing: thrown if AppNavigator renders outside AppContainer. The holder never sees it.
+    "navigatorOutsideContainer": "AppNavigator must be rendered inside AppContainer.",
     // Stands in for {message} in developer.status.failed when the failure carried no message.
     "nativeCommandFailed": "Native command failed",
     // {code} is the error code a check expected.
