@@ -30,18 +30,14 @@ export function DocumentEvidenceField({
       <EvidenceValues row={row} values={values} differs={differs} />
       <View style={layout.chips}>
         <Chip
-          label={
+          label={frontLabel(row)}
+          tone={
             row.front === 'matched'
-              ? t('documentEvidence.frontMatched')
-              : row.front === 'mismatched'
-                ? t('documentEvidence.frontMismatch')
-                : row.frontValue
-                  ? t('documentEvidence.frontRead')
-                  : row.licenseValue
-                    ? t('documentEvidence.barcodeRead')
-                    : t('documentEvidence.submittedOnly')
+              ? 'good'
+              : ['partial', 'mismatched'].includes(row.front)
+                ? 'attention'
+                : 'neutral'
           }
-          tone={row.front === 'matched' ? 'good' : row.front === 'mismatched' ? 'attention' : 'neutral'}
         />
         <Chip
           label={
@@ -58,6 +54,13 @@ export function DocumentEvidenceField({
           }
         />
       </View>
+      {!!row.frontMissing?.length && (
+        <Text style={styles.label}>
+          {t('documentEvidence.frontMissing', {
+            fields: row.frontMissing.map(fieldLabel).join(t('common.listSeparator')),
+          })}
+        </Text>
+      )}
     </View>
   );
 }
@@ -131,4 +134,18 @@ function EvidenceValues({
       )}
     </>
   );
+}
+
+function frontLabel(row: DocumentFieldReadout): string {
+  switch (row.front) {
+    case 'matched':
+      return t('documentEvidence.frontMatched');
+    case 'partial':
+      return t('documentEvidence.frontPartial');
+    case 'mismatched':
+      return t('documentEvidence.frontMismatch');
+    case 'notReported':
+      if (row.frontValue) return t('documentEvidence.frontRead');
+      return row.licenseValue ? t('documentEvidence.barcodeRead') : t('documentEvidence.submittedOnly');
+  }
 }

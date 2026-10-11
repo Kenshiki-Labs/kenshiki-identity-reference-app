@@ -559,6 +559,8 @@ export type MessageValues = {
   readonly "license.captureError.recordingTerminated": undefined;
   readonly "license.captureError.nativeControlsPaused": undefined;
   readonly "license.captureError.other": undefined;
+  readonly "documentEvidence.frontPartial": undefined;
+  readonly "documentEvidence.frontMissing": {readonly fields: string | number};
   readonly "documentEvidence.frontSubmittedValue": {readonly value: string | number};
   readonly "documentEvidence.barcodeSubmittedValue": {readonly value: string | number};
   readonly "documentEvidence.submittedOnly": undefined;
@@ -1591,6 +1593,8 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "license.captureError.recordingTerminated": "The camera stopped before the photo was saved. Try again.",
       "license.captureError.nativeControlsPaused": "The camera paused. Continue when you are ready.",
       "license.captureError.other": "The photo could not be completed. Keep the whole card in view and try again.",
+      "documentEvidence.frontPartial": "Front ↔ PDF417 incomplete",
+      "documentEvidence.frontMissing": ["Not read on front: ", ["arg", "fields"]],
       "documentEvidence.frontSubmittedValue": ["Front / submitted: ", ["arg", "value"]],
       "documentEvidence.barcodeSubmittedValue": ["PDF417 / submitted: ", ["arg", "value"]],
       "documentEvidence.submittedOnly": "Submitted value",
