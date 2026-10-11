@@ -1,3 +1,8 @@
+// Responsibility: Determines whether the reference UI can offer phone and SSN checks.
+// Control: Requires matching document capture hashes and a completed phone snapshot; these are presentation gates.
+// Native counterpart: Native phone and SSN providers must independently resolve and revalidate bound evidence.
+// Specification: RFC-0002 §§4.2–4.3; capability-evidence-and-assurance-plan §§3.3, 3.5–3.6.
+
 import type {
   Configuration,
   DocumentCheckSnapshot,

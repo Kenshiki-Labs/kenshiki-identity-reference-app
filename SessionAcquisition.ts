@@ -1,3 +1,8 @@
+// Responsibility: Acquires native sessions and releases handles that arrive after their caller has left.
+// Control: Preserves release failures so subsequent work cannot silently bypass failed cleanup.
+// Native counterpart: CaptureRuntime creates and releases the handles exposed by CaptureSession.
+// Specification: RFC-0002 §§12.2, 13.1, 13.3.
+
 import type { CaptureSession } from '@kenshiki/identity-capture';
 
 /** Creating a native session is owned work, including cleanup if its caller leaves before the

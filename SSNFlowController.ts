@@ -1,3 +1,8 @@
+// Responsibility: Coordinates SSN entry, confirmation presentation, recovery and live session handoff.
+// Control: Tracks asynchronous ownership while native code owns exact confirmation and uncertain-attempt recovery.
+// Native counterpart: SSNCaptureRuntime delegates verification and encrypted custody to SSNVerificationSession.
+// Specification: RFC-0002 §§4.2, 12.4, 13.1; capability-evidence-and-assurance-plan §3.5.
+
 import type {
   CaptureErrorCode,
   CaptureSession,

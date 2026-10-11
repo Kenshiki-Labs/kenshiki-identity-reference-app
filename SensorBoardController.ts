@@ -1,3 +1,8 @@
+// Responsibility: Serializes sensor board commands, refreshes and foreground lifecycle changes for the host.
+// Control: Cancels and drains refresh work before user actions; native code owns measurements and custody.
+// Native counterpart: SensorBoardRuntime executes the queued requests and projects results.
+// Specification: RFC-0002 §§4.4–4.5, 12.2; capability-evidence-and-assurance-plan §3.14.
+
 import {
   type CaptureSession,
   type Configuration,

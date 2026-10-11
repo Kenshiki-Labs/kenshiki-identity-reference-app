@@ -1,3 +1,8 @@
+// Responsibility: Determines when subscriber observations prevent phone-step completion in this host.
+// Control: Treats contradictory or unsatisfied comparisons as a stop; it does not authenticate receipts.
+// Native counterpart: PhonePossessionSession supplies the receipt and subscriber comparison observations.
+// Specification: RFC-0002 §§4.2–4.3; capability-evidence-and-assurance-plan §3.6.
+
 import type { PhoneCheckReceipt } from '@kenshiki/identity-capture';
 
 /** Host policy: contradictory subscriber evidence cannot complete the phone step. */

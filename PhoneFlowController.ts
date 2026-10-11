@@ -1,3 +1,8 @@
+// Responsibility: Coordinates phone check presentation, interruption, recovery and live session handoff.
+// Control: Suppresses stale completions and drains owned work before releasing or transferring the session.
+// Native counterpart: PhoneCaptureRuntime and PhonePossessionSession own challenges, polling and receipt custody.
+// Specification: RFC-0002 §§4.2, 13.1; capability-evidence-and-assurance-plan §3.6.
+
 import type {
   CaptureErrorCode,
   CaptureSession,

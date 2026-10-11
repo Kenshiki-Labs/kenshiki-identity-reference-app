@@ -1,3 +1,8 @@
+// Responsibility: Coordinates passport capture, selfie comparison, recovery and session handoff for the host.
+// Control: Tracks asynchronous ownership and binds restored face results to the retained passport portrait.
+// Native counterpart: CaptureRuntime owns parsing, chip proofs, selfie admission, comparison and custody.
+// Specification: RFC-0002 §§4.2, 4.5, 13.1; capability-evidence-and-assurance-plan §§3.8, 3.12.
+
 import type {
   CaptureErrorCode,
   CaptureEvent,
