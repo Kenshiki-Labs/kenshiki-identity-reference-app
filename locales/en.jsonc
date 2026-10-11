@@ -881,8 +881,8 @@
     "enterAgain": "Enter number again",
     // Placeholder in the empty number field: nine digits, no separators.
     "placeholder": "000000000",
-    "entryNotice": "You will confirm every digit before the check starts. Your entered number is cleared when you leave this screen.",
-    "reviewNumber": "Review number",
+    "entryNotice": "Your number is cleared when you leave this screen.",
+    "reviewNumber": "Continue",
     // "SSN" is the common abbreviation for Social Security number.
     "enter": "Enter SSN",
     "erase": "Erase saved SSN checks",

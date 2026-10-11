@@ -304,13 +304,11 @@ test('missing provider setup names the service, never ID or phone prerequisites'
   expect(f.create).not.toHaveBeenCalled();
   expect(await f.c.handoff()).toBeUndefined();
 });
-test('entry opens from an introduction with no native confirmation or request', async () => {
+test('opening a new check goes straight to entry without native confirmation or dispatch', async () => {
   const f = fixture();
   await f.c.open();
-  expect(f.c.state.editing).toBe(false);
-  expect(f.native.ssnRequestConfirmation).not.toHaveBeenCalled();
-  f.c.beginEntry();
   expect(f.c.state.editing).toBe(true);
+  expect(f.native.ssnRequestConfirmation).not.toHaveBeenCalled();
   expect(f.native.ssnConfirm).not.toHaveBeenCalled();
 });
 test('a failed save reconciles original status and blocks another purchase', async () => {

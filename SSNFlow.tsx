@@ -135,6 +135,29 @@ export function SSNFlow({
         </View>
       );
     }
+    if (confirmation) {
+      return (
+        <View style={styles.card} testID="ssn-confirmation">
+          <Text style={styles.body}>{t('ssn.confirm.body')}</Text>
+          <Text style={styles.title} testID="ssn-confirmation-number">
+            {formatNumber(confirmation.digits)}
+          </Text>
+          <Action
+            label={t('ssn.confirm.action')}
+            testID="ssn-confirm"
+            onPress={activeController.confirm}
+            disabled={busy}
+          />
+          <Action
+            label={t('ssn.confirm.edit')}
+            testID="ssn-edit"
+            secondary
+            onPress={activeController.edit}
+            disabled={busy}
+          />
+        </View>
+      );
+    }
     if (state.editing) {
       return (
         <>
@@ -175,16 +198,9 @@ export function SSNFlow({
     return null;
   }
   function renderSSNSheet() {
-    if (!state.sheet || state.sheet.kind === 'erase') return null;
+    if (!recovery) return null;
     return (
-      <NativeSheet
-        title={
-          state.sheet.kind === 'confirmation'
-            ? t('ssn.confirm.title')
-            : (recovery?.title ?? t('common.checkNeedsAttention'))
-        }
-        testID="ssn-bottom-sheet"
-      >
+      <NativeSheet title={recovery.title} testID="ssn-bottom-sheet">
         {renderSheetActions()}
         {close}
       </NativeSheet>
@@ -192,29 +208,6 @@ export function SSNFlow({
   }
   function renderSheetActions() {
     if (!state.sheet) return null;
-    if (state.sheet.kind === 'confirmation' && confirmation) {
-      return (
-        <>
-          <Text style={styles.body}>{t('ssn.confirm.body')}</Text>
-          <Text style={styles.title} testID="ssn-confirmation-number">
-            {formatNumber(confirmation.digits)}
-          </Text>
-          <Action
-            label={t('ssn.confirm.action')}
-            testID="ssn-confirm"
-            onPress={activeController.confirm}
-            disabled={busy}
-          />
-          <Action
-            label={t('ssn.confirm.edit')}
-            testID="ssn-edit"
-            secondary
-            onPress={activeController.edit}
-            disabled={busy}
-          />
-        </>
-      );
-    }
     if (recovery) {
       return (
         <>
@@ -241,12 +234,12 @@ export function SSNFlow({
     <Page
       title={t('common.socialSecurityNumber')}
       onClose={dismiss}
-      covered={!!state.sheet}
+      covered={!!recovery || state.sheet?.kind === 'erase'}
       overlay={renderSSNSheet()}
     >
-      <Text style={styles.body}>{t('ssn.intro')}</Text>
+      {state.editing && !confirmation && <Text style={styles.body}>{t('ssn.intro')}</Text>}
       {renderSSNStage()}
-      {receipt && (
+      {receipt && !state.editing && !confirmation && (
         <>
           {needsRecovery && <Text style={styles.eyebrow}>{t('common.previousCheck')}</Text>}
           <SSNResultDetails receipt={receipt} />
@@ -264,7 +257,7 @@ export function SSNFlow({
           )}
         </>
       )}
-      {snapshot && (
+      {snapshot?.receipt && !state.editing && !confirmation && (
         <Action
           label={t('ssn.erase')}
           destructive

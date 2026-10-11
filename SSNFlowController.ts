@@ -150,6 +150,7 @@ export class SSNFlowController {
       return;
     }
     await this.run((session) => session.ssnSnapshot());
+    if (this.state.snapshot && !this.state.snapshot.receipt && !this.state.sheet) this.beginEntry();
   };
   beginEntry = () => {
     if (this.closed || this.state.busy || this.state.snapshot?.recoveryNeeded) return;

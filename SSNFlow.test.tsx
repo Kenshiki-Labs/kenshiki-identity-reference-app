@@ -117,22 +117,26 @@ async function renderApp(config = configuration) {
   }
   return { view, tap, enter };
 }
-test('SSN review displays exact digits in a bottom sheet and a completed result reopens from Identity', async () => {
+test('SSN opens entry directly, confirms once inline, and shows the result without another prompt', async () => {
   const { view, tap, enter } = await renderApp();
   await tap('open-ssn');
-  expect(view.root.findAllByProps({ testID: 'ssn-entry' })).toHaveLength(0);
-  await tap('ssn-begin-entry');
+  expect(view.root.findByProps({ testID: 'ssn-entry' })).toBeDefined();
   await enter();
   // The field owns what is typed (S-12): JavaScript never writes a value back into it.
   expect(view.root.findByProps({ testID: 'ssn-entry' }).props.value).toBeUndefined();
   await tap('ssn-review-number');
-  expect(view.root.findByProps({ testID: 'ssn-bottom-sheet' })).toBeDefined();
+  expect(view.root.findByProps({ testID: 'ssn-confirmation' })).toBeDefined();
+  expect(view.root.findAllByProps({ testID: 'ssn-bottom-sheet' })).toHaveLength(0);
+  expect(view.root.findAllByProps({ testID: 'ssn-entry' })).toHaveLength(0);
   expect(view.root.findByProps({ testID: 'ssn-confirmation-number' }).props.children).toBe('000-00-1234');
   expect(mockSession.ssnConfirm).not.toHaveBeenCalled();
   await tap('ssn-confirm');
   expect(mockSession.ssnConfirm).toHaveBeenCalledWith('token');
   expect(JSON.stringify(view.toJSON())).toContain('The number was issued');
   expect(JSON.stringify(view.toJSON())).not.toContain('000-00-1234');
+  expect(view.root.findAllByProps({ testID: 'ssn-confirmation' })).toHaveLength(0);
+  expect(JSON.stringify(view.toJSON())).not.toContain('Your checked ID and confirmed phone');
+  expect(mockSession.ssnRequestConfirmation).toHaveBeenCalledTimes(1);
   await tap('finish-ssn');
   await tap('open-ssn');
   expect(view.root.findByProps({ testID: 'ssn-result' })).toBeDefined();
@@ -144,16 +148,14 @@ test('SSN review displays exact digits in a bottom sheet and a completed result 
   // The fixture returns this stub for both the phone and SSN session owners.
   expect(mockSession.release).toHaveBeenCalledTimes(2);
 });
-test('leaving the exact-number sheet clears the input before the Identity card can reopen it', async () => {
+test('leaving the exact-number review clears the input before the Identity card can reopen it', async () => {
   const { view, tap, enter } = await renderApp();
   await tap('open-ssn');
-  await tap('ssn-begin-entry');
   await enter();
   await tap('ssn-review-number');
-  await tap('ssn-back-to-identity');
+  await tap('modal-cancel');
   expect(JSON.stringify(view.toJSON())).not.toContain('000-00-1234');
   await tap('open-ssn');
-  await tap('ssn-begin-entry');
   expect(view.root.findByProps({ testID: 'ssn-entry' }).props.defaultValue).toBe('');
   expect(mockSession.ssnConfirm).not.toHaveBeenCalled();
   await act(async () => {
@@ -268,7 +270,6 @@ test('returned findings show source values, while older receipts explain why det
 test('fast SSN entry keeps every digit in order and never writes stale text back', async () => {
   const { view, tap } = await renderApp();
   await tap('open-ssn');
-  await tap('ssn-begin-entry');
   const field = view.root.findByProps({ testID: 'ssn-entry' });
   const typed = '000001234';
   const pushedBack: unknown[] = [];
@@ -291,7 +292,6 @@ test('fast SSN entry keeps every digit in order and never writes stale text back
 test('renders between keystrokes never update the native default text seed', async () => {
   const { view, tap } = await renderApp();
   await tap('open-ssn');
-  await tap('ssn-begin-entry');
   const typed = '000001234';
   for (let length = 1; length <= typed.length; length += 1) {
     await act(async () => {
@@ -309,7 +309,6 @@ test('renders between keystrokes never update the native default text seed', asy
 test('pasted text that is not only digits restarts the field from the digits kept', async () => {
   const { view, tap } = await renderApp();
   await tap('open-ssn');
-  await tap('ssn-begin-entry');
   await act(async () => {
     invoke(view.root.findByProps({ testID: 'ssn-entry' }), 'onChangeText', '000-00-1234');
   });
