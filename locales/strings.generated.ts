@@ -559,6 +559,27 @@ export type MessageValues = {
   readonly "license.captureError.recordingTerminated": undefined;
   readonly "license.captureError.nativeControlsPaused": undefined;
   readonly "license.captureError.other": undefined;
+  readonly "documentEvidence.frontSubmittedValue": {readonly value: string | number};
+  readonly "documentEvidence.barcodeSubmittedValue": {readonly value: string | number};
+  readonly "documentEvidence.submittedOnly": undefined;
+  readonly "documentEvidence.submittedComparison": {readonly status: string | number};
+  readonly "documentEvidence.dolMatched": undefined;
+  readonly "documentEvidence.dolPartial": undefined;
+  readonly "documentEvidence.dolMismatch": undefined;
+  readonly "documentEvidence.dolUnavailable": undefined;
+  readonly "documentEvidence.dolPending": undefined;
+  readonly "documentEvidence.dolNotReported": undefined;
+  readonly "documentEvidence.barcodeRead": undefined;
+  readonly "documentEvidence.frontMatched": undefined;
+  readonly "documentEvidence.frontMismatch": undefined;
+  readonly "documentEvidence.frontNotReported": undefined;
+  readonly "documentEvidence.frontRead": undefined;
+  readonly "documentEvidence.sourceMatched": undefined;
+  readonly "documentEvidence.sourceMismatch": undefined;
+  readonly "documentEvidence.barcodeValue": {readonly value: string | number};
+  readonly "documentEvidence.frontValue": {readonly value: string | number};
+  readonly "documentEvidence.submittedValue": {readonly value: string | number};
+  readonly "documentEvidence.title": undefined;
   readonly "documentCheck.title": undefined;
   readonly "documentCheck.notConfigured": undefined;
   readonly "documentCheck.busy": undefined;
@@ -1570,6 +1591,27 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "license.captureError.recordingTerminated": "The camera stopped before the photo was saved. Try again.",
       "license.captureError.nativeControlsPaused": "The camera paused. Continue when you are ready.",
       "license.captureError.other": "The photo could not be completed. Keep the whole card in view and try again.",
+      "documentEvidence.frontSubmittedValue": ["Front / submitted: ", ["arg", "value"]],
+      "documentEvidence.barcodeSubmittedValue": ["PDF417 / submitted: ", ["arg", "value"]],
+      "documentEvidence.submittedOnly": "Submitted value",
+      "documentEvidence.submittedComparison": [["arg", "status"], " (submitted)"],
+      "documentEvidence.dolMatched": "DOL match",
+      "documentEvidence.dolPartial": "DOL partial match",
+      "documentEvidence.dolMismatch": "DOL mismatch",
+      "documentEvidence.dolUnavailable": "No DOL result",
+      "documentEvidence.dolPending": "DOL pending",
+      "documentEvidence.dolNotReported": "DOL not compared",
+      "documentEvidence.barcodeRead": "PDF417 read",
+      "documentEvidence.frontMatched": "Front ↔ PDF417 match",
+      "documentEvidence.frontMismatch": "Front ↔ PDF417 mismatch",
+      "documentEvidence.frontNotReported": "Front ↔ PDF417 not compared",
+      "documentEvidence.frontRead": "Front read",
+      "documentEvidence.sourceMatched": "Submitted ↔ PDF417 match",
+      "documentEvidence.sourceMismatch": "Submitted ↔ PDF417 differs",
+      "documentEvidence.barcodeValue": ["PDF417: ", ["arg", "value"]],
+      "documentEvidence.frontValue": ["Front: ", ["arg", "value"]],
+      "documentEvidence.submittedValue": ["Submitted: ", ["arg", "value"]],
+      "documentEvidence.title": "License details",
       "documentCheck.title": "Document record check",
       "documentCheck.notConfigured": "Record checking is not configured for this app. Your saved photos and barcode details remain available.",
       "documentCheck.busy": "Opening or checking the saved record…",

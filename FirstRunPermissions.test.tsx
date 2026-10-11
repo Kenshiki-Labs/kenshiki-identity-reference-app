@@ -16,6 +16,9 @@ const mockRead = jest.fn(async (_request: SensorBoardRequest) => mockBoard);
 const mockRelease = jest.fn(async () => {});
 const mockCreate = jest.fn(async () => ({ sensorBoard: mockRead, release: mockRelease }));
 jest.mock('@kenshiki/identity-capture', () => ({
+  documentFieldReadout: jest.requireActual<
+    typeof import('../../ReactNative/identity-capture/src/DocumentReadout')
+  >('../../ReactNative/identity-capture/src/DocumentReadout').documentFieldReadout,
   IdentityCaptureSession: { create: () => mockCreate() },
   IdentitySymbol: 'MockSymbol',
 }));

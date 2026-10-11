@@ -30,6 +30,7 @@
   // generator writes it as `DynamicColorIOS`, so it still follows the appearance as a system color
   // does.
   "color": {
+    "evidenceMatch": {"light": "#166534", "dark": "#86EFAC"},
     // Screen background: the grouped-list background. Replaces #f4f5f8.
     "background": {"ios": "systemGroupedBackground"},
     // A grouped list's cells and the cards that hold a result. Replaces #fff.

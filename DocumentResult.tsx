@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { DocumentCheckContent } from './DocumentCheckPanel';
+import { DocumentCheckReceipt } from './DocumentCheckReceipt';
 import type { SavedDocumentCapture } from './DocumentFlowController';
 import { DocumentResultDetails } from './DocumentResultDetails';
 import { t } from './locales/i18n';
@@ -43,9 +44,10 @@ function LoadedDocumentResult({ result, children, ...props }: Props) {
   }
   return (
     <>
-      <DocumentCheckContent {...connection} check={check} />
-      <DocumentResultDetails result={result} />
+      <DocumentCheckContent {...connection} check={check} summaryOnly />
+      <DocumentResultDetails result={result} checkResult={check.state.snapshot?.result} />
       {children}
+      {check.state.snapshot?.result && <DocumentCheckReceipt result={check.state.snapshot.result} />}
     </>
   );
 }

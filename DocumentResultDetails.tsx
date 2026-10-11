@@ -1,30 +1,37 @@
-import type { DocumentSideObservation } from '@kenshiki/identity-capture';
+import {
+  type DocumentCheckResult,
+  type DocumentSideObservation,
+  documentFieldReadout,
+} from '@kenshiki/identity-capture';
 import { Text, View } from 'react-native';
+import { DocumentEvidenceField } from './DocumentEvidenceField';
 import type { SavedDocumentCapture } from './DocumentFlowController';
 import { DocumentInspection } from './DocumentInspection';
 import { t } from './locales/i18n';
 import { styles } from './ui/styles';
 
-export function DocumentResultDetails({ result }: Readonly<{ result: SavedDocumentCapture }>) {
+export function DocumentResultDetails({
+  result,
+  checkResult,
+}: Readonly<{ result: SavedDocumentCapture; checkResult?: DocumentCheckResult | null | undefined }>) {
   const { document } = result;
   const barcode = document.back?.pdf417;
-  const fields = barcode?.fields ?? {};
+  const rows = documentFieldReadout(document, checkResult);
   return (
     <>
-      <DocumentInspection result={result} />
-      {document.back && (
+      {(document.back || rows.length > 0) && (
         <View style={styles.card} testID="document-barcode-details">
           <Text accessibilityRole="header" style={styles.sheetTitle}>
-            {t('license.result.barcodeTitle')}
+            {t('documentEvidence.title')}
           </Text>
           <Text style={styles.body} testID="document-barcode-status">
-            {barcodeStatus(document.back)}
+            {document.back ? barcodeStatus(document.back) : ''}
           </Text>
-          {Object.entries(fields).map(([field, value]) => (
-            <Detail
-              key={field}
-              label={fieldLabels[field] ?? t('license.result.unknownField', { code: field })}
-              value={value}
+          {rows.map((row) => (
+            <DocumentEvidenceField
+              key={row.key}
+              row={row}
+              label={Object.hasOwn(fieldLabels, row.key) ? fieldLabels[row.key] : undefined}
             />
           ))}
           {!!barcode?.missingRequiredElements.length && (
@@ -37,6 +44,7 @@ export function DocumentResultDetails({ result }: Readonly<{ result: SavedDocume
           )}
         </View>
       )}
+      <DocumentInspection result={result} />
     </>
   );
 }

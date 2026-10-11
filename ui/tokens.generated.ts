@@ -5,6 +5,7 @@ import {DynamicColorIOS, PlatformColor} from 'react-native';
 /** Color roles. Adaptive roles resolve iOS system colors or a brand's light and dark
  * pair; see ui/tokens.jsonc. */
 export const color = {
+  evidenceMatch: DynamicColorIOS({light: "#166534", dark: "#86EFAC"}),
   background: PlatformColor("systemGroupedBackground"),
   card: PlatformColor("secondarySystemGroupedBackground"),
   sheet: PlatformColor("systemGroupedBackground"),
@@ -36,6 +37,7 @@ export const color = {
 /** The brand colors' two values, for an API that takes one string per appearance, such as
  * the navigation theme. Screens use `color`. */
 export const appearanceColor = {
+  evidenceMatch: {light: "#166534", dark: "#86EFAC"},
   tint: {light: "#0D2958", dark: "#8FB3E6"},
   wordmark: {light: "#1D1D1F", dark: "#F5F5F7"},
   onTint: {light: "#FFFFFF", dark: "#1D1D1F"},

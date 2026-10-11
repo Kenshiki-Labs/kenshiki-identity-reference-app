@@ -49,6 +49,9 @@ export const failures: ErrorText = {
   sessionUnavailable: t('documentCheck.failure.sessionUnavailable'),
 };
 const fieldNames: Record<string, string> = {
+  givenNames: t('passport.field.givenNames'),
+  fullName: t('license.field.DAA'),
+  country: t('license.field.DCG'),
   // WorkerDocumentChecker preserves plan.aamva wire keys in submittedFields.
   // Keep provider field names intact; only their display labels are translated.
   'name-first': t('documentCheck.field.givenName'),

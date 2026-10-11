@@ -4,6 +4,9 @@ import { invoke, mockSession, required } from './__tests__/support';
 import { DocumentResult } from './DocumentResult';
 
 jest.mock('@kenshiki/identity-capture', () => ({
+  documentFieldReadout: jest.requireActual<
+    typeof import('../../ReactNative/identity-capture/src/DocumentReadout')
+  >('../../ReactNative/identity-capture/src/DocumentReadout').documentFieldReadout,
   isCaptureErrorCode: jest.requireActual<typeof import('../../ReactNative/identity-capture/src/codes')>(
     '../../ReactNative/identity-capture/src/codes',
   ).isCaptureErrorCode,
@@ -153,7 +156,7 @@ test('no DOL result preserves the separate details read from the license', async
     }),
   );
   const text = JSON.stringify(view.toJSON());
-  for (const value of ['No DOL result returned', 'Read from license', '01021990', '97001'])
+  for (const value of ['No DOL result', 'License details', '1990-01-02', '97001'])
     expect(text).toContain(value);
   expect(text).not.toContain('Full match');
   expect(f.session.documentCheck).not.toHaveBeenCalled();

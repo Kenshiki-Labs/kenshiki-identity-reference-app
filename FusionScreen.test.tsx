@@ -24,7 +24,12 @@ jest.mock('./SensorScreen', () => ({
     perform: mockPerform,
   }),
 }));
-jest.mock('@kenshiki/identity-capture', () => ({ IdentitySymbol: 'MockSymbol' }));
+jest.mock('@kenshiki/identity-capture', () => ({
+  documentFieldReadout: jest.requireActual<
+    typeof import('../../ReactNative/identity-capture/src/DocumentReadout')
+  >('../../ReactNative/identity-capture/src/DocumentReadout').documentFieldReadout,
+  IdentitySymbol: 'MockSymbol',
+}));
 async function render(element: React.ReactElement) {
   let view: ReactTestRenderer | undefined;
   await act(async () => {

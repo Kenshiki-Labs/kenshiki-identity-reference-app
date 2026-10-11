@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { AppState, Text, TextInput, View } from 'react-native';
 import type { DocumentCheckState } from './DocumentCheckController';
+import { DocumentCheckReceipt } from './DocumentCheckReceipt';
 import { documentCheckAction } from './DocumentCheckRecovery';
 import { correctionText, failures, fieldLabel, labels, snapshotFailures } from './DocumentCheckText';
-import { DocumentProviderChecks } from './DocumentProviderChecks';
 import { errorCode, errorText, formatMoment } from './HolderText';
 import { t } from './locales/i18n';
 import { Action } from './ui/Action';
@@ -26,8 +26,10 @@ export function DocumentCheckContent({
   configured,
   onRetake,
   check,
+  summaryOnly = false,
 }: DocumentCheckProps & {
   check: ReturnType<typeof useDocumentCheck>;
+  summaryOnly?: boolean;
 }) {
   const { controller, state, failed } = check;
   const [correction, setCorrection] = useState(false);
@@ -85,7 +87,7 @@ export function DocumentCheckContent({
             {t('documentCheck.checkedAt', { moment: formatMoment(snapshot.checkedAt) })}
           </Text>
         )}
-        {renderReturnedCheck()}
+        {!summaryOnly && renderReturnedCheck()}
         {nextAction === 'check' && (
           <Action
             label={t('documentCheck.action.check')}
@@ -201,7 +203,6 @@ export function DocumentCheckContent({
     if (!result) return null;
     return (
       <>
-        <DocumentProviderChecks checks={result.providerChecks} />
         {result.submittedFields ? (
           <>
             <Text accessibilityRole="header" style={styles.label}>
@@ -217,29 +218,7 @@ export function DocumentCheckContent({
         ) : (
           <Text style={styles.body}>{t('documentCheck.noSubmitted')}</Text>
         )}
-        <Text style={styles.body}>
-          {result.replayed ? t('documentCheck.replayed') : t('documentCheck.fresh')}
-        </Text>
-        {result.receipt ? (
-          <View style={styles.detail}>
-            <Text style={styles.label}>{t('documentCheck.receipt.title')}</Text>
-            <Text style={styles.body}>
-              {t('documentCheck.receipt.version', { value: result.receipt.serviceVersion })}
-            </Text>
-            <Text style={styles.body}>
-              {t('documentCheck.receipt.answeredRequest', { value: result.receipt.answeredRequestSHA256 })}
-            </Text>
-            <Text style={styles.body}>
-              {t('documentCheck.receipt.observations', { value: result.receipt.observationSHA256 })}
-            </Text>
-          </View>
-        ) : (
-          <Text style={styles.body}>{t('documentCheck.receipt.missing')}</Text>
-        )}
-        <Text style={styles.body}>{t('documentCheck.operation', { value: result.operationID })}</Text>
-        {result.verificationID && (
-          <Text style={styles.body}>{t('documentCheck.verification', { value: result.verificationID })}</Text>
-        )}
+        <DocumentCheckReceipt result={result} />
       </>
     );
   }

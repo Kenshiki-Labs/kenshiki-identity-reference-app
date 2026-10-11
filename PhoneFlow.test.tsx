@@ -85,6 +85,9 @@ const mockDocumentSession = {
 };
 let mockDocumentSessionPending = true;
 jest.mock('@kenshiki/identity-capture', () => ({
+  documentFieldReadout: jest.requireActual<
+    typeof import('../../ReactNative/identity-capture/src/DocumentReadout')
+  >('../../ReactNative/identity-capture/src/DocumentReadout').documentFieldReadout,
   isCaptureErrorCode: jest.requireActual<typeof import('../../ReactNative/identity-capture/src/codes')>(
     '../../ReactNative/identity-capture/src/codes',
   ).isCaptureErrorCode,

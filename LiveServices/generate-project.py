@@ -23,7 +23,9 @@ target['sources'] = [str(base / 'Sources'), str(Path(__file__).parent / 'Referen
 for name in ('SensorSSNService', 'SensorPhoneService', 'SensorPhoneWireEvidence', 'WorkerDocumentChecker', 'SensorPhoneDocumentContext'):
     target['sources'].append(str(root / 'Hosts/SensorHost/Sources' / (name + '.swift')))
 for name in ('IdentityGateway', 'IdentityEvidenceRegula'):
-    target['dependencies'].append({'package': name, 'product': name})
+    dependency = {'package': name, 'product': name}
+    if dependency not in target['dependencies']:
+        target['dependencies'].append(dependency)
 # This host framework is built with its application, not distributed as a stable SDK artifact.
 target['settings']['base']['BUILD_LIBRARY_FOR_DISTRIBUTION'] = False
 spec['targets'] = {'IdentityCaptureRuntime': target}

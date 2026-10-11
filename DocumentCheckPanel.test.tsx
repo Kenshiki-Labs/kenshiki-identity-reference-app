@@ -5,6 +5,9 @@ import { invoke, mockSession as makeSession, required } from './__tests__/suppor
 import { DocumentCheckPanel } from './DocumentCheckPanel';
 
 jest.mock('@kenshiki/identity-capture', () => ({
+  documentFieldReadout: jest.requireActual<
+    typeof import('../../ReactNative/identity-capture/src/DocumentReadout')
+  >('../../ReactNative/identity-capture/src/DocumentReadout').documentFieldReadout,
   isCaptureErrorCode: jest.requireActual<typeof import('../../ReactNative/identity-capture/src/codes')>(
     '../../ReactNative/identity-capture/src/codes',
   ).isCaptureErrorCode,
