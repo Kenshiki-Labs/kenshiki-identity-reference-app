@@ -427,6 +427,13 @@ export type MessageValues = {
   readonly "inspection.title": undefined;
   readonly "inspection.original": undefined;
   readonly "inspection.normalized": undefined;
+  readonly "inspection.spatial": undefined;
+  readonly "inspection.portrait": undefined;
+  readonly "inspection.spatialExplanation": undefined;
+  readonly "inspection.resourceLimited": undefined;
+  readonly "inspection.spatialMissing": undefined;
+  readonly "inspection.portraitMissing": undefined;
+  readonly "inspection.portraitExplanation": undefined;
   readonly "inspection.image": {readonly representation: string | number; readonly side: string | number};
   readonly "inspection.originalExplanation": undefined;
   readonly "inspection.normalizedExplanation": undefined;
@@ -1415,6 +1422,13 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "inspection.title": "Inspect your card",
       "inspection.original": "Original photo",
       "inspection.normalized": "Lifted card",
+      "inspection.spatial": "Features",
+      "inspection.portrait": "Document portrait",
+      "inspection.spatialExplanation": "Observed image features: pink inside the candidate card mask, blue outside. These colors do not establish authenticity or confirm the physical card edge.",
+      "inspection.resourceLimited": "Feature analysis is unavailable for this image size or while another analysis is finishing. The original image remains unchanged.",
+      "inspection.spatialMissing": "Feature inspection is unavailable for this capture.",
+      "inspection.portraitMissing": "No extracted document portrait is saved for this capture.",
+      "inspection.portraitExplanation": "The portrait extracted from this card. This is not a selfie or a face-match result.",
       "inspection.image": [["arg", "side"], " · ", ["arg", "representation"]],
       "inspection.originalExplanation": "The original photo retained by the SDK, including the area around your card.",
       "inspection.normalizedExplanation": "The card extracted and straightened from this photo. This view does not establish authenticity or a record match.",

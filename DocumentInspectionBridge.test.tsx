@@ -25,6 +25,9 @@ test.each([
   ['back', 'original', 'documentBackInspection'],
   ['front', 'normalized', 'documentFrontNormalizedInspection'],
   ['back', 'normalized', 'documentBackNormalizedInspection'],
+  ['front', 'spatial', 'documentFrontSpatialInspection'],
+  ['back', 'spatial', 'documentBackSpatialInspection'],
+  ['front', 'portrait', 'documentFrontPortraitInspection'],
 ] as const)('%s %s is projected with the same original custody hash', async (side, representation, kind) => {
   let view!: renderer.ReactTestRenderer;
   await act(async () => {
@@ -49,6 +52,25 @@ test.each([
     'kind',
     'sessionId',
   ]);
+  await act(async () => {
+    view.unmount();
+  });
+});
+
+test('a back portrait request never falls back to front or selfie pixels', async () => {
+  let view!: renderer.ReactTestRenderer;
+  await act(async () => {
+    view = renderer.create(
+      <IdentityDocumentInspection
+        session={{ id: 'opaque-session' }}
+        side="back"
+        representation="portrait"
+        sha256="back-hash"
+        presentation={presentation}
+      />,
+    );
+  });
+  expect(view.root.findAll((node) => String(node.type) === 'NativePreview')).toHaveLength(0);
   await act(async () => {
     view.unmount();
   });

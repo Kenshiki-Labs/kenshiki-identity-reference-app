@@ -18,15 +18,29 @@ frameworks = ('IdentityCaptureRuntime', 'DocumentReader', 'DocumentReaderCore', 
 for name in frameworks:
     if not (products / (name + '.framework')).is_dir():
         parser.error('Missing built framework: ' + name)
+bridge_name = 'IdentityEvidenceOpenCVBridge'
+bridge = products / (bridge_name + '.framework')
+if not bridge.is_dir():
+    parser.error('Missing matching native bridge framework')
+subprocess.run(['python3', str(Path(__file__).with_name('verify_host_bridge.py')),
+                str(products / 'IdentityCaptureRuntime.framework/IdentityCaptureRuntime'),
+                str(bridge / bridge_name)], check=True)
 for name in ('regula.license', 'db.dat', 'regula-provenance.json'):
     if not (resources / name).is_file():
         parser.error('Missing licensed resource: ' + name)
 slice_path = host / 'node_modules/@kenshiki/identity-capture/Frameworks/IdentityCaptureRuntime.xcframework/ios-arm64'
 if not slice_path.is_dir():
     parser.error('Host does not contain the expected device framework slice')
+bridge_target = slice_path.parents[1] / (bridge_name + '.xcframework') / 'ios-arm64' / (bridge_name + '.framework')
+if not bridge_target.is_dir():
+    parser.error('Host does not contain the expected native bridge device slice')
 # Remove obsolete module interfaces from the disposable host's previous framework build.
 shutil.rmtree(slice_path / 'IdentityCaptureRuntime.framework')
 shutil.copytree(products / 'IdentityCaptureRuntime.framework', slice_path / 'IdentityCaptureRuntime.framework')
+# The runtime imports this private C ABI dynamically; copying only the runtime
+# would leave an older npm artifact with missing symbols at application launch.
+shutil.rmtree(bridge_target)
+shutil.copytree(bridge, bridge_target)
 vendor = host / 'ios/LiveServiceFrameworks'
 vendor.mkdir(exist_ok=True)
 for name in frameworks[1:]:

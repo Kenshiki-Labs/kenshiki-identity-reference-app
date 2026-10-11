@@ -135,14 +135,18 @@ test('license capture returns to Identity and both exact photos and read details
   expect(JSON.stringify(view.toJSON()).indexOf('document-check-panel')).toBeLessThan(
     JSON.stringify(view.toJSON()).indexOf('document-result'),
   );
-  const front = view.root.find((node) => String(node.type) === 'MockDocumentInspection');
+  const front = view.root.find(
+    (node) => String(node.type) === 'MockDocumentInspection' && node.props.representation === 'original',
+  );
   expect([property(front, 'side'), property(front, 'representation'), property(front, 'sha256')]).toEqual([
     'front',
     'original',
     'front-digest',
   ]);
   await tap('inspect-back');
-  const back = view.root.find((node) => String(node.type) === 'MockDocumentInspection');
+  const back = view.root.find(
+    (node) => String(node.type) === 'MockDocumentInspection' && node.props.representation === 'original',
+  );
   expect([property(back, 'side'), property(back, 'representation'), property(back, 'sha256')]).toEqual([
     'back',
     'original',

@@ -19,8 +19,19 @@ and licensed Regula resources matching the pinned packages. Use a disposable hos
    `regula.license`, `db.dat`, and `regula-provenance.json`.
 4. Build the host with its registered bundle identifier and distribution profile. Its signed
    App Attest entitlement is `production`; that exact team/bundle must be allowed by the Worker.
+5. Before installation, verify the actual framework binaries inside the final signed app:
 
-The configuration script replaces the disposable host's device framework slice, embeds the
+   ```sh
+   python3 Examples/ReactNativeCaptureHost/LiveServices/verify_host_bridge.py \
+     /absolute/IdentitySDKHost.app/Frameworks/IdentityCaptureRuntime.framework/IdentityCaptureRuntime \
+     /absolute/IdentitySDKHost.app/Frameworks/IdentityEvidenceOpenCVBridge.framework/IdentityEvidenceOpenCVBridge
+   ```
+
+   The check requires every runtime C bridge import to exist in the bundled arm64 bridge.
+   Stop installation if it fails; matching headers or an earlier source build do not establish
+   compatibility of the frameworks actually packaged in the app.
+
+The configuration script pairs the disposable host's runtime and C bridge device slices, embeds the
 reader frameworks/resources, and enables `KENSHIKI_LIVE_REFERENCE`. This is a source-built
 integration, not verification of an unchanged delivery tarball. Do not publish that modified
 node_modules tree as the binary SDK.
