@@ -131,8 +131,6 @@ async function renderApp() {
       await invoke(button, 'onPress');
     });
   }
-  await tap('open-driver-license');
-  await tap('finish-document');
   return { view, tap };
 }
 test('Phone opens from Identity, sending waits for receipt, Done and reopen keep all findings', async () => {

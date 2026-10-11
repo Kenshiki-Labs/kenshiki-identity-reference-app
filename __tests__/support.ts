@@ -151,6 +151,10 @@ export function mockSession<T extends Partial<CaptureSession>>(overrides: T) {
       ReturnType<CaptureSession['captureDocument']>,
       Parameters<CaptureSession['captureDocument']>
     >(unexpected),
+    restoreDocumentSelection: jest.fn<
+      ReturnType<CaptureSession['restoreDocumentSelection']>,
+      Parameters<CaptureSession['restoreDocumentSelection']>
+    >(async () => null),
     documentResult: jest.fn<
       ReturnType<CaptureSession['documentResult']>,
       Parameters<CaptureSession['documentResult']>

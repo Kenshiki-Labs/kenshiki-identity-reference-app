@@ -47,7 +47,9 @@ export function Page({
       : undefined;
   const close = onClose ?? back;
   const hasActions = actions !== undefined && actions !== null;
-  const closeLabel = onClose ? t(mode === 'sheet' ? 'common.done' : 'common.cancel') : t('common.back');
+  const closeLabel = t(
+    mode === 'sheet' ? 'common.done' : mode === 'camera' ? 'common.cancel' : 'common.back',
+  );
   const heading = title ? (
     <Text testID="page-title" accessibilityRole="header" style={pageStyles.title}>
       {title}
@@ -68,6 +70,7 @@ export function Page({
             {close && (
               <Action
                 label={closeLabel}
+                back={mode === 'scroll'}
                 onPress={close}
                 secondary
                 testID={onClose ? 'modal-cancel' : 'page-back'}

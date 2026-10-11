@@ -262,6 +262,7 @@
     "erase": "trash.fill",
     "developer": "hammer.fill",
     "chevron": "chevron.right",
+    "back": "chevron.left",
     // A row that opens Apple's documentation outside the app: SensorHost's `externalLink`.
     "externalLink": "arrow.up.right"
   },
@@ -271,6 +272,7 @@
     // The glyph on a row's colored tile, as in Settings.
     "tile": "white",
     // A row's disclosure chevron.
-    "chevron": "tertiaryLabel"
+    "chevron": "tertiaryLabel",
+    "back": "label"
   }
 }

@@ -291,8 +291,6 @@ async function openDocumentBoundPhone() {
   const f = await render(
     <App configuration={{ phone: phoneConfiguration, document: documentConfiguration }} />,
   );
-  await f.tap('open-driver-license');
-  await f.tap('finish-document');
   await f.tap('open-phone');
   return f;
 }

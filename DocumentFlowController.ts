@@ -152,6 +152,11 @@ export class DocumentFlowController {
       if (epoch === this.epoch) this.update({ busy: false });
     }
   }
+  restoreSelected = () =>
+    this.run('loading', 'load', async (session, epoch) => {
+      const observation = await session.restoreDocumentSelection();
+      if (observation && !this.closed && epoch === this.epoch) this.accept(observation);
+    });
   open = () => {
     if (this.current) return Promise.resolve();
     return this.run('loading', 'load', async (session, epoch) => {

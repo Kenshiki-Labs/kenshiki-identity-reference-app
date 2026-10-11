@@ -7,7 +7,7 @@ import {
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CaptureFlowController, type CompletedCapture } from './CaptureFlowController';
 import type { DocumentCheckPort, DocumentCheckState } from './DocumentCheckController';
-import type { SavedDocumentCapture } from './DocumentFlowController';
+import { DocumentFlowController, type SavedDocumentCapture } from './DocumentFlowController';
 import { type ErrorText, errorCode, errorText } from './HolderText';
 import { phonePrerequisite, ssnPrerequisite } from './IdentityPrerequisites';
 import { t } from './locales/i18n';
@@ -178,6 +178,29 @@ export function useIdentityWorkspace(
     let restoring = true;
     const isActive = () => active.current && restoring && latestRestoreAttempt.current === restoreAttempt;
     const controller = new CaptureFlowController(IdentityCaptureSession.create, configuration, () => {});
+    const documentController = new DocumentFlowController(
+      IdentityCaptureSession.create,
+      configuration,
+      () => {},
+    );
+    async function restoreDocument() {
+      await documentController.restoreSelected();
+      if (!isActive()) return;
+      if (documentController.state.sheet) {
+        setRestoreFailure(documentController.state.sheet.message);
+        return;
+      }
+      if (!configuration.results) setRestoreFailure(undefined);
+      if (!documentController.state.completed && !documentController.state.draft) return;
+      const restored = await documentController.handoff();
+      if (!restored) return;
+      if (!isActive()) {
+        await restored.session.release();
+        return;
+      }
+      ownedDocument.current = restored;
+      setDocument(restored);
+    }
     const reportRestoreFailure = (error: unknown) => {
       if (isActive())
         setRestoreFailure(errorText(errorCode(error), restoreErrors, t('hub.restoreError.other')));
@@ -206,7 +229,7 @@ export function useIdentityWorkspace(
       if (isActive()) setRestoreFailure(undefined);
     }
     async function finishRestore() {
-      await controller.dispose();
+      await Promise.all([controller.dispose(), documentController.dispose()]);
       if (!isActive()) return;
       opening.current = false;
       setOpeningResults(false);
@@ -215,6 +238,7 @@ export function useIdentityWorkspace(
       try {
         await custody.releasing;
         if (isActive() && configuration.results) await restoreSavedResult();
+        if (isActive() && configuration.document && !ownedDocument.current) await restoreDocument();
       } catch (error) {
         reportRestoreFailure(error);
       } finally {
@@ -224,7 +248,11 @@ export function useIdentityWorkspace(
     restore().catch(reportRestoreFailure);
     return () => {
       restoring = false;
-      custody.releasing = Promise.all([custody.releasing, controller.dispose()]);
+      custody.releasing = Promise.all([
+        custody.releasing,
+        controller.dispose(),
+        documentController.dispose(),
+      ]);
       custody.releasing.catch((error: unknown) => {
         reportRestoreFailure(error);
         custody.reportFailure(error);

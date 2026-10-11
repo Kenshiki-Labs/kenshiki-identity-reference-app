@@ -133,6 +133,7 @@ export const symbol = {
   erase: "trash.fill",
   developer: "hammer.fill",
   chevron: "chevron.right",
+  back: "chevron.left",
   externalLink: "arrow.up.right",
 } as const;
 
@@ -140,4 +141,5 @@ export const symbol = {
 export const symbolTint = {
   tile: "white",
   chevron: "tertiaryLabel",
+  back: "label",
 } as const;

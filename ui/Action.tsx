@@ -1,7 +1,9 @@
+import { IdentitySymbol } from '@kenshiki/identity-capture';
 import { useState } from 'react';
 import { Pressable, Text } from 'react-native';
 import { t } from '../locales/i18n';
 import { styles } from './styles';
+import { size, symbol, symbolTint } from './tokens.generated';
 
 export function Action({
   label,
@@ -10,8 +12,10 @@ export function Action({
   testID,
   secondary = false,
   destructive = false,
+  back = false,
 }: Readonly<{
   label: string;
+  back?: boolean;
   onPress: () => unknown;
   disabled?: boolean | undefined;
   testID?: string | undefined;
@@ -33,12 +37,24 @@ export function Action({
     <>
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={label}
         accessibilityState={{ disabled }}
         disabled={disabled}
         testID={testID}
         onPress={press}
-        style={[secondary || destructive ? styles.plain : styles.action, disabled && styles.disabled]}
+        style={[
+          secondary || destructive ? styles.plain : styles.action,
+          back && { flexDirection: 'row', alignItems: 'center' },
+          disabled && styles.disabled,
+        ]}
       >
+        {back && (
+          <IdentitySymbol
+            name={symbol.back}
+            tint={symbolTint.back}
+            style={{ width: size.iconGlyph, height: size.iconTile }}
+          />
+        )}
         <Text
           style={[
             secondary || destructive ? styles.plainText : styles.actionText,

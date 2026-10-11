@@ -1,4 +1,10 @@
-import type { Configuration, DocumentCheckSnapshot, DocumentObservation } from '@kenshiki/identity-capture';
+import {
+  type CaptureSession,
+  type Configuration,
+  type DocumentCheckSnapshot,
+  type DocumentObservation,
+  IdentityCaptureSession,
+} from '@kenshiki/identity-capture';
 import renderer, { act } from 'react-test-renderer';
 import { completedPhone, phoneConfiguration } from './__tests__/phoneFixture';
 import { mockSession, required } from './__tests__/support';
@@ -275,4 +281,43 @@ test('newer document-check state supersedes a late restore and requires phone re
   await act(async () => {
     view.unmount();
   });
+});
+
+test('relaunch restores the SDK selection and its exact accepted check without opening the license picker', async () => {
+  const session = mockSession({
+    subscribe: jest.fn(() => () => {}),
+    restoreDocumentSelection: jest.fn(async () => document),
+    documentResult: jest.fn(async () => document),
+    documentCheckRestore: jest.fn(async () => checked),
+    cancel: jest.fn(async () => {}),
+    release: jest.fn(async () => {}),
+  });
+  const createSession: (configuration: Configuration) => Promise<CaptureSession> =
+    IdentityCaptureSession.create;
+  jest.mocked(createSession).mockResolvedValueOnce(session);
+  const custody = createControllerCustody();
+  const navigate = jest.fn();
+  let workspace: IdentityWorkspace | undefined;
+  function Harness() {
+    workspace = useIdentityWorkspace(configuration, () => {}, navigate, custody);
+    return null;
+  }
+  let view!: renderer.ReactTestRenderer;
+  await act(async () => {
+    view = renderer.create(<Harness />);
+  });
+  expect(required(workspace).phone.blocked).toBeUndefined();
+  expect(required(workspace).phone.configuration.phone?.checkedDocumentID).toBe('front');
+  expect(session.listDocuments).not.toHaveBeenCalled();
+  expect(session.documentCheck).not.toHaveBeenCalled();
+  expect(session.phoneSend).not.toHaveBeenCalled();
+  expect(session.release).not.toHaveBeenCalled();
+  await act(async () => {
+    required(workspace).phone.start();
+  });
+  expect(navigate).toHaveBeenCalledWith('phone');
+  await act(async () => {
+    view.unmount();
+  });
+  expect(session.release).toHaveBeenCalledTimes(1);
 });

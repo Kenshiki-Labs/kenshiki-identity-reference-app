@@ -112,8 +112,6 @@ async function renderApp(config = configuration) {
     });
   }
   if (config.phone) {
-    await tap('open-driver-license');
-    await tap('finish-document');
     await tap('open-phone');
     await tap('phone-done');
   }

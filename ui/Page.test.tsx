@@ -1,3 +1,4 @@
+import { IdentitySymbol } from '@kenshiki/identity-capture';
 import { createNavigationContainerRef, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ScrollView, Text } from 'react-native';
@@ -6,6 +7,8 @@ import { invoke, required } from '../__tests__/support';
 import { NativeSheet } from './NativeSheet';
 import { Page } from './Page';
 import { Wordmark } from './Wordmark';
+
+jest.mock('@kenshiki/identity-capture', () => ({ IdentitySymbol: 'MockSymbol' }));
 
 test.each(['scroll', 'camera', 'sheet'] as const)(
   '%s uses one brand and hides all underlying controls when covered',
@@ -67,3 +70,26 @@ test('Back pops a detail screen; a recovery sheet has no implicit route dismissa
   expect(navigation.getCurrentRoute()?.name).toBe('Home');
   await act(async () => view.unmount());
 });
+
+test.each(['scroll', 'camera', 'sheet'] as const)(
+  'custom %s navigation preserves its handler and uses the shared affordance',
+  async (mode) => {
+    const close = jest.fn();
+    let view!: ReactTestRenderer;
+    await act(async () => {
+      view = create(<Page mode={mode} onClose={close} />);
+    });
+    const control = view.root.findByProps({ testID: 'modal-cancel' });
+    expect(control.props.label).toBe(mode === 'camera' ? 'Cancel' : mode === 'sheet' ? 'Done' : 'Back');
+    const chevrons = view.root.findAllByType(IdentitySymbol);
+    expect(chevrons).toHaveLength(mode === 'scroll' ? 1 : 0);
+    if (mode === 'scroll') expect(required(chevrons[0]).props.name).toBe('chevron.left');
+    await act(async () => {
+      await invoke(control, 'onPress');
+    });
+    expect(close).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      view.unmount();
+    });
+  },
+);

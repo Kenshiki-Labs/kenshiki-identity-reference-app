@@ -35,6 +35,7 @@ const checked: DocumentCheckSnapshot = {
 /** These native answers let UI journeys satisfy the same document prerequisite as a device. */
 export function documentSessionMethods() {
   return {
+    restoreDocumentSelection: jest.fn(async () => document),
     listDocuments: jest.fn(async () => [
       { workflowID: document.workflowID, ...front },
       { workflowID: document.workflowID, ...back },
