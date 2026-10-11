@@ -258,7 +258,6 @@ export function PhoneFlow({
 }
 
 export function PhoneResultDetails({ receipt }: Readonly<{ receipt: PhoneCheckReceipt }>) {
-  const [showReceipt, setShowReceipt] = useState(false);
   const comparison = receipt.subjectComparison;
   const evidence = comparison?.evidence;
   const stopped = phoneCheckStopped(receipt);
@@ -320,33 +319,20 @@ export function PhoneResultDetails({ receipt }: Readonly<{ receipt: PhoneCheckRe
           )}
         </>
       )}
-      <Action
-        label={showReceipt ? t('phone.result.hideReceipt') : t('phone.result.showReceipt')}
-        secondary
-        onPress={() => setShowReceipt((value) => !value)}
-        testID="phone-receipt-details"
-      />
-      {showReceipt && (
+      <Row label={t('phone.result.challenge')} value={receipt.challengeID} />
+      <Row label={t('phone.result.messageDigest')} value={receipt.messageHash} />
+      <Row label={t('phone.result.requestReference')} value={evidence?.requestID} />
+      {receipt.subscriberComparison && (
         <>
-          <Row label={t('phone.result.challenge')} value={receipt.challengeID} />
-          <Row label={t('phone.result.messageDigest')} value={receipt.messageHash} />
-          <Row label={t('phone.result.requestReference')} value={evidence?.requestID} />
-          {receipt.subscriberComparison && (
-            <>
-              <Row
-                label={t('phone.result.comparisonReference')}
-                value={receipt.subscriberComparison.operationID}
-              />
-              <Row
-                label={t('phone.result.policyVersion')}
-                value={receipt.subscriberComparison.evaluation.policyVersion}
-              />
-              <Row
-                label={t('phone.result.profileVersion')}
-                value={receipt.subscriberComparison.profileVersion}
-              />
-            </>
-          )}
+          <Row
+            label={t('phone.result.comparisonReference')}
+            value={receipt.subscriberComparison.operationID}
+          />
+          <Row
+            label={t('phone.result.policyVersion')}
+            value={receipt.subscriberComparison.evaluation.policyVersion}
+          />
+          <Row label={t('phone.result.profileVersion')} value={receipt.subscriberComparison.profileVersion} />
         </>
       )}
     </View>

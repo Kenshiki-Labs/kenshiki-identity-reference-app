@@ -780,8 +780,6 @@ export type MessageValues = {
   readonly "phone.result.noFieldGrades": undefined;
   readonly "phone.result.noNumberChecks": undefined;
   readonly "phone.result.noEvidence": undefined;
-  readonly "phone.result.showReceipt": undefined;
-  readonly "phone.result.hideReceipt": undefined;
   readonly "phone.result.challenge": undefined;
   readonly "phone.result.messageDigest": undefined;
   readonly "phone.result.requestReference": undefined;
@@ -1815,8 +1813,6 @@ export const locales: {readonly [C in LocaleCode]: LocaleDefinition} = {
       "phone.result.noFieldGrades": "No individual field grades were returned.",
       "phone.result.noNumberChecks": "No number checks were returned.",
       "phone.result.noEvidence": "Number check details are not present in this saved receipt. Opening it does not run another check.",
-      "phone.result.showReceipt": "Show receipt details",
-      "phone.result.hideReceipt": "Hide receipt details",
       "phone.result.challenge": "Challenge reference",
       "phone.result.messageDigest": "Message digest",
       "phone.result.requestReference": "Number check request reference",

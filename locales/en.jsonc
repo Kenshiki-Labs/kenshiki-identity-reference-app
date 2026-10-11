@@ -1005,8 +1005,6 @@
       "noFieldGrades": "No individual field grades were returned.",
       "noNumberChecks": "No number checks were returned.",
       "noEvidence": "Number check details are not present in this saved receipt. Opening it does not run another check.",
-      "showReceipt": "Show receipt details",
-      "hideReceipt": "Hide receipt details",
       "challenge": "Challenge reference",
       "messageDigest": "Message digest",
       "requestReference": "Number check request reference",

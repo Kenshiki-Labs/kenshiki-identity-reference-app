@@ -164,7 +164,7 @@ test('Phone opens from Identity, sending waits for receipt, Done and reopen keep
     expect(shown).toContain(value);
   expect(shown).not.toContain('Subscriber details differ');
   expect(shown).not.toContain('synthetic-source');
-  await tap('phone-receipt-details');
+  expect(view.root.findAllByProps({ testID: 'phone-receipt-details' })).toHaveLength(0);
   expect(JSON.stringify(view.toJSON())).toContain('a'.repeat(64));
   await tap('phone-done');
   await tap('open-phone');
