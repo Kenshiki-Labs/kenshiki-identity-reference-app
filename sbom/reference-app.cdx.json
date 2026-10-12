@@ -37278,8 +37278,7 @@
     "tools": [
       {
         "name": "cli",
-        "vendor": "npm",
-        "version": "10.9.7"
+        "vendor": "npm"
       }
     ]
   },

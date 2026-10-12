@@ -8,7 +8,8 @@
   download URL and SHA-256 that build-manifest.json records for vendor frameworks, and the attributions in
   LICENSES/ (a version only where the file name states one).
 
-Timestamps and serial numbers are left out so the files change only when the inputs do.
+Timestamps, serial numbers and the generating npm's version are left out so the files change only when
+the inputs do.
 Usage: python3 scripts/sbom.py [--check] [--package DIR]
 """
 import argparse
@@ -29,6 +30,9 @@ def npm_sbom():
         ['npm', 'sbom', '--sbom-format', 'cyclonedx', '--sbom-type', 'application', '--package-lock-only'], cwd=ROOT))
     document.pop('serialNumber', None)
     document.get('metadata', {}).pop('timestamp', None)
+    # The generating npm's version varies by machine; keep which tool wrote the file, not its patch level.
+    for tool in document.get('metadata', {}).get('tools', []):
+        tool.pop('version', None)
     # npm names the root after the checkout folder; use the package name so every checkout agrees.
     document['metadata']['component']['name'] = json.loads((ROOT / 'package.json').read_text())['name']
     return document
