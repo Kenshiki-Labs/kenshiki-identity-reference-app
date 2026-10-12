@@ -98,7 +98,7 @@ def profile_result(profile, path, team, bundle_id, identities, now, required=Non
         identifier = None
         errors.append('Profile UUID is invalid.')
     certificates = profile.get('DeveloperCertificates', [])
-    hashes = sorted({hashlib.sha1(cert).hexdigest().upper() for cert in certificates if isinstance(cert, bytes)}) if isinstance(certificates, list) else []
+    hashes = sorted({hashlib.sha1(cert, usedforsecurity=False).hexdigest().upper() for cert in certificates if isinstance(cert, bytes)}) if isinstance(certificates, list) else []
     usable = sorted(set(hashes) & identities)
     if not usable:
         errors.append('No profile certificate matches an available valid signing identity/private key.')

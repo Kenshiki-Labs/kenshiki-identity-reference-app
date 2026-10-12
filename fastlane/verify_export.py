@@ -97,7 +97,7 @@ def validate_profile(profile, preflight, now=None):
     if expiry.tzinfo is None:
         expiry = expiry.replace(tzinfo=dt.timezone.utc)
     require(expiry > now, 'Provisioning profile expired')
-    certificates = {hashlib.sha1(cert).hexdigest().upper() for cert in profile.get('DeveloperCertificates', [])}
+    certificates = {hashlib.sha1(cert, usedforsecurity=False).hexdigest().upper() for cert in profile.get('DeveloperCertificates', [])}
     require(selected['certificate_sha1'].upper() in certificates, 'Profile certificate mismatch')
     for key, wanted in preflight['required_entitlements'].items():
         actual = entitlements.get(key)
@@ -166,7 +166,7 @@ def verify_app(app, inputs, preflight, scratch):
     validate_signed_entitlements(entitlements, preflight)
     prefix = str(scratch / 'signer')
     run('/usr/bin/codesign', '-d', '--extract-certificates', prefix, str(app))
-    actual_cert = hashlib.sha1(Path(prefix + '0').read_bytes()).hexdigest().upper()
+    actual_cert = hashlib.sha1(Path(prefix + '0').read_bytes(), usedforsecurity=False).hexdigest().upper()
     require(actual_cert == preflight['selected_profile']['certificate_sha1'].upper(), 'Actual signing certificate mismatch')
     verify_binary(app / info['CFBundleExecutable'])
     for framework in app.rglob('*.framework'):
