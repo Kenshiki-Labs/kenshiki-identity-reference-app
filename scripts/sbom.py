@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Write the app's software bill of materials (CycloneDX 1.5 JSON) into sbom/.
 
-- sbom/reference-app.cdx.json: every npm package the app installs, from `npm sbom` on the installed tree.
+- sbom/reference-app.cdx.json: every npm package the app installs, from `npm sbom` on package-lock.json, so the
+  file is the same on every platform (an installed tree differs: macOS adds optional packages such as fsevents).
 - sbom/identity-capture-native.cdx.json: the native frameworks inside @kenshiki/identity-capture, which npm
   cannot see. Each comes from what the installed package records: the framework's Info.plist version, the
   download URL and SHA-256 that build-manifest.json records for vendor frameworks, and the attributions in
@@ -25,7 +26,7 @@ PACKAGE = ROOT / 'node_modules/@kenshiki/identity-capture'
 
 def npm_sbom():
     document = json.loads(subprocess.check_output(
-        ['npm', 'sbom', '--sbom-format', 'cyclonedx', '--sbom-type', 'application'], cwd=ROOT))
+        ['npm', 'sbom', '--sbom-format', 'cyclonedx', '--sbom-type', 'application', '--package-lock-only'], cwd=ROOT))
     document.pop('serialNumber', None)
     document.get('metadata', {}).pop('timestamp', None)
     # npm names the root after the checkout folder; use the package name so every checkout agrees.
