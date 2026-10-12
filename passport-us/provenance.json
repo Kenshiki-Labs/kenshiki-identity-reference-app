@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "scope": "US passport device integration; not a production trust-source approval",
+  "scope": "US passport device integration; trust-source approval for a deployment is a separate decision",
   "sourceRepository": "Kenshiki-Labs/pulse-ios",
   "sourceRevision": "b40f49eef6f9ce0bc1b1140cd0855d7b761dd43c",
   "sourcePath": "Samples/KenshikiDeviceDemo/csca_us.pem",

@@ -70,7 +70,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         document["requiresLocation"] = false
         configuration["document"] = document
         #if KENSHIKI_LIVE_REFERENCE
-        // Owner-authorized nonproduction composition; absent from the binary reference delivery.
+        // The live-services composition: compiled only into the source-built reference runtime, never the binary package.
         // The runtime resolves the selected checked document from encrypted native custody.
         do {
           guard let directory = Bundle.main.url(forResource: "Regula", withExtension: nil,

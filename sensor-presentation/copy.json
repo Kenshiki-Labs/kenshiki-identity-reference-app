@@ -841,7 +841,7 @@
   "telephony.row.simInserted": "Carrier SIM match",
   "threeProofs.check.attestation": "Apple's own check of the app reports its state, and a challenge still outstanding is not a completed attestation. The two are kept apart on the continuity screen for that reason.",
   "threeProofs.check.completeness": "Whether the history you were handed is the whole history used to need a commitment published somewhere else. It no longer does: every reading carries the counter Apple keeps for this app's key, which the app cannot set or skip, so readings removed from a run leave a gap in the count that the run itself shows.",
-  "threeProofs.check.coverage": "This demonstration signs its sensor readings. Document capture and visits live in the Pulse app, and the position used for the Air check is not yet written into the evidence here. Shared mechanisms make the rest possible; what is actually signed is what can be claimed.",
+  "threeProofs.check.coverage": "This app signs its sensor readings. Document capture and visits live in the Pulse app, and the position used for the Air check is not yet written into the evidence here. Shared mechanisms make the rest possible; what is actually signed is what can be claimed.",
   "threeProofs.check.header": "What can be verified",
   "threeProofs.check.how": "A signature establishes that the signed content was produced with the matching private key and has not changed since. A linked chain establishes the relationships and the ordering recorded inside the history you were given.",
   "threeProofs.check.tamper": "There is a button beside the export that alters a reading after it was signed. Use it, export again, and watch the check refuse that reading and name it. A check that never fails proves nothing.",

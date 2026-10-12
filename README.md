@@ -5,7 +5,7 @@ Start here to run an independent app against the delivered SDK. You need both
 the same build. Their accompanying `SHA256SUMS` identifies the exact bytes; the delivery's
 distribution note explains verification.
 The generator installs the binary tarball; it does not require an SDK source checkout.
-This is editable reference UI for the adopting team, not a finished enrollment app. What it
+This is editable reference UI: the adopting team builds its enrollment app from it. What it
 leaves to the adopting app is listed under [Decisions for the adopting app](#decisions-for-the-adopting-app).
 
 The baseline is **bare React Native 0.87.1, React 19.2.3, New Architecture, iOS 18+**. Android,
@@ -204,7 +204,7 @@ For U.S. passport device integration, this source checkout includes the existing
 at `passport-us/masterList.pem`. Pass that path with `--trust-anchors` when generating the device
 host. `passport-us/provenance.json` pins its source and all seven certificate fingerprints.
 This is a device-integration profile: original acquisition, signed master-list provenance and
-current revocation coverage remain unverified. It is not a production trust-source approval.
+current revocation coverage remain unverified. Approving it as a trust source for a deployment is a separate decision.
 Do not change the SDK's signature or trust-failure handling to make a passport pass.
 
 To prepare the existing face models from this source checkout for device evaluation:

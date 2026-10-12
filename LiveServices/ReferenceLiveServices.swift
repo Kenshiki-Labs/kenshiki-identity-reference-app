@@ -4,7 +4,7 @@ internal import IdentityEvidenceRegula
 internal import IdentityGateway
 internal import IdentityPhonePossession
 
-/// This composition is compiled only into the owner-authorized nonproduction host framework.
+/// This composition is compiled only into the source-built reference runtime, never the binary package.
 /// Supplier credentials stay on the service; installation authorization and subject custody stay
 /// native. Each capture session gets its own document selection and phone context resolver.
 extension CaptureRuntime {

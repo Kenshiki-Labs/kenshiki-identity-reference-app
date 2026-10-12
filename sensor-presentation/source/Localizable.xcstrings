@@ -9608,7 +9608,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This demonstration signs its sensor readings. Document capture and visits live in the Pulse app, and the position used for the Air check is not yet written into the evidence here. Shared mechanisms make the rest possible; what is actually signed is what can be claimed."
+            "value": "This app signs its sensor readings. Document capture and visits live in the Pulse app, and the position used for the Air check is not yet written into the evidence here. Shared mechanisms make the rest possible; what is actually signed is what can be claimed."
           }
         }
       }

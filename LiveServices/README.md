@@ -1,8 +1,9 @@
-# Live nonproduction reference host
+# Live services reference composition
 
 This composition connects the React host's selected, checked driver's license to the existing
-Worker phone service, backed by Camara's Twilio/Vonage integrations. The owner has authorized
-these suppliers for nonproduction use. Their retention qualification remains a production task.
+Worker phone service, backed by Camara's Twilio/Vonage integrations. These suppliers are
+authorized for reference and evaluation builds; their retention qualification is completed before
+a deployment relies on them.
 
 The shipped binary SDK remains provider-neutral. This build compiles its runtime sources and
 host adapters into one framework, so it does not link a second copy of SDK custody modules into

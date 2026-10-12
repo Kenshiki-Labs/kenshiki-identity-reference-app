@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the nonproduction source-built runtime; never modifies the binary delivery.
+"""Generate the source-built reference runtime; never modifies the binary delivery.
 Requires PyYAML and XcodeGen. Usage: generate-project.py /absolute/build-directory
 """
 import argparse
