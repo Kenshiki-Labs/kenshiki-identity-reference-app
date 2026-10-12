@@ -1,0 +1,315 @@
+import type { CaptureEvent, CaptureSession, PhoneCheckSnapshot } from '@kenshiki/identity-capture';
+import { mockSession as makeSession } from '../testing/support';
+import { PhoneFlowController } from './PhoneFlowController';
+
+const ready: PhoneCheckSnapshot = {
+  stage: 'start',
+  busy: false,
+  failure: null,
+  pending: false,
+  sent: false,
+  receipt: null,
+  recordedAt: null,
+  sendAgainAt: null,
+  challengeReserved: false,
+};
+const waiting: PhoneCheckSnapshot = { ...ready, stage: 'waiting', pending: true, sent: true };
+const complete: PhoneCheckSnapshot = {
+  ...ready,
+  stage: 'completed',
+  receipt: {
+    challengeID: 'synthetic',
+
+    receivedAt: '2026-10-08T12:00:00Z',
+    completedAt: '2026-10-08T12:00:01Z',
+    subjectComparison: {
+      status: 'contradicted',
+
+      checkedAt: '2026-10-08T12:00:01Z',
+    },
+    subscriberFailure: null,
+  },
+};
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+async function tick() {
+  for (let i = 0; i < 15; ++i) await Promise.resolve();
+}
+function fixture(initial = ready) {
+  let snapshot = initial;
+  let listener: ((event: CaptureEvent) => void) | undefined;
+  const off = jest.fn(() => {
+    listener = undefined;
+  });
+  const native = {
+    subscribe: jest.fn((value: (event: CaptureEvent) => void) => {
+      listener = value;
+      return off;
+    }),
+    phoneSnapshot: jest.fn(async () => snapshot),
+    phoneCancel: jest.fn(async () => snapshot),
+    phoneSend: jest.fn(async (_consent: true) => {
+      snapshot = waiting;
+      return snapshot;
+    }),
+    phoneResume: jest.fn(async () => snapshot),
+    phoneRetrySave: jest.fn(async () => snapshot),
+    phoneStartOver: jest.fn(async (_consent: true) => {
+      snapshot = { ...ready, pending: true, receipt: snapshot.receipt };
+      return snapshot;
+    }),
+    phoneErase: jest.fn(async () => {
+      snapshot = ready;
+    }),
+    release: jest.fn(async () => {}),
+  };
+  const session = makeSession(native);
+  const create = jest.fn(async () => session);
+  const c = new PhoneFlowController(create, {}, jest.fn());
+  return {
+    c,
+    native,
+    create,
+    session,
+    off,
+    commit: (value: PhoneCheckSnapshot) => {
+      snapshot = value;
+    },
+    emit: (value: PhoneCheckSnapshot) => {
+      snapshot = value;
+      listener?.({ type: 'phoneSnapshot', snapshot: value });
+    },
+  };
+}
+test('opening and reopening only read local state and do not send or poll', async () => {
+  const f = fixture(complete);
+  await f.c.open();
+  expect(f.native.phoneSend).not.toHaveBeenCalled();
+  expect(f.native.phoneResume).not.toHaveBeenCalled();
+  expect(f.c.state.snapshot?.receipt).toEqual(complete.receipt);
+  const saved = await f.c.handoff();
+  await f.c.dispose();
+  expect(f.off).toHaveBeenCalledTimes(1);
+  expect(f.native.release).not.toHaveBeenCalled();
+  const next = new PhoneFlowController(f.create, {}, jest.fn(), saved);
+  await next.open();
+  expect(next.state.snapshot?.receipt?.subjectComparison?.status).toBe('contradicted');
+  expect(f.create).toHaveBeenCalledTimes(1);
+  await next.dispose();
+});
+test('sent waits for the native service receipt and asynchronous receipt events keep every detail', async () => {
+  const f = fixture();
+  await f.c.open();
+  await f.c.send();
+  expect(f.native.phoneSend).toHaveBeenCalledWith(true);
+  expect(f.c.state.snapshot?.receipt).toBeNull();
+  f.emit(complete);
+  expect(f.c.state.snapshot?.receipt).toEqual(complete.receipt);
+  expect(f.c.state.snapshot?.receipt?.subjectComparison?.status).toBe('contradicted');
+});
+test('duplicate sends cannot overlap while Apple composition is in progress', async () => {
+  const f = fixture();
+  await f.c.open();
+  const composed = deferred<PhoneCheckSnapshot>();
+  f.native.phoneSend.mockImplementationOnce(() => composed.promise);
+  const sending = f.c.send();
+  await tick();
+  await f.c.send();
+  expect(f.native.phoneSend).toHaveBeenCalledTimes(1);
+  composed.resolve(waiting);
+  await sending;
+});
+test('a command response cannot overwrite a newer asynchronously published receipt', async () => {
+  const f = fixture();
+  await f.c.open();
+  const composed = deferred<PhoneCheckSnapshot>();
+  f.native.phoneSend.mockImplementationOnce(() => composed.promise);
+  const sending = f.c.send();
+  await tick();
+  f.emit(complete);
+  composed.resolve(waiting);
+  await sending;
+  expect(f.c.state.snapshot?.receipt).toBe(complete.receipt);
+});
+test('backgrounding drains native work before handoff and ignores late command snapshots', async () => {
+  const f = fixture();
+  await f.c.open();
+  const composed = deferred<PhoneCheckSnapshot>();
+  const cancelled = deferred<PhoneCheckSnapshot>();
+  f.native.phoneSend.mockImplementationOnce(() => composed.promise);
+  f.native.phoneCancel.mockImplementationOnce(() => cancelled.promise);
+  const sending = f.c.send();
+  await tick();
+  const pausing = f.c.pause();
+  composed.resolve({ ...ready, stage: 'compose' });
+  await sending;
+  expect(f.c.state.busy).toBe(true);
+  f.commit(complete);
+  cancelled.resolve(complete);
+  await pausing;
+  expect(f.c.state.snapshot?.receipt).toBe(complete.receipt);
+  expect(f.c.state.busy).toBe(false);
+});
+test('reopened pending check explicitly resumes the same operation with no automatic send', async () => {
+  const f = fixture(waiting);
+  await f.c.open();
+  expect(f.c.state.paused).toBe(true);
+  await f.c.resume();
+  expect(f.native.phoneResume).toHaveBeenCalledTimes(1);
+  expect(f.native.phoneSend).not.toHaveBeenCalled();
+  expect(f.native.phoneStartOver).not.toHaveBeenCalled();
+});
+test('replacement requires a sheet confirmation and a failed replacement retains the previous receipt', async () => {
+  const f = fixture(complete);
+  await f.c.open();
+  f.c.ask('restart');
+  expect(f.native.phoneStartOver).not.toHaveBeenCalled();
+  await f.c.confirm();
+  expect(f.native.phoneStartOver).toHaveBeenCalledWith(true);
+  f.native.phoneSend.mockRejectedValueOnce({ code: 'unavailable' });
+  await f.c.send();
+  expect(f.c.state.snapshot?.receipt).toBe(complete.receipt);
+  expect(f.c.state.sheet?.kind).toBe('error');
+});
+test('local save recovery never sends another message', async () => {
+  const f = fixture({ ...waiting, stage: 'finishing', failure: 'storageUnavailable' });
+  await f.c.open();
+  await f.c.save();
+  expect(f.native.phoneRetrySave).toHaveBeenCalledTimes(1);
+  expect(f.native.phoneSend).not.toHaveBeenCalled();
+});
+test('explicit erase drains first and does not clear the displayed result on failure', async () => {
+  const f = fixture(complete);
+  await f.c.open();
+  f.c.ask('erase');
+  expect(f.native.phoneErase).not.toHaveBeenCalled();
+  f.native.phoneErase.mockRejectedValueOnce({ code: 'storageUnavailable' });
+  await f.c.confirm();
+  expect(f.native.phoneCancel).toHaveBeenCalledTimes(1);
+  expect(f.c.state.snapshot?.receipt).toBe(complete.receipt);
+  f.c.ask('erase');
+  await f.c.confirm();
+  expect(f.c.state.snapshot?.receipt).toBeNull();
+});
+test('failed cancellation keeps ownership and blocks returning a still active session', async () => {
+  const f = fixture(waiting);
+  await f.c.open();
+  f.native.phoneCancel.mockRejectedValueOnce({ code: 'unavailable' });
+  await expect(f.c.handoff()).rejects.toEqual({ code: 'unavailable' });
+  expect(f.native.release).not.toHaveBeenCalled();
+  expect(f.c.state.sheet?.kind).toBe('error');
+});
+test.each([false, true])(
+  'closing during creation drains custody without opening it (release fails: %s)',
+  async (releaseFails) => {
+    const f = fixture();
+    const created = deferred<CaptureSession>();
+    const c = new PhoneFlowController(() => created.promise, {}, jest.fn());
+    const opening = c.open();
+    const released = deferred<void>();
+    const failure = { code: 'operationFailed' };
+    f.native.release.mockImplementation(async () => {
+      await released.promise;
+      if (releaseFails) throw failure;
+    });
+    let closed = false;
+    const closing = c.dispose().then(
+      () => {
+        closed = true;
+        return undefined;
+      },
+      (error: unknown) => {
+        closed = true;
+        return error;
+      },
+    );
+    await tick();
+    expect(closed).toBe(false);
+    created.resolve(f.session);
+    await tick();
+    expect(closed).toBe(false);
+    released.resolve();
+    await opening;
+    expect(await closing).toEqual(releaseFails ? failure : undefined);
+    if (releaseFails) await expect(c.dispose()).rejects.toEqual(failure);
+    expect(f.native.release).toHaveBeenCalledTimes(1);
+    expect(f.native.phoneSnapshot).not.toHaveBeenCalled();
+  },
+);
+test('a missing native provider shows a recoverable sheet and still allows exit', async () => {
+  const c = new PhoneFlowController(
+    async () => {
+      throw { code: 'phoneNotConfigured' };
+    },
+    {},
+    jest.fn(),
+  );
+  await c.open();
+  expect(c.state.sheet?.kind).toBe('error');
+  expect(await c.handoff()).toBeUndefined();
+});
+test('a changed installation hides the previous personal result until context is re-established', async () => {
+  const f = fixture(complete);
+  await f.c.open();
+  f.native.phoneSnapshot.mockRejectedValueOnce({ code: 'contextChanged' });
+  await f.c.open();
+  expect(f.c.state.snapshot).toBeUndefined();
+  expect(f.c.state.sheet?.kind).toBe('error');
+  await f.c.handoff();
+});
+
+test('failed no-snapshot disposal keeps rejecting repeated handoffs without releasing twice', async () => {
+  const f = fixture();
+  f.native.phoneSnapshot.mockRejectedValueOnce({ code: 'contextChanged' });
+  await f.c.open();
+  const failure = { code: 'operationFailed' };
+  f.native.release.mockRejectedValueOnce(failure);
+  await expect(f.c.handoff()).rejects.toEqual(failure);
+  expect(f.c.disposalStarted).toBe(true);
+  await expect(f.c.handoff()).rejects.toEqual(failure);
+  await expect(f.c.dispose()).rejects.toEqual(failure);
+  await f.c.send();
+  expect(f.native.release).toHaveBeenCalledTimes(1);
+  expect(f.native.phoneSend).not.toHaveBeenCalled();
+  expect(f.create).toHaveBeenCalledTimes(1);
+});
+
+jest.mock('@kenshiki/identity-capture', () => ({
+  isCaptureErrorCode: jest.requireActual<typeof import('@kenshiki/identity-capture/src/codes')>(
+    '@kenshiki/identity-capture/src/codes',
+  ).isCaptureErrorCode,
+}));
+
+test('a late restore reply cannot change the pause state of a newer pending event', async () => {
+  const f = fixture();
+  const restored = deferred<PhoneCheckSnapshot>();
+  f.native.phoneSnapshot.mockImplementationOnce(() => restored.promise);
+  const opening = f.c.open();
+  await tick();
+  f.emit(waiting);
+  expect(f.c.state.opening).toBe(true);
+  restored.resolve(complete);
+  await opening;
+  expect(f.c.state.opening).toBe(false);
+  expect(f.c.state.snapshot).toEqual(waiting);
+  expect(f.c.state.paused).toBe(true);
+  await f.c.dispose();
+});
+
+test('declined conditional handoff keeps the native owner available for recovery', async () => {
+  const f = fixture(complete);
+  await f.c.open();
+  const accept = jest.fn(() => false);
+  await expect(f.c.handoff(accept)).rejects.toMatchObject({ code: 'contextChanged' });
+  expect(accept).toHaveBeenCalledWith({ session: f.session, snapshot: complete });
+  expect(f.off).not.toHaveBeenCalled();
+  expect(f.native.release).not.toHaveBeenCalled();
+  expect(await f.c.handoff()).toEqual({ session: f.session, snapshot: complete });
+  await f.c.dispose();
+  expect(f.native.release).not.toHaveBeenCalled();
+});

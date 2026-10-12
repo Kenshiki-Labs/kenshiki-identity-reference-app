@@ -1,0 +1,26 @@
+name: Bug report
+description: Something in the app behaves differently from its README or tests.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Use synthetic data only. Never include real identity documents, SSNs, phone numbers or other personal data.
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: This app's release, @kenshiki/identity-capture version, iOS version and device
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened
+    validations:
+      required: true

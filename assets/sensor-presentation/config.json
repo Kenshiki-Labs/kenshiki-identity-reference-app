@@ -1,0 +1,236 @@
+{
+  "airCheck": {
+    "diagram": {
+      "hatFillOpacity": 0.18,
+      "height": 200,
+      "lineWidth": 1.5,
+      "ringOpacity": 0.5
+    },
+    "maximumObservationAgeSeconds": 5400,
+    "maximumStationDistanceMeters": 50000,
+    "maximumStationsTried": 8,
+    "metreDecimals": 1,
+    "pressureDecimals": 2,
+    "temperatureDecimals": 1,
+    "timeoutSeconds": 30,
+    "weatherUserAgent": "KenshikiSensorHost/1.0 (https://github.com/Kenshiki-Labs)"
+  },
+  "capture": {
+    "folderName": "SensorHostCaptures",
+    "keychainAccount": "capture-evidence-v1",
+    "keychainService": "com.kenshiki.sensors.capture",
+    "previewCornerRadius": 10,
+    "previewHeight": 340
+  },
+  "captureWindowSlider": {
+    "maximumSeconds": 5.0,
+    "minimumSeconds": 0.1,
+    "stepSeconds": 0.1
+  },
+  "colors": {
+    "approximateFix": "orange",
+    "failure": "red",
+    "highlight": "blue",
+    "highlightOpacity": 0.18,
+    "preciseFix": "blue",
+    "success": "green",
+    "warning": "orange"
+  },
+  "decimals": {
+    "accuracyMeters": 1,
+    "altitudeMeters": 1,
+    "batteryPercent": 0,
+    "captureWindowSeconds": 1,
+    "coordinateMaximum": 15,
+    "courseDegrees": 0,
+    "feet": 1,
+    "inchesOfMercury": 2,
+    "pressureHectopascals": 2,
+    "sensorReading": 3,
+    "speedMetersPerSecond": 1
+  },
+  "evidence": {
+    "defaultsSuiteName": "org.example.sensorhost.evidence",
+    "durableRootFolderName": "SensorHostEvidence",
+    "sessionIdentifier": "sensor-host-debug-screen"
+  },
+  "evidenceExport": {
+    "keptReadings": 50
+  },
+  "formats": {
+    "clockStamp": {
+      "date": "omitted",
+      "time": "standard"
+    },
+    "fixAge": {
+      "units": [
+        "hours",
+        "minutes",
+        "seconds"
+      ],
+      "width": "abbreviated"
+    },
+    "fixMeasuredAt": {
+      "date": "abbreviated",
+      "time": "standard"
+    }
+  },
+  "layout": {
+    "compactSpacing": 2,
+    "headerIconSpacing": 10,
+    "mapBlockSpacing": 6,
+    "rowSpacing": 4
+  },
+  "map": {
+    "cornerRadius": 10,
+    "emptyNotice": {
+      "cornerRadius": 8,
+      "padding": 10
+    },
+    "estimateRing": {
+      "diameter": 22,
+      "lineWidth": 2
+    },
+    "height": 280,
+    "minimumCircleRadiusMeters": 1,
+    "newest": {
+      "circleFillOpacity": 0.18,
+      "circleStrokeOpacity": 0.9,
+      "circleStrokeWidth": 2,
+      "markerDiameter": 12,
+      "markerOpacity": 1
+    },
+    "older": {
+      "circleFillOpacity": 0.06,
+      "circleStrokeOpacity": 0.35,
+      "circleStrokeWidth": 1,
+      "markerDiameter": 8,
+      "markerOpacity": 0.5
+    },
+    "trailLimit": 20
+  },
+  "refresh": {
+    "clockTickSeconds": 1,
+    "pauseBetweenPassesSeconds": 1
+  },
+  "sectionIcon": {
+    "cornerRadius": 7,
+    "glyphSize": 15,
+    "size": 28
+  },
+  "sections": {
+    "audioRoute": {
+      "color": "pink",
+      "symbol": "speaker.wave.2"
+    },
+    "barometer": {
+      "color": "teal",
+      "symbol": "barometer"
+    },
+    "batteryReader": {
+      "color": "green",
+      "symbol": "battery.100"
+    },
+    "bluetooth": {
+      "color": "blue",
+      "symbol": "antenna.radiowaves.left.and.right"
+    },
+    "calls": {
+      "color": "green",
+      "symbol": "phone"
+    },
+    "compass": {
+      "color": "red",
+      "symbol": "safari"
+    },
+    "continuity": {
+      "color": "indigo",
+      "symbol": "link"
+    },
+    "device": {
+      "color": "gray",
+      "symbol": "iphone"
+    },
+    "erase": {
+      "color": "red",
+      "symbol": "trash"
+    },
+    "export": {
+      "color": "green",
+      "symbol": "square.and.arrow.up.on.square"
+    },
+    "limits": {
+      "color": "purple",
+      "symbol": "questionmark.circle"
+    },
+    "location": {
+      "color": "blue",
+      "symbol": "location.fill"
+    },
+    "mobileNetwork": {
+      "color": "green",
+      "symbol": "cellularbars"
+    },
+    "motion": {
+      "color": "orange",
+      "symbol": "gyroscope"
+    },
+    "network": {
+      "color": "blue",
+      "symbol": "wifi"
+    },
+    "permissions": {
+      "color": "blue",
+      "symbol": "hand.raised"
+    },
+    "power": {
+      "color": "red",
+      "symbol": "thermometer.medium"
+    },
+    "proofs": {
+      "color": "purple",
+      "symbol": "checkmark.seal"
+    },
+    "readingTime": {
+      "color": "orange",
+      "symbol": "timer"
+    },
+    "saved": {
+      "color": "gray",
+      "symbol": "internaldrive"
+    },
+    "status": {
+      "color": "gray",
+      "symbol": "clock"
+    },
+    "units": {
+      "color": "indigo",
+      "symbol": "ruler"
+    },
+    "weather": {
+      "color": "teal",
+      "symbol": "cloud.sun"
+    },
+    "whereKept": {
+      "color": "indigo",
+      "symbol": "folder"
+    }
+  },
+  "symbols": {
+    "airCheckMatch": "checkmark.circle.fill",
+    "airCheckMismatch": "exclamationmark.circle.fill",
+    "airCheckTab": "barometer",
+    "captureTab": "viewfinder",
+    "disclosure": "chevron.right",
+    "externalLink": "arrow.up.right",
+    "fusionTab": "point.3.connected.trianglepath.dotted",
+    "identityDocument": "creditcard",
+    "identityFace": "faceid",
+    "identityPassport": "book.closed",
+    "identitySSN": "number",
+    "identityTab": "person.text.rectangle",
+    "knownLimit": "exclamationmark.triangle",
+    "sensorsTab": "waveform.path.ecg",
+    "settingsTab": "gearshape"
+  }
+}

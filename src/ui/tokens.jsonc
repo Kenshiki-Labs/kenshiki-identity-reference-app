@@ -1,0 +1,372 @@
+// Design tokens for the React Native reference app. This file is the only place the app's look is
+// written down. `generate-ui-resources.py` compiles it into `ui/tokens.generated.ts`; screens import
+// that module and never spell a color, font size, radius or spacing value themselves. The boundary
+// gate's React Native host scan refuses one that does.
+//
+// After editing, run `python3 generate-ui-resources.py` beside this app's sources. Its `--check`
+// mode fails when the generated module is stale.
+//
+// The app's look is the Figma first-run design (docs/design/first-run): white screens, tinted
+// cards, the navy tint, Dynamic Type text styles, SF Symbols. Where the design and this file
+// disagree, the design wins; a token that carries a design value names its Figma variable or text
+// style. Each token says what it is for and, where it replaced a value, which one.
+//
+// The product is Kenshiki SDK. The existing Kenshiki palette is retained. Brand values live in
+// three places only: the brand colors and the wordmark's type here, the wordmark's words in
+// locales/en.jsonc (`brand`), and the icon in brand/. The launch screen is generated from the same
+// wordmark. An app that signs this host
+// under its own brand replaces those three and nothing else.
+{
+  // Color roles. A system role names an iOS system color, resolved through React Native's
+  // `PlatformColor`, so its light, dark and increased-contrast appearances come from iOS. The names
+  // are the ones React Native 0.87 resolves (`RCTSemanticColorsMap` in RCTConvert.mm); the
+  // generator refuses any other name.
+  //
+  // Two surfaces are non-adaptive on iOS by design: the camera (dark in both appearances, as in the
+  // Camera app) and what is drawn over it. Text over the camera names the UIKit fixed color it
+  // stands for (`UIColor.white`) under "fixed"; React Native 0.87's `PlatformColor` cannot resolve
+  // it, so the generator writes it as a fixed value. The camera background gives the design's
+  // near-black as the same value for light and dark.
+  //
+  // A brand or design color gives its "light" and "dark" values as a pair. The generator writes it
+  // as `DynamicColorIOS`, so it follows the appearance as a system color does.
+  "color": {
+    "choiceSelected": {"light": "#F5F8FD", "dark": "#1B2A42"},
+    // A passed check: its check mark and its text. Figma `color/evidenceMatch`. Replaces #166534.
+    "evidenceMatch": {"light": "#17804A", "dark": "#86EFAC"},
+    // The well behind a passed check's mark. Figma `color/evidenceMatchSoft`; dark is a deep shade
+    // of the same green.
+    "evidenceMatchSoft": {"light": "#E3F3EA", "dark": "#0F2E1E"},
+    // Screen background. Figma `color/background`: white, as systemBackground. Replaces
+    // systemGroupedBackground.
+    "background": {"ios": "systemBackground"},
+    // Cards, panels, hero art and grouped cells on the white screen. Figma `color/card`; dark is
+    // secondarySystemBackground's dark value. Replaces secondarySystemGroupedBackground.
+    "card": {"light": "#F3F5F9", "dark": "#1C1C1E"},
+    // A sheet's background: white, as the design's confirmation sheet. Replaces
+    // systemGroupedBackground.
+    "sheet": {"ios": "systemBackground"},
+    // Primary text. Figma `color/text`; dark is label's dark value. Replaces label.
+    "text": {"light": "#0B1220", "dark": "#FFFFFF"},
+    // Secondary text: body copy under a title, field labels, row details. Figma
+    // `color/secondaryText`; dark is systemGray. Replaces secondaryLabel.
+    "secondaryText": {"light": "#5A6474", "dark": "#8E8E93"},
+    // Quiet text: footnotes under a screen's actions and waiting steps. Figma `color/tertiaryText`;
+    // dark is systemGray2's dark value.
+    "tertiaryText": {"light": "#8A93A3", "dark": "#636366"},
+    // The tint: prominent buttons, plain buttons, links, the selected tab and the back button.
+    // Brand: pulse-ios `KTheme.accent` (KenshikiTheme.swift, `Color(light: 0x0D2958, dark:
+    // 0x8FB3E6)`), the navy identity ink. Replaces systemBlue, which replaced #173965.
+    "tint": {"light": "#0D2958", "dark": "#8FB3E6"},
+    // The tint at low strength: icon wells, the option card's well. Figma `color/tintSoft`; dark is
+    // a deep shade of the dark tint.
+    "tintSoft": {"light": "#E7ECF5", "dark": "#1B2A42"},
+    // The tint at mid strength: illustration fills, an unselected radio, a running step's track.
+    // Figma `color/tintMid`.
+    "tintMid": {"light": "#B9C6DD", "dark": "#3A4F72"},
+    // The "Kenshiki SDK" wordmark in the shared page header. Brand: pulse-ios `KTheme.text`
+    // (`Color(light: 0x1D1D1F, dark: 0xF5F5F7)`), the ink pulse-ios gives its h1 role
+    // (`TextRole.defaultColor`), which reads on the light and the dark background. The
+    // launch screen's wordmark keeps pulse-ios's fixed 0.96 white: its background is always dark.
+    "wordmark": {"light": "#1D1D1F", "dark": "#F5F5F7"},
+    // Text on a filled tint button. Brand: pulse-ios `KTheme.onAction` (`Color(light: 0xFFFFFF,
+    // dark: 0x1D1D1F)`): white on the navy tint, ink on the light dark-mode tint, where white fails
+    // contrast. Replaces a fixed white, which replaced #fff.
+    "onTint": {"light": "#FFFFFF", "dark": "#1D1D1F"},
+    // Camera screen background, behind the live preview. Figma `color/cameraBackground`. Replaces
+    // fixed black.
+    "cameraBackground": {"light": "#05070A", "dark": "#05070A"},
+    // Text and the selfie guide drawn over the camera preview. Replaces #fff.
+    "onCamera": {"fixed": "white"},
+    // A destructive action's title, as UIKit's destructive style.
+    "destructive": {"ios": "systemRed"},
+
+    // Warning text must remain readable on the screen and card surfaces in both appearances.
+    // System orange is suitable for icon tiles, but does not provide enough contrast for small text
+    // on white. Figma `color/warning`. Replaces #994700.
+    "warning": {"light": "#A15C00", "dark": "#FFB366"},
+    // The well behind a warning's mark. Figma `color/warningSoft`; dark is a deep shade of the same
+    // orange.
+    "warningSoft": {"light": "#FBF0E1", "dark": "#3A2A12"},
+    // The capture-window slider's unfilled track, as UISlider draws it. Replaces #d1d1d6.
+    "sliderTrack": {"ios": "systemGray4"},
+    // The slider thumb: white in both appearances, as UISlider's. Replaces #fff.
+    "sliderThumb": {"fixed": "white"},
+    // The slider thumb's outline. Replaces #ddd.
+    "sliderThumbBorder": {"ios": "opaqueSeparator"},
+
+    // The line between two list rows, an unselected option card's edge, an empty step's ring and a
+    // progress track. Figma `color/separator`; dark is opaqueSeparator's dark value. Replaces
+    // separator.
+    "separator": {"light": "#E2E6ED", "dark": "#38383A"},
+    // A row while it is pressed.
+    "rowPressed": {"ios": "systemGray4"},
+
+    // SwiftUI's standard colors: the tiles behind list-row icons. sensor-presentation/config.json,
+    // generated from SensorHost, names each sensor section's tile with one of these SwiftUI names;
+    // SensorPresentation.ts resolves the name to the iOS system color SwiftUI uses for it, and the
+    // identity rows use the same set so the two parts of the app look like one. React Native would
+    // otherwise read "teal" or "gray" as a CSS color.
+    "swiftBlue": {"ios": "systemBlue"},
+    "swiftGray": {"ios": "systemGray"},
+    "swiftGreen": {"ios": "systemGreen"},
+    "swiftIndigo": {"ios": "systemIndigo"},
+    "swiftOrange": {"ios": "systemOrange"},
+    "swiftPink": {"ios": "systemPink"},
+    "swiftPurple": {"ios": "systemPurple"},
+    "swiftRed": {"ios": "systemRed"},
+    "swiftTeal": {"ios": "systemTeal"}
+  },
+
+  // The iOS Dynamic Type ramp at the default ("Large") content size, in points. The steps the
+  // design uses carry its sizes; the rest keep Apple's Human Interface Guidelines values. Text keeps
+  // React Native's default `allowFontScaling`, so the holder's text-size setting scales every style.
+  "typeRamp": {
+    "largeTitle": {"fontSize": 34, "lineHeight": 41},
+    // Design size. Replaces 28 / 34.
+    "title1": {"fontSize": 30, "lineHeight": 36},
+    // Design size. Replaces 22 / 28.
+    "title2": {"fontSize": 24, "lineHeight": 30},
+    "title3": {"fontSize": 20, "lineHeight": 25},
+    "headline": {"fontSize": 17, "lineHeight": 22},
+    // Design size. Replaces 17 / 22.
+    "body": {"fontSize": 17, "lineHeight": 24},
+    // Design size. Replaces 16 / 21.
+    "callout": {"fontSize": 16, "lineHeight": 22},
+    // Design size. Replaces 15 / 20.
+    "subheadline": {"fontSize": 15, "lineHeight": 21},
+    "footnote": {"fontSize": 13, "lineHeight": 18},
+    "caption1": {"fontSize": 12, "lineHeight": 16},
+    "caption2": {"fontSize": 11, "lineHeight": 13}
+  },
+
+  // Text styles, each on an iOS text style.
+  "text": {
+    // The heading of a step inside a check, under the navigation bar's own title. Figma
+    // `text/screenTitle`. Replaces fontSize 32, weight 700.
+    "screenTitle": {"style": "title1", "fontWeight": "700", "letterSpacing": -0.6},
+    // The title of a card or a sheet. Figma `text/sheetTitle`. Replaces title3 at weight 600.
+    "sectionTitle": {"style": "title2", "fontWeight": "700"},
+    // Body text. Figma `text/body`. Replaces fontSize 18, lineHeight 26.
+    "body": {"style": "body", "fontWeight": "400"},
+    // A field's label above its value, and a hint over the camera (Figma `text/callout`). Replaces
+    // fontSize 14, weight 700.
+    "label": {"style": "subheadline", "fontWeight": "600"},
+    // A short line above a group, such as "Step 1 of 2" or "Previous check", as a grouped list's
+    // section header. Figma `text/eyebrow`. Replaces the uppercase 14-point eyebrow with
+    // letterSpacing 2.
+    "eyebrow": {"style": "footnote", "fontWeight": "600", "letterSpacing": 0.6},
+    // A prominent button's label, as UIKit's prominent button. Figma `text/headline`. Replaces
+    // fontSize 18, weight 600.
+    "action": {"style": "headline", "fontWeight": "600"},
+    // A plain button's label. Figma `text/plainAction`. Replaces weight 400.
+    "plainAction": {"style": "body", "fontWeight": "500"},
+    // The SSN digits while they are entered. Figma `text/entry`. Replaces title1 at weight
+    // 400.
+    "entry": {"style": "title2", "fontWeight": "500", "letterSpacing": 1},
+    // The title of a first-run icon row or option card. Figma `text/rowTitle`. A list row's title is
+    // `rowTitle`.
+    "itemTitle": {"style": "callout", "fontWeight": "600"},
+    // A small label on a tag, such as "Recommended". Figma `text/tag`.
+    "tag": {"style": "caption1", "fontWeight": "600"},
+    // A caption with emphasis, under an image. Figma `text/captionEmphasis`.
+    "captionEmphasis": {"style": "footnote", "fontWeight": "500"},
+    // The developer checks screen title. Replaces fontSize 24, weight bold.
+    "developerTitle": {"style": "title2", "fontWeight": "700"},
+    // Sensor board section titles. Replaces fontSize 20, weight 600.
+    "groupTitle": {"style": "headline", "fontWeight": "600"},
+    // Sensor board group headings ("Freely readable"). Replaces fontSize 23, weight 600.
+    "groupHeader": {"style": "title3", "fontWeight": "600"},
+    // Sensor board row labels and values. Replaces fontSize 16.
+    "row": {"style": "body", "fontWeight": "400"},
+    // Sensor board explanations under a row. Replaces fontSize 13, lineHeight 19.
+    "note": {"style": "footnote", "fontWeight": "400"},
+    // Sensor board warnings. Replaces fontSize 14, which joins the subheadline step.
+    "warning": {"style": "subheadline", "fontWeight": "400"},
+    // The value printed under the capture-window slider. Replaces fontSize 10, which joins the
+    // smallest step of the ramp.
+    "caption": {"style": "caption2", "fontWeight": "400"},
+    // A list row's title, as a UITableView cell's text label. A first-run icon row's title is
+    // `itemTitle`.
+    "rowTitle": {"style": "body", "fontWeight": "400"},
+    // A list row's second line: the check's status. Also a first-run row's detail (Figma
+    // `text/rowDetail`, `text/note`).
+    "rowStatus": {"style": "subheadline", "fontWeight": "400"},
+    // A grouped list's section header and footer, and a first-run screen's footnote (Figma
+    // `text/footnote`).
+    "listFooter": {"style": "footnote", "fontWeight": "400"},
+    // An API or Info.plist name on a sensor's page, set as code, as SensorHost's `docEntry` does.
+    "code": {"style": "callout", "fontWeight": "400", "design": "monospaced"},
+    // The wordmark in the shared page header. Brand: pulse-ios sets its wordmark in the
+    // h1 role, bold and in the system serif (`TextRole.h1`); here it takes the title3 step so it
+    // sits inside the bar's row, above the large title it must not cover.
+    "wordmark": {"style": "title3", "fontWeight": "700", "design": "serif"}
+  },
+
+  // Spacing, in points. One scale for padding, margins and gaps.
+  "spacing": {
+    // Between a field label and its value, and a row's title and status. Replaces 4.
+    "xxs": 4,
+    // Between a portrait and its caption, and a section and its note. Replaces 8.
+    "xs": 8,
+    // Camera overlay gaps, the portrait row, a row's vertical padding and the gap from an icon to
+    // its title. Replaces 12.
+    "sm": 12,
+    // The inset grouped margin, a card's padding and a row's horizontal padding. Replaces 16.
+    "md": 16,
+    // Between two sections of a screen, and the camera's bottom inset. Replaces 20.
+    "lg": 20,
+    // Camera insets, a sheet's gap between its parts, and a first-run screen's side margins.
+    // Replaces 24, and 22 for the sheet gap.
+    "xl": 24,
+    // A sheet's padding. Replaces 28.
+    "xxl": 28,
+    // Below a sheet's last action. Replaces 40.
+    "xxxl": 40,
+    // Below a screen's last action. Replaces 48.
+    "xxxxl": 48
+  },
+
+  // Corner radii, in points.
+  "radius": {
+    // Fully rounded: the selfie oval, the slider thumb, and prominent buttons outside the first-run
+    // screens. Replaces 1000, and
+    // 12 for the 24-point slider thumb.
+    "full": 1000,
+    // Cards, option cards, result panels and grouped sections. Figma `radius/card`. Replaces 12.
+    "group": 18,
+    // A first-run screen's prominent button. Figma `radius/action`.
+    "action": 16,
+    // The panel that holds a screen's illustration. Figma `radius/hero`.
+    "hero": 24,
+    // A first-run icon well, behind an icon row's or an option card's icon. Figma `radius/well`. A
+    // list row's icon tile is `iconTile`.
+    "well": 12,
+    // A text field, such as the SSN entry. Figma `radius/field`.
+    "field": 14,
+    // A hint over the camera preview. Figma `radius/pill`.
+    "pill": 20,
+    // A sheet's top corners. Figma `radius/sheet`.
+    "sheet": 28,
+    // The rounded square behind a list row's icon: SensorHost's `sectionIcon.cornerRadius`. A
+    // first-run icon well is `well`.
+    "iconTile": 7,
+    // The capture-window slider's track. Replaces 2.
+    "sliderTrack": 2
+  },
+
+  // Fixed sizes and proportions. Rows have none: text sets their height, so Dynamic Type reflows.
+  "size": {
+    // First-run artwork displays at 60% of the Figma dimensions to leave room for content.
+    // Source assets retain their original geometry; both axes scale equally.
+    "preparationHeroHeight": 128,
+    "preparationPassportWidth": 84,
+    "preparationPassportHeight": 102,
+    "preparationLicenseWidth": 132,
+    "preparationLicenseHeight": 90,
+    "preparationBookWidth": 14.4833,
+    "preparationBookHeight": 18.15,
+    "preparationSunSize": 19.0667,
+    "preparationNFCWidth": 11.302,
+    "preparationNFCHeight": 17.2333,
+    "preparationLayersWidth": 18.1503,
+    "preparationLayersHeight": 15.4,
+    "choiceBookWidth": 15.8,
+    "choiceBookHeight": 19.8,
+    "choiceIDWidth": 19.8,
+    "choiceIDHeight": 15.8,
+    "choiceRadio": 24,
+    // Welcome uses the same compact panel and 60% artwork scale as preparation.
+    "welcomeHeroHeight": 128,
+    "welcomeArtWidth": 90,
+    "welcomeArtHeight": 96,
+    "welcomeIDWidth": 18.15,
+    "welcomeIDHeight": 14.4833,
+    "welcomePhoneWidth": 10.8167,
+    "welcomePhoneHeight": 19.0667,
+    "welcomeClockSize": 18.15,
+    "fusionDiagram": 200,
+    "fusionRing": 80,
+    "fusionMinimumScale": 0.18,
+    "fusionMaximumScale": 1.65,
+    // A prominent button's minimum height. Figma `size/actionHeight`. Replaces 50.
+    "actionMinHeight": 54,
+    // A plain button's minimum height. Figma `size/plainActionHeight`.
+    "plainActionMinHeight": 48,
+    // A first-run icon well. Figma `size/well`. A list row's icon tile is `iconTile`.
+    "well": 40,
+    // Symmetric space beside the wordmark for Back, Cancel or Done.
+    "navigationActionWidth": 72,
+    // The captured front shown while the back is still needed. Replaces 220.
+    "documentPreviewHeight": 220,
+    // Each side of a saved license on its results card. Replaces 200.
+    "documentImageHeight": 200,
+    "documentInspectionHeight": 340,
+    // The native preview on the developer checks screen. Replaces 180.
+    "developerPreviewHeight": 180,
+    // Passport portrait, width over height. Replaces 3 / 4.
+    "portraitAspectRatio": 0.75,
+    // Selfie guide width, as a share of the camera width. Replaces .68.
+    "selfieGuideWidth": 0.68,
+    // Selfie guide height over its width. Replaces 1.3.
+    "selfieGuideAspect": 1.3,
+    // The 44-point iOS minimum touch target: a row's minimum height and the capture-window
+    // slider's height. Replaces 44.
+    "touchTarget": 44,
+    // The capture-window slider's track thickness. Replaces 4.
+    "sliderTrack": 4,
+    // The capture-window slider's thumb diameter. Replaces 24.
+    "sliderThumb": 24,
+    // A list row's icon tile and the glyph inside it: SensorHost's `sectionIcon` size and
+    // glyph size.
+    "iconTile": 28,
+    "iconGlyph": 15,
+    // A row's trailing disclosure chevron.
+    "chevron": 13
+  },
+
+  // Border widths, in points.
+  "border": {
+    "choiceSelected": 2,
+    // The selfie guide outline. Replaces 3.
+    "guide": 3,
+    // The capture-window slider thumb's outline. Replaces 1.
+    "hairline": 1
+  },
+
+  // Opacities.
+  "opacity": {
+    // A disabled row or button. Replaces .45.
+    "disabled": 0.45,
+    "pressed": 0.7
+  },
+
+  // SF Symbols, by role. The tab bar types each name against the SF Symbols iOS ships.
+  "symbol": {
+    "fusionTab": "square.stack.3d.up",
+    "identityTab": "person.text.rectangle",
+    "sensorsTab": "sensor",
+    "settingsTab": "gearshape",
+    "license": "person.text.rectangle.fill",
+    "passport": "book.closed.fill",
+    "face": "faceid",
+    "ssn": "number",
+    "phone": "message.fill",
+    "savedChecks": "clock.arrow.circlepath",
+    "erase": "trash.fill",
+    "developer": "hammer.fill",
+    "chevron": "chevron.right",
+    "back": "chevron.left",
+    // A row that opens Apple's documentation outside the app: SensorHost's `externalLink`.
+    "externalLink": "arrow.up.right"
+  },
+
+  // The system color each kind of symbol is drawn in, from the set the SDK's IdentitySymbol draws.
+  "symbolTint": {
+    // The glyph on a row's colored tile, as in Settings.
+    "tile": "white",
+    // A row's disclosure chevron.
+    "chevron": "tertiaryLabel",
+    "back": "label"
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "figmaFile": "OhiN6d5r52NoeJ0kRRI1ev",
+  "frame": "3:4",
+  "assets": [
+    {
+      "name": "welcome",
+      "figmaNode": "3:25",
+      "svgSHA256": "71a5f5563ef4b51e18b342591de2bc6758ff7ae2158335cac2fd3070ae466c7f",
+      "conversion": "rsvg-convert; intrinsic size and 3x; no geometry edits",
+      "1x": {
+        "bytes": 5326,
+        "pixels": [
+          150,
+          160
+        ]
+      },
+      "@3x": {
+        "bytes": 16424,
+        "pixels": [
+          450,
+          480
+        ]
+      }
+    },
+    {
+      "name": "id",
+      "figmaNode": "3:38",
+      "svgSHA256": "5f09676022fe8afa8804733139bcb8674fa0a4e1d1080288f1e54e81ec7da354",
+      "conversion": "rsvg-convert; intrinsic size and 3x; no geometry edits",
+      "1x": {
+        "bytes": 584,
+        "pixels": [
+          19,
+          15
+        ]
+      },
+      "@3x": {
+        "bytes": 1549,
+        "pixels": [
+          55,
+          44
+        ]
+      }
+    },
+    {
+      "name": "phone",
+      "figmaNode": "3:47",
+      "svgSHA256": "3624597cc46f827226a080b8bba67a51f37a34dbf153c255569b1ed69ada4bb3",
+      "conversion": "rsvg-convert; intrinsic size and 3x; no geometry edits",
+      "1x": {
+        "bytes": 366,
+        "pixels": [
+          11,
+          20
+        ]
+      },
+      "@3x": {
+        "bytes": 904,
+        "pixels": [
+          33,
+          58
+        ]
+      }
+    },
+    {
+      "name": "clock",
+      "figmaNode": "3:55",
+      "svgSHA256": "0c89cc0b78e7105bded241a19a10786067dbb646da574408a963fbc64d8dec0a",
+      "conversion": "rsvg-convert; intrinsic size and 3x; no geometry edits",
+      "1x": {
+        "bytes": 749,
+        "pixels": [
+          19,
+          19
+        ]
+      },
+      "@3x": {
+        "bytes": 2248,
+        "pixels": [
+          55,
+          55
+        ]
+      }
+    },
+    {
+      "name": "prep-license",
+      "figmaNode": "4:30",
+      "svgSHA256": "f55e08d0325c9494163d322e598b28a70dbdc751a0edefadaa8d330649227d15",
+      "conversion": "rsvg-convert; intrinsic size and 3x; no geometry edits"
+    },
+    {
+      "name": "prep-passport",
+      "figmaNode": "6:350",
+      "svgSHA256": "77e191fafd539ed12bbce6a9d9a55882fd6f464ed78950bb0e533fdfeee97cd7",
+      "conversion": "rsvg-convert; intrinsic size and 3x; no geometry edits"
+    },
+    {
+      "name": "book",
+      "figmaNode": "6:369",
+      "svgSHA256": "762f3c2fb77485d713c2f56c0176667a32196fdb8dfe24c675121b55ea1eb036",
+      "conversion": "rsvg-convert; intrinsic size and 3x; no geometry edits"
+    },
+    {
+      "name": "sun",
+      "figmaNode": "6:378",
+      "svgSHA256": "84d1ec117202182630fef5926af0fdbaf4c94fc73c89acf3ddd716d4444b3c9b",
+      "conversion": "rsvg-convert; intrinsic size and 3x; no geometry edits"
+    },
+    {
+      "name": "nfc",
+      "figmaNode": "6:386",
+      "svgSHA256": "71eee4fe07560c8cc361e8009fb2032bb8b72281ad4d01d7ea0c8d03b9ce2260",
+      "conversion": "rsvg-convert; intrinsic size and 3x; no geometry edits"
+    },
+    {
+      "name": "layers",
+      "figmaNode": "4:60",
+      "svgSHA256": "c66a6220249aa09ba30a5cd95fdf34956835a3d470dc081f39b05b4a3896da02",
+      "conversion": "rsvg-convert; intrinsic size and 3x; no geometry edits"
+    },
+    {
+      "name": "choice-book",
+      "figmaNode": "3:93",
+      "svgSHA256": "462aa71dd4a308b4fd7713262780060f15f6bcbcfec5ba5d671751ea940d7af7",
+      "conversion": "rsvg-convert; intrinsic size and 3x; no geometry edits"
+    },
+    {
+      "name": "choice-id",
+      "figmaNode": "3:108",
+      "svgSHA256": "fe0c85e6fb5b62f6d34b3c39de4985fecb25fc21fa021cf17f57623fb2337ce9",
+      "conversion": "rsvg-convert; intrinsic size and 3x; no geometry edits"
+    },
+    {
+      "name": "choice-selected",
+      "figmaNode": "3:103",
+      "svgSHA256": "0c9adabf45cf1083af3a4d6377a98884341459af16e7af2b894f1c062d1e8fb8",
+      "conversion": "rsvg-convert; intrinsic size and 3x; no geometry edits"
+    }
+  ]
+}

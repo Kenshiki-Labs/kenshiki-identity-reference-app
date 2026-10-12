@@ -1,0 +1,18 @@
+Kenshiki Identity Reference App License
+
+Copyright (c) 2026 Kenshiki Labs. All rights reserved.
+
+Kenshiki Labs grants you a free, non-exclusive, worldwide, royalty-free license to use, copy,
+modify, and distribute this source code, with or without modifications, as part of applications
+you build, including commercial applications, subject to these conditions:
+
+1. You may not distribute this source code on its own, or as part of a competing SDK or reference
+   app, and you may not sublicense it except as part of your application.
+2. Keep this license with every copy of the source code you distribute.
+3. The @kenshiki/identity-capture package that this app installs is licensed under its own
+   LICENSE. Third-party packages are licensed under their own terms.
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO
+EVENT SHALL KENSHIKI LABS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM THE
+SOFTWARE OR ITS USE.

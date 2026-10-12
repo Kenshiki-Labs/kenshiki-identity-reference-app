@@ -1,0 +1,289 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "framework:DocumentReader",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://pods.regulaforensics.com/DocumentReader/9.7.6818/DocumentReader-9.7.6818.zip"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "41a070a0940f5736d770f472b60bc002d6cc1f3e9766b6c55f0a643c204da6f5"
+        }
+      ],
+      "name": "DocumentReader",
+      "type": "framework",
+      "version": "9.7.6818"
+    },
+    {
+      "bom-ref": "framework:DocumentReaderCore",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://pods.regulaforensics.com/FullAuth/9.7.19685/DocumentReaderCore_fullauth_9.7.19685.zip"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "668314fdab542cce6f485a50ab4a2b8ac796d622e9b8a4dcde4b2e956fcb287a"
+        }
+      ],
+      "name": "DocumentReaderCore",
+      "type": "framework",
+      "version": "9.7.19685"
+    },
+    {
+      "bom-ref": "framework:IdentityCaptureRuntime",
+      "name": "IdentityCaptureRuntime",
+      "type": "framework",
+      "version": "0.8.0"
+    },
+    {
+      "bom-ref": "framework:IdentityEvidenceOpenCVBridge",
+      "name": "IdentityEvidenceOpenCVBridge",
+      "type": "framework",
+      "version": "1.0"
+    },
+    {
+      "bom-ref": "framework:OpenSSL",
+      "name": "OpenSSL",
+      "type": "framework",
+      "version": "3.3.3001"
+    },
+    {
+      "bom-ref": "framework:RegulaCommon",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://pods.regulaforensics.com/RegulaCommon/9.7.2626/RegulaCommon-9.7.2626.zip"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b37b57bbb6ccef59b2cd0bd094bea0f812a8667531114b11028b4483aeed9c5d"
+        }
+      ],
+      "name": "RegulaCommon",
+      "type": "framework",
+      "version": "9.7.2626"
+    },
+    {
+      "bom-ref": "notice:AVCamBarcode",
+      "licenses": [
+        {
+          "license": {
+            "name": "See LICENSES/AVCamBarcode.txt"
+          }
+        }
+      ],
+      "name": "AVCamBarcode",
+      "type": "library"
+    },
+    {
+      "bom-ref": "notice:Apple-AVCam",
+      "licenses": [
+        {
+          "license": {
+            "name": "See LICENSES/Apple-AVCam.txt"
+          }
+        }
+      ],
+      "name": "Apple-AVCam",
+      "type": "library"
+    },
+    {
+      "bom-ref": "notice:Apple-DetectingObjectsInStillImages",
+      "licenses": [
+        {
+          "license": {
+            "name": "See LICENSES/Apple-DetectingObjectsInStillImages.txt"
+          }
+        }
+      ],
+      "name": "Apple-DetectingObjectsInStillImages",
+      "type": "library"
+    },
+    {
+      "bom-ref": "notice:ExifTool",
+      "licenses": [
+        {
+          "license": {
+            "name": "See LICENSES/ExifTool.txt"
+          }
+        }
+      ],
+      "name": "ExifTool",
+      "type": "library"
+    },
+    {
+      "bom-ref": "notice:ImageMagick",
+      "licenses": [
+        {
+          "license": {
+            "name": "See LICENSES/ImageMagick.txt"
+          }
+        }
+      ],
+      "name": "ImageMagick",
+      "type": "library"
+    },
+    {
+      "bom-ref": "notice:NFCPassportReader-MIT",
+      "licenses": [
+        {
+          "license": {
+            "name": "See LICENSES/NFCPassportReader-MIT.txt"
+          }
+        }
+      ],
+      "name": "NFCPassportReader-MIT",
+      "type": "library"
+    },
+    {
+      "bom-ref": "notice:OSS-DocumentScanner",
+      "licenses": [
+        {
+          "license": {
+            "name": "See LICENSES/OSS-DocumentScanner.txt"
+          }
+        }
+      ],
+      "name": "OSS-DocumentScanner",
+      "type": "library"
+    },
+    {
+      "bom-ref": "notice:OpenCV-4.12.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "See LICENSES/OpenCV-4.12.0.txt"
+          }
+        }
+      ],
+      "name": "OpenCV",
+      "type": "library",
+      "version": "4.12.0"
+    },
+    {
+      "bom-ref": "notice:OpenSSL-Apache-2.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "See LICENSES/OpenSSL-Apache-2.0.txt"
+          }
+        }
+      ],
+      "name": "OpenSSL-Apache-2.0",
+      "type": "library"
+    },
+    {
+      "bom-ref": "notice:OpenSSL-Packaging-License",
+      "licenses": [
+        {
+          "license": {
+            "name": "See LICENSES/OpenSSL-Packaging-License.txt"
+          }
+        }
+      ],
+      "name": "OpenSSL-Packaging-License",
+      "type": "library"
+    },
+    {
+      "bom-ref": "notice:OpenScanner",
+      "licenses": [
+        {
+          "license": {
+            "name": "See LICENSES/OpenScanner.txt"
+          }
+        }
+      ],
+      "name": "OpenScanner",
+      "type": "library"
+    },
+    {
+      "bom-ref": "notice:Regula",
+      "licenses": [
+        {
+          "license": {
+            "name": "See LICENSES/Regula.txt"
+          }
+        }
+      ],
+      "name": "Regula",
+      "type": "library"
+    },
+    {
+      "bom-ref": "notice:WeScan",
+      "licenses": [
+        {
+          "license": {
+            "name": "See LICENSES/WeScan.txt"
+          }
+        }
+      ],
+      "name": "WeScan",
+      "type": "library"
+    },
+    {
+      "bom-ref": "notice:YesWeScan",
+      "licenses": [
+        {
+          "license": {
+            "name": "See LICENSES/YesWeScan.txt"
+          }
+        }
+      ],
+      "name": "YesWeScan",
+      "type": "library"
+    }
+  ],
+  "dependencies": [
+    {
+      "dependsOn": [
+        "framework:DocumentReader",
+        "framework:DocumentReaderCore",
+        "framework:IdentityCaptureRuntime",
+        "framework:IdentityEvidenceOpenCVBridge",
+        "framework:OpenSSL",
+        "framework:RegulaCommon",
+        "notice:AVCamBarcode",
+        "notice:Apple-AVCam",
+        "notice:Apple-DetectingObjectsInStillImages",
+        "notice:ExifTool",
+        "notice:ImageMagick",
+        "notice:NFCPassportReader-MIT",
+        "notice:OSS-DocumentScanner",
+        "notice:OpenCV-4.12.0",
+        "notice:OpenSSL-Apache-2.0",
+        "notice:OpenSSL-Packaging-License",
+        "notice:OpenScanner",
+        "notice:Regula",
+        "notice:WeScan",
+        "notice:YesWeScan"
+      ],
+      "ref": "sdk"
+    }
+  ],
+  "metadata": {
+    "component": {
+      "bom-ref": "sdk",
+      "name": "@kenshiki/identity-capture",
+      "properties": [
+        {
+          "name": "sdkCommit",
+          "value": "c9b4cc1c14a87371cb77f7cf16838693bd5e80db"
+        }
+      ],
+      "type": "library",
+      "version": "0.8.0"
+    }
+  },
+  "specVersion": "1.5",
+  "version": 1
+}

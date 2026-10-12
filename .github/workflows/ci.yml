@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+jobs:
+  javascript:
+    name: TypeScript, Jest, generated resources and SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      # Installs @kenshiki/identity-capture from the npm registry at the lockfile's integrity value.
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test -- --ci
+      - run: npm run check:ui-resources
+      - run: python3 scripts/sbom.py --check
+
+  ios:
+    name: iOS simulator build (Release)
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: pod install
+        working-directory: ios
+      - run: |
+          xcodebuild -workspace ios/IdentitySDKHost.xcworkspace -scheme IdentitySDKHost \
+            -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build
